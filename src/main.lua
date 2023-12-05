@@ -13,30 +13,35 @@ ball:moveTo(100,100)
 ball:addSprite()
 
 elapsedTime = 0
-dx, dy = 0, 0
+dx, dy, dr = 0, 0, 0
 
 function playdate.leftButtonDown()
-  dx -= 1
+  dx -= 3
+  ball:setRotation(270)
   print("Left Down")
 end
 
 function playdate.rightButtonDown()
   dx += 1
-	print("Right Down")
+  ball:setRotation(90)
+  print("Right Down")
 end
 
 function playdate.upButtonDown()
   dy -= 1
+  ball:setRotation(0)
   print("Up Down")
 end
 
 function playdate.downButtonDown()
   dy += 1
+  ball:setRotation(180)
   print("Down Down")
 end
 
 function playdate.leftButtonUp()
-  dx += 1
+  dx += 3
+  dr -= 1
   print("Left Up")
 end
 
@@ -55,6 +60,10 @@ function playdate.downButtonUp()
   print("Down Up")
 end
 
+function playdate.cranked(change, acceleratedChange)
+  ball:setRotation(ball:getRotation() + change)
+end
+
 function playdate.update()
 
   dt = 1/20
@@ -63,6 +72,7 @@ function playdate.update()
   moveDistance = 100 * dt
 
   ball:moveTo(ball.x + dx * moveDistance, ball.y += dy * moveDistance)
+  -- ball:setRotation(ball:getRotation() + dr);
 
   -- print(ball.x .. "," .. ball.y)
 
