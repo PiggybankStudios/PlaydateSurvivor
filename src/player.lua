@@ -11,11 +11,13 @@ player:moveTo(100,100)
 player:addSprite()
 
 bullets = {}
+bulletLife = {}
 
-playerSpeed = 200
+playerSpeed = 50
 playerRunSpeed = 1
 bulletSpeed = 200
 
+theTargTime = 0
 
 -- +--------------------------------------------------------------+
 -- |                            Input                             |
@@ -29,30 +31,26 @@ end
 function playdate.leftButtonUp()
 	inputX += 1
 end
-
 function playdate.rightButtonDown()
 	inputX += 1
 end
 function playdate.rightButtonUp()
 	inputX -= 1
 end
-
 function playdate.upButtonDown()
 	inputY -= 1
 end
 function playdate.upButtonUp()
 	inputY += 1
 end
-
 function playdate.downButtonDown()
 	inputY += 1
 end
 function playdate.downButtonUp()
 	inputY -= 1
 end
-
 function playdate.AButtonDown()
-	newBullet = gfx.sprite:new();
+	newBullet = gfx.sprite:new()
 	newBullet:setImage(gfx.image.new('Resources/Sprites/Bullet1'))
 	newBullet:moveTo(player.x, player.y)
 	newBullet:setRotation(player:getRotation() + 90)
@@ -79,11 +77,31 @@ end
 
 function updatePlayer(dt)
 	moveSpeed = playerSpeed * playerRunSpeed * dt
+	theCurrTime = playdate.getCurrentTimeMilliseconds()
 	player:moveTo(player.x + inputX * moveSpeed, player.y + inputY * moveSpeed)
 	player:setRotation(crankAngle)
 	for bIndex,bullet in pairs(bullets) do
 		rotation = ((bullet:getRotation() - 90) / 180) * 3.1415926
 		bullet:moveTo(bullet.x + (math.cos(rotation)) * bulletSpeed * dt, bullet.y + (math.sin(rotation)) * bulletSpeed * dt)
+		if theCurrTime >= bulletLife[bIndex] then
+			bullet:remove()
+			table.remove(bullets,bIndex)
+			table.remove(bulletLife,bIndex)
+			print("Dying!")
+		end
+	end
+	
+	if theCurrTime >= theTargTime then
+		theTargTime = theCurrTime + 200
+		newBullet = gfx.sprite:new()
+		newBullet:setImage(gfx.image.new('Resources/Sprites/Bullet1'))
+		newBullet:moveTo(player.x, player.y)
+		newBullet:setRotation(player:getRotation() + 90)
+		newBullet:addSprite()
+		bullets[#bullets + 1] = newBullet
+		newBulletLife = theCurrTime + 1000
+		bulletLife[#bulletLife + 1] = newBulletLife
+		-- print("Firing!")
 	end
 	-- animationLoop:draw(player.x, player.y)
 	-- animationLoop:draw(0, 0)
