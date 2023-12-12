@@ -13,7 +13,9 @@ player:addSprite()
 bullets = {}
 
 playerSpeed = 200
+playerRunSpeed = 1
 bulletSpeed = 200
+
 
 -- +--------------------------------------------------------------+
 -- |                            Input                             |
@@ -59,6 +61,14 @@ function playdate.AButtonDown()
 	print("Firing!")
 end
 
+function playdate.BButtonDown()
+	playerRunSpeed = 2
+end
+
+function playdate.BButtonUp()
+	playerRunSpeed = 1
+end
+
 function playdate.cranked(change, acceleratedChange)
 	crankAngle += change
 end
@@ -68,7 +78,7 @@ end
 -- +--------------------------------------------------------------+
 
 function updatePlayer(dt)
-	moveSpeed = playerSpeed * dt
+	moveSpeed = playerSpeed * playerRunSpeed * dt
 	player:moveTo(player.x + inputX * moveSpeed, player.y + inputY * moveSpeed)
 	player:setRotation(crankAngle)
 	for bIndex,bullet in pairs(bullets) do
