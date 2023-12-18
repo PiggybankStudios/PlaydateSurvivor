@@ -1,4 +1,4 @@
-
+-- playdate screen 400 x 240
 gfx = playdate.graphics
 
 playerSheet = gfx.imagetable.new('Resources/Sheets/player')
@@ -13,11 +13,17 @@ player:addSprite()
 bullets = {}
 bulletLife = {}
 
+enemies = {}
+
 playerSpeed = 50
 playerRunSpeed = 1
 bulletSpeed = 200
+enemySpeed = 30
 
-theTargTime = 0
+theShotTime = 0
+theSpawnTime = 0
+enemyX = {0,230,230,230,0,-230,-230,-230}
+enemyY = {150,150,0,-150,-150,-150,0,150}
 
 -- +--------------------------------------------------------------+
 -- |                            Input                             |
@@ -67,33 +73,74 @@ end
 -- +--------------------------------------------------------------+
 
 function updatePlayer(dt)
-	moveSpeed = playerSpeed * playerRunSpeed * dt
 	theCurrTime = playdate.getCurrentTimeMilliseconds()
 	
+	moveSpeed = playerSpeed * playerRunSpeed * dt
 	player:moveTo(player.x + inputX * moveSpeed, player.y + inputY * moveSpeed)
 	player:setRotation(crankAngle)
 
 	for bIndex,bullet in pairs(bullets) do
 		rotation = ((bullet:getRotation() - 90) / 180) * 3.1415926
 		bullet:moveTo(bullet.x + (math.cos(rotation)) * bulletSpeed * dt, bullet.y + (math.sin(rotation)) * bulletSpeed * dt)
-		if theCurrTime >= bulletLife[bIndex] then
+		--bullet:setCollideRect(bullet:getBounds())
+		buletZ = bullet:getZIndex()
+		if theCurrTime >= bulletLife[bIndex] or buletZ == -99 then
 			bullet:remove()
 			table.remove(bullets,bIndex)
 			table.remove(bulletLife,bIndex)
-			--print("Dying!")
+		end
+	end
+	for eIndex,enemy in pairs(enemies) do
+		enemyVec = playdate.geometry.vector2D.new(player.x - enemy.x,player.y - enemy.y)
+		enemyVec:normalize()
+		enemy:moveTo(enemy.x + (enemyVec.x * enemySpeed * dt), enemy.y + (enemyVec.y * enemySpeed * dt))
+		--enemy:setCollideRect(enemy:getBounds())
+		enemyZ = enemy:getZIndex()
+		if enemyZ == -99 then
+			enemy:remove()
+			table.remove(enemies,eIndex)
 		end
 	end
 	
-	if theCurrTime >= theTargTime then
-		theTargTime = theCurrTime + 200
+	local collisions = gfx.sprite.allOverlappingSprites()
+
+	for i = 1, #collisions do
+	        local collisionPair = collisions[i]
+	        local sprite1 = collisionPair[1]
+	        local sprite2 = collisionPair[2]
+	        if sprite1.width ~= sprite2.width then
+	        	sprite1:setZIndex(-99)
+	        	sprite2:setZIndex(-99)
+	        	print("collision detected")
+	        end
+	end
+	
+	--spawn a bullet
+	if theCurrTime >= theShotTime then
+		theShotTime = theCurrTime + 200
 		newBullet = gfx.sprite:new()
 		newBullet:setImage(gfx.image.new('Resources/Sprites/Bullet1'))
 		newBullet:moveTo(player.x, player.y)
 		newBullet:setRotation(player:getRotation() + 90)
 		newBullet:addSprite()
+		newBullet:setCollideRect(newBullet::getBounds())
 		bullets[#bullets + 1] = newBullet
 		newBulletLife = theCurrTime + 1000
 		bulletLife[#bulletLife + 1] = newBulletLife
+		-- print("Firing!")
+	end
+	
+	--spawn a monster 230 x 150
+	if theCurrTime >= theSpawnTime then
+		rndLoc = math.random(1,8)
+		theSpawnTime = theCurrTime + 5000
+		newEnemy = gfx.sprite:new()
+		newEnemy:setImage(gfx.image.new('Resources/Sprites/Enemy2'))
+		newEnemy:moveTo(player.x + enemyX[rndLoc], player.y + enemyY[rndLoc])
+		--newEnemy:setRotation(player:getRotation() + 90)
+		newEnemy:addSprite()
+		newEnemy:setCollideRect(newEnemy::getBounds())
+		enemies[#enemies + 1] = newEnemy
 		-- print("Firing!")
 	end
 	-- animationLoop:draw(player.x, player.y)
