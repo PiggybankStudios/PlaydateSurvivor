@@ -3,8 +3,9 @@ import "CoreLibs/sprites"
 import "CoreLibs/animation"
 
 import "player"
+import "camera"
 
-gfx = playdate.graphics
+local gfx <const> = playdate.graphics
 
 gfx.setColor(gfx.kColorWhite)
 gfx.fillRect(0, 0, 400, 240)
@@ -17,6 +18,7 @@ function playdate.update()
 	elapsedTime = elapsedTime + dt
 	
 	updatePlayer(dt)
+	updateCamera(dt)
 	
 	gfx.sprite.update()
 end

@@ -49,15 +49,6 @@ end
 function playdate.downButtonUp()
 	inputY -= 1
 end
-function playdate.AButtonDown()
-	newBullet = gfx.sprite:new()
-	newBullet:setImage(gfx.image.new('Resources/Sprites/Bullet1'))
-	newBullet:moveTo(player.x, player.y)
-	newBullet:setRotation(player:getRotation() + 90)
-	newBullet:addSprite()
-	bullets[#bullets + 1] = newBullet
-	print("Firing!")
-end
 
 function playdate.BButtonDown()
 	playerRunSpeed = 2
@@ -78,8 +69,10 @@ end
 function updatePlayer(dt)
 	moveSpeed = playerSpeed * playerRunSpeed * dt
 	theCurrTime = playdate.getCurrentTimeMilliseconds()
+	
 	player:moveTo(player.x + inputX * moveSpeed, player.y + inputY * moveSpeed)
 	player:setRotation(crankAngle)
+
 	for bIndex,bullet in pairs(bullets) do
 		rotation = ((bullet:getRotation() - 90) / 180) * 3.1415926
 		bullet:moveTo(bullet.x + (math.cos(rotation)) * bulletSpeed * dt, bullet.y + (math.sin(rotation)) * bulletSpeed * dt)
@@ -87,7 +80,7 @@ function updatePlayer(dt)
 			bullet:remove()
 			table.remove(bullets,bIndex)
 			table.remove(bulletLife,bIndex)
-			print("Dying!")
+			--print("Dying!")
 		end
 	end
 	
