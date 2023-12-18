@@ -1,9 +1,13 @@
 import "CoreLibs/graphics"
 import "CoreLibs/sprites"
 import "CoreLibs/animation"
+import "CoreLibs/math"
+
+import "LDtk"
 
 import "player"
 import "camera"
+import "gameScene"
 
 local gfx <const> = playdate.graphics
 
@@ -13,12 +17,16 @@ gfx.setBackgroundColor(gfx.kColorWhite)
 
 elapsedTime = 0
 
+gameScene()
+
 function playdate.update()
 	dt = 1/20
 	elapsedTime = elapsedTime + dt
 	
 	updatePlayer(dt)
-	updateCamera(dt)
+	
 	
 	gfx.sprite.update()
+
+	updateCamera(dt)
 end

@@ -1,4 +1,3 @@
-import "player"
 import "tweening"
 
 -- define lookup functions
@@ -22,13 +21,14 @@ local currentCameraPos = {}
 currentCameraPos["x"] = 0
 currentCameraPos["y"] = 0
 
-local speed = 4
-local distance = 60
-
+local speed = 12
+local camDistance = {}
+camDistance.x = 100
+camDistance.y = 40
 
 -- Debugging
-playerX = 0
-playerY = 0
+--playerX = 0
+--playerY = 0
 
 
 -- +--------------------------------------------------------------+
@@ -38,21 +38,24 @@ playerY = 0
 
 function setCameraPos(angle, posX, posY)
 	rad = math.rad(angle)
-	cameraPos.x = distance * math.cos(rad) + posX
-	cameraPos.y = distance * math.sin(rad) + posY	
+	cameraPos.x = camDistance.x * math.cos(rad) + posX
+	cameraPos.y = camDistance.y * math.sin(rad) + posY	
 	
 	-- For debugging
-	playerX = posX
-	playerY = posY
+	--playerX = posX
+	--playerY = posY
 end
 
 
--- Seems like this is getting camera jittering, but this should be tweaked after we get some static sprites on the screen
-local function moveCamera()
-	currentCameraPos.x = mathFloor( moveTowards(currentCameraPos.x, cameraPos.x, speed) ) -- attempting to stop camera jitter, but need to set background tiles before that can be properly tested
-	currentCameraPos.y = mathFloor( moveTowards(currentCameraPos.y, cameraPos.y, speed) )
+-- Seems like this is still getting camera jittering :( need to test on hardware
+local function moveCamera(dt)
+	currentCameraPos.x = moveTowards(currentCameraPos.x, cameraPos.x, speed)
+	currentCameraPos.y = moveTowards(currentCameraPos.y, cameraPos.y, speed)
 
-	gfx.setDrawOffset(halfScreenWidth - currentCameraPos.x, halfScreenHeight - currentCameraPos.y)
+	local offsetX = math.floor(halfScreenWidth - currentCameraPos.x)
+	local offsetY = math.floor(halfScreenHeight - currentCameraPos.y)
+
+	gfx.setDrawOffset(offsetX, offsetY)
 end
 
 
@@ -63,10 +66,12 @@ end
 function updateCamera(dt)
 
 	setCameraPos(crankAngle, player.x, player.y)
-	moveCamera()
+	moveCamera(dt)
 
 	-- Debugging
 		-- this space draws primitives to the whole screen's background
+		-- need to comment this out when not using, bc it draws to the whole screen every frame
+	--[[
 	local offsetX, offsetY = gfx.getDrawOffset()
 	gfx.sprite.setBackgroundDrawingCallback(
         function( x, y, width, height )
@@ -78,5 +83,6 @@ function updateCamera(dt)
             gfx.clearClipRect()
         end
     )
+    ]]--
 
 end
