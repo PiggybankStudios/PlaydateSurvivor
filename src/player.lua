@@ -8,16 +8,14 @@ playerSheet = gfx.imagetable.new('Resources/Sheets/player')
 animationLoop = gfx.animation.loop.new(16, playerSheet)
 
 bullets = {}
-bulletLife = {}
 
 enemies = {}
 
 playerSpeed = 50
 playerRunSpeed = 1
-bulletSpeed = 200
 enemySpeed = 30
 
-theShotTime = 0
+nextShotTime = 0
 theSpawnTime = 0
 enemyX = {0,230,230,230,0,-230,-230,-230}
 enemyY = {150,150,0,-150,-150,-150,0,150}
@@ -120,16 +118,13 @@ function updatePlayer(dt)
 	player:setRotation(crankAngle)
 
 	for bIndex,bullet in pairs(bullets) do
-		rotation = ((bullet:getRotation() - 90) / 180) * 3.1415926
-		bullet:moveTo(bullet.x + (math.cos(rotation)) * bulletSpeed * dt, bullet.y + (math.sin(rotation)) * bulletSpeed * dt)
-		--bullet:setCollideRect(bullet:getBounds())
-		buletZ = bullet:getZIndex()
-		if theCurrTime >= bulletLife[bIndex] or buletZ == -99 then
+		bullet:update(dt, theCurrTime)
+		if not bullet.isAlive then
 			bullet:remove()
-			table.remove(bullets,bIndex)
-			table.remove(bulletLife,bIndex)
+			table.remove(bullets, bIndex)
 		end
 	end
+	
 	for eIndex,enemy in pairs(enemies) do
 		enemyVec = playdate.geometry.vector2D.new(player.x - enemy.x,player.y - enemy.y)
 		enemyVec:normalize()
@@ -142,31 +137,25 @@ function updatePlayer(dt)
 		end
 	end
 	
+	--[[
 	local collisions = gfx.sprite.allOverlappingSprites()
-
 	for i = 1, #collisions do
-	        local collisionPair = collisions[i]
-	        local sprite1 = collisionPair[1]
-	        local sprite2 = collisionPair[2]
-	        if sprite1.width ~= sprite2.width then
-	        	sprite1:setZIndex(-99)
-	        	sprite2:setZIndex(-99)
-	        	--print("collision detected")
-	        end
+		local collisionPair = collisions[i]
+		local sprite1 = collisionPair[1]
+		local sprite2 = collisionPair[2]
+		if sprite1.width ~= sprite2.width then
+			sprite1:setZIndex(-99)
+			sprite2:setZIndex(-99)
+			--print("collision detected")
+		end
 	end
+	]]--
 	
 	--spawn a bullet
-	if theCurrTime >= theShotTime then
-		theShotTime = theCurrTime + 200
-		newBullet = gfx.sprite:new()
-		newBullet:setImage(gfx.image.new('Resources/Sprites/Bullet1'))
-		newBullet:moveTo(player.x, player.y)
-		newBullet:setRotation(player:getRotation() + 90)
-		newBullet:addSprite()
-		newBullet:setCollideRect(newBullet:getBounds())
+	if theCurrTime >= nextShotTime then
+		nextShotTime = theCurrTime + 200
+		newBullet = Bullet(theCurrTime, 'Resources/Sprites/Bullet1', player.x, player.y, player:getRotation() + 90)
 		bullets[#bullets + 1] = newBullet
-		newBulletLife = theCurrTime + 1000
-		bulletLife[#bulletLife + 1] = newBulletLife
 		-- print("Firing!")
 	end
 	

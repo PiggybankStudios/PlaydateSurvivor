@@ -5,6 +5,7 @@ import "CoreLibs/math"
 
 import "LDtk"
 
+import "bullet"
 import "player"
 import "camera"
 import "gameScene"
