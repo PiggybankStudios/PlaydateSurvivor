@@ -6,6 +6,7 @@ import "CoreLibs/math"
 import "LDtk"
 
 import "bullet"
+import "enemy"
 import "player"
 import "camera"
 import "gameScene"

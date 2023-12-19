@@ -17,14 +17,10 @@ enemySpeed = 30
 
 nextShotTime = 0
 theSpawnTime = 0
-enemyX = {0,230,230,230,0,-230,-230,-230}
-enemyY = {150,150,0,-150,-150,-150,0,150}
-
 
 -- +--------------------------------------------------------------+
 -- |            Player Sprite and Collider Interaction            |
 -- +--------------------------------------------------------------+
-
 
 -- Global function called after level is created - level removes all sprites in game on level load
 function createPlayerSprite()
@@ -49,7 +45,6 @@ function movePlayerWithCollider(x, y)
 	player:moveTo(x, y)
 	collider:moveTo(x, y)
 end
-
 
 -- +--------------------------------------------------------------+
 -- |                            Input                             |
@@ -104,7 +99,6 @@ function movePlayer(dt)
 	movePlayerWithCollider(actualX, actualY)
 end
 
-
 -- +--------------------------------------------------------------+
 -- |                            Update                            |
 -- +--------------------------------------------------------------+
@@ -112,8 +106,6 @@ end
 function updatePlayer(dt)
 	theCurrTime = playdate.getCurrentTimeMilliseconds()
 	
-	--moveSpeed = playerSpeed * playerRunSpeed * dt
-	--player:moveTo(player.x + inputX * moveSpeed, player.y + inputY * moveSpeed)
 	movePlayer(dt)
 	player:setRotation(crankAngle)
 
@@ -126,15 +118,7 @@ function updatePlayer(dt)
 	end
 	
 	for eIndex,enemy in pairs(enemies) do
-		enemyVec = playdate.geometry.vector2D.new(player.x - enemy.x,player.y - enemy.y)
-		enemyVec:normalize()
-		enemy:moveTo(enemy.x + (enemyVec.x * enemySpeed * dt), enemy.y + (enemyVec.y * enemySpeed * dt))
-		--enemy:setCollideRect(enemy:getBounds())
-		enemyZ = enemy:getZIndex()
-		if enemyZ == -99 then
-			enemy:remove()
-			table.remove(enemies,eIndex)
-		end
+		enemy:update(dt, player.x, player.y)
 	end
 	
 	--[[
@@ -161,16 +145,9 @@ function updatePlayer(dt)
 	
 	--spawn a monster 230 x 150
 	if theCurrTime >= theSpawnTime then
-		rndLoc = math.random(1,8)
 		theSpawnTime = theCurrTime + 5000
-		newEnemy = gfx.sprite:new()
-		newEnemy:setImage(gfx.image.new('Resources/Sprites/Enemy2'))
-		newEnemy:moveTo(player.x + enemyX[rndLoc], player.y + enemyY[rndLoc])
-		--newEnemy:setRotation(player:getRotation() + 90)
-		newEnemy:addSprite()
-		newEnemy:setCollideRect(newEnemy:getBounds())
+		newEnemy = Enemy(theCurrTime, 'Resources/Sprites/Enemy2', player.x, player.y)
 		enemies[#enemies + 1] = newEnemy
-		-- print("Firing!")
 	end
 	-- animationLoop:draw(player.x, player.y)
 	-- animationLoop:draw(0, 0)
