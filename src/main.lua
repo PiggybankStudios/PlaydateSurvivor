@@ -5,6 +5,10 @@ import "CoreLibs/math"
 
 import "LDtk"
 
+import "tags"
+import "bullet"
+import "healthbar"
+import "enemy"
 import "player"
 import "camera"
 import "gameScene"
