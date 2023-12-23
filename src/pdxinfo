@@ -1,0 +1,7 @@
+name=Playdate Survivors
+author=Sean Cunnington, Devon Lawless, Taylor Robbins
+description=A recreation of Vampire Survivors
+bundleID=com.piggybankstudios.playdate_survivors
+imagePath=Resources/launch_card.png
+version=0.1
+buildNumber=1

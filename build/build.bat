@@ -6,7 +6,7 @@ set PlaydateSdkDirectory=%PLAYDATE_SDK_PATH%
 set PdcExeName=%PlaydateSdkDirectory%\bin\pdc
 
 echo [Packaging...]
-"%PdcExeName%" -sdkpath "%PlaydateSdkDirectory%" "..\src" "PlaydateSurvivor.pdx"
+"%PdcExeName%" -q -sdkpath "%PlaydateSdkDirectory%" "..\src" "PlaydateSurvivor.pdx"
 
 if "%RunGame%"=="1" (
 	echo [Running Game...]

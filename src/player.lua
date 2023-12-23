@@ -30,19 +30,14 @@ local health = maxHealth
 local damageTimer = 0
 local playerHealthbar
 
-bulletSpeed = 200
 enemySpeed = 30
 
-theShotTime = 0
+nextShotTime = 0
 theSpawnTime = 0
-enemyX = {0,230,230,230,0,-230,-230,-230}
-enemyY = {150,150,0,-150,-150,-150,0,150}
-
 
 -- +--------------------------------------------------------------+
 -- |            Player Sprite and Collider Interaction            |
 -- +--------------------------------------------------------------+
-
 
 -- Add the player sprite and collider back to the drawing list after level load - also sets starting position
 function addPlayerSpritesToList()
@@ -88,7 +83,6 @@ function collider:collisionResponse(other)
 		return "slide"
 	end
 end
-
 
 -- +--------------------------------------------------------------+
 -- |                            Input                             |
@@ -146,7 +140,6 @@ function movePlayer(dt)
 	movePlayerWithCollider(actualX, actualY)
 end
 
-
 -- +--------------------------------------------------------------+
 -- |                  Bullet & Monster Management                 |
 -- +--------------------------------------------------------------+
@@ -201,19 +194,17 @@ end
 
 function updateMonsters()
 	for eIndex,enemy in pairs(enemies) do
-		enemyVec = playdate.geometry.vector2D.new(player.x - enemy.x,player.y - enemy.y)
-		enemyVec:normalize()
+		enemy:update(dt, player.x, player.y)
 		local newX = enemy.x + (enemyVec.x * enemySpeed * dt)
 		local newY = enemy.y + (enemyVec.y * enemySpeed * dt)
 		enemy:move(newX, newY)
 		if enemies[eIndex].health <= 0 then
 			enemies[eIndex]:remove()
-			table.remove(enemies,eIndex)
-		end
 	end
 
 	spawnMonsters()
 end
+	]]--
 
 
 
