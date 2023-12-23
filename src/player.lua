@@ -1,11 +1,10 @@
 -- playdate screen 400 x 240
 local gfx <const> = playdate.graphics
-local vec <const> = playdate.geometry.vector2D
+--local vec <const> = playdate.geometry.vector2D
 
 local colliderSize <const> = 24
 local healthbarOffsetY <const> = 20
 local setDamageTimer <const> = 200
-
 
 -- Sprite
 playerSheet = gfx.imagetable.new('Resources/Sheets/player')
@@ -19,10 +18,7 @@ collider:setTag(TAGS.player)
 collider:setSize(colliderSize, colliderSize)
 collider:setCollideRect(0, 0, colliderSize, colliderSize)
 
--- Bullets & Enemies
-bullets = {}
-enemies = {}
-
+-- Player
 local playerSpeed = 50
 local playerRunSpeed = 1
 local maxHealth = 10
@@ -30,9 +26,15 @@ local health = maxHealth
 local damageTimer = 0
 local playerHealthbar
 
-enemySpeed = 30
+-- Bullets
+bullets = {}
+bulletSpeed = 200
 
-nextShotTime = 0
+theShotTime = 0
+
+
+-- Enemies
+enemies = {}
 theSpawnTime = 0
 
 -- +--------------------------------------------------------------+
@@ -57,8 +59,8 @@ function movePlayerWithCollider(x, y)
 end
 
 
--- Damage player health
-function damagePlayer(amount)
+-- Damage player health - called via enemies
+function player:damage(amount)
 	if damageTimer > theCurrTime then
 		return
 	end
@@ -77,7 +79,6 @@ function collider:collisionResponse(other)
 	if tag == TAGS.weapon then
 		return "overlap"
 	elseif tag == TAGS.enemy then
-		damagePlayer(1)
 		return "overlap"
 	else -- Any collision that's not set is defaulted to Wall Collision
 		return "slide"
@@ -150,7 +151,7 @@ function spawnBullets()
 		theShotTime = theCurrTime + 200
 
 		local newRotation = player:getRotation() + 90
-		local newLifeTime = theCurrTime + 1000
+		local newLifeTime = theCurrTime + 1500
 		newBullet = bullet(player.x, player.y, newRotation, newLifeTime)
 		newBullet:add()
 
@@ -176,15 +177,27 @@ end
 
 
 -- Monster movement and spawning
+	-- TO DO:
+		-- Need to move spawning logic into enemy class
+		-- Need to make multiple types of enemies that can be selected
 function spawnMonsters()
 	-- Movement
 	if theCurrTime >= theSpawnTime then
 		rndLoc = math.random(1,8)
 		theSpawnTime = theCurrTime + 3000
 
-		local startX = player.x + enemyX[rndLoc]
-		local startY = player.y + enemyY[rndLoc]
-		newEnemy = enemy(startX, startY)
+		direction = { 	x = (math.random(0,1) * 2) - 1, 
+						y = (math.random(0,1) * 2) - 1}		-- either -1 or 1
+		distance = { 	x = math.random(), 
+						y = math.random() }					-- between 0 to 1
+		enemyX = player.x + (halfScreenWidth + (halfScreenWidth * distance.x)) * direction.x
+		enemyY = player.y + (halfScreenHeight + (halfScreenHeight * distance.y)) * direction.y
+
+		local eHealth = math.random(3, 9)
+		local eSpeed = math.random(1, 4)
+		local eDamage = math.random(1, 3)
+
+		newEnemy = enemy(enemyX, enemyY, eHealth, eSpeed, eDamage)
 		newEnemy:add()
 
 		enemies[#enemies + 1] = newEnemy
@@ -193,18 +206,15 @@ end
 
 
 function updateMonsters()
-	for eIndex,enemy in pairs(enemies) do
-		enemy:update(dt, player.x, player.y)
-		local newX = enemy.x + (enemyVec.x * enemySpeed * dt)
-		local newY = enemy.y + (enemyVec.y * enemySpeed * dt)
-		enemy:move(newX, newY)
+	for eIndex,enemy in pairs(enemies) do		
+		enemy:move(player.x, player.y)
 		if enemies[eIndex].health <= 0 then
 			enemies[eIndex]:remove()
+		end
 	end
 
 	spawnMonsters()
 end
-	]]--
 
 
 

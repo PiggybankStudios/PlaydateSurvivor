@@ -1,15 +1,13 @@
 import "tweening"
 
--- define lookup functions
-	-- Could help squeeze out performance if really needed, saving here for future reference
 local gfx <const> = playdate.graphics
 local mathFloor <const> = math.floor
 
-
-local screenHeight = playdate.display.getHeight()
-local screenWidth = playdate.display.getWidth()
-local halfScreenHeight = screenHeight / 2
-local halfScreenWidth = screenWidth / 2
+-- screen size
+local screenHeight <const> = playdate.display.getHeight()
+local screenWidth <const> = playdate.display.getWidth()
+halfScreenHeight = screenHeight / 2
+halfScreenWidth = screenWidth / 2
 
 -- this is the target position the camera is trying to get to
 local cameraPos = {}
@@ -21,14 +19,22 @@ local currentCameraPos = {}
 currentCameraPos["x"] = 0
 currentCameraPos["y"] = 0
 
-local speed = 12
+-- camera shake
+shakeStrength = {
+	tiny = 1,
+	small = 2, 
+	medium = 3,
+	large = 4,
+	massive = 5
+}
+
+
+local speed = 6
 local camDistance = {}
 camDistance.x = 100
 camDistance.y = 40
 
--- Debugging
---playerX = 0
---playerY = 0
+
 
 
 -- +--------------------------------------------------------------+
@@ -40,10 +46,6 @@ function setCameraPos(angle, posX, posY)
 	rad = math.rad(angle)
 	cameraPos.x = camDistance.x * math.cos(rad) + posX
 	cameraPos.y = camDistance.y * math.sin(rad) + posY	
-	
-	-- For debugging
-	--playerX = posX
-	--playerY = posY
 end
 
 
@@ -58,6 +60,10 @@ local function moveCamera(dt)
 	gfx.setDrawOffset(offsetX, offsetY)
 end
 
+
+function cameraShake()
+
+end
 
 -- +--------------------------------------------------------------+
 -- |                            Update                            |
