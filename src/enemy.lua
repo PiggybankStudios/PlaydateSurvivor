@@ -32,6 +32,7 @@ function enemy:init(x, y, type, theTime)
 	end
 	self.type = type
 	self.time = theTime
+	self.drop = math.random(0, 10)
 	self.AIsmarts = 1
 	self:moveTo(x, y)
 	self:setTag(TAGS.enemy)
@@ -59,7 +60,7 @@ end
 
 function enemy:damage(amount)
 	self.health -= amount
-	if self.health <= 0 then self.healt = 0 end
+	if self.health <= 0 then self.health = 0 end
 
 	self.healthbar:damage(amount)
 end
@@ -85,15 +86,11 @@ function enemy:move(playerX, playerY, theTime)
 			self.health += 1
 			self.healthbar:heal(1)
 		end
-		if (self.health == 10) then
-			self.AIsmarts = 1
-		end
+		if (self.health == 10) then self.AIsmarts = 1 end
 	else
 		directionVec = vec.new(playerX - self.x, playerY - self.y)
 		self.time = theTime
-		if (self.type == 4 and self.health <= 4) then
-			self.AIsmarts = 2
-		end
+		if (self.type == 4 and self.health <= 4) then self.AIsmarts = 2 end
 	end
 	
 	directionVec:normalize()

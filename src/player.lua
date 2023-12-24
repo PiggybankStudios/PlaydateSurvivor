@@ -142,7 +142,7 @@ function movePlayer(dt)
 end
 
 -- +--------------------------------------------------------------+
--- |                  Bullet & Monster Management                 |
+-- |                  Bullet Management                 |
 -- +--------------------------------------------------------------+
 
 
@@ -174,7 +174,9 @@ function updateBullets()
 	spawnBullets()
 end
 
-
+-- +--------------------------------------------------------------+
+-- |                  Monster Management                 |
+-- +--------------------------------------------------------------+
 -- Monster movement and spawning
 	-- TO DO:
 		-- Need to move spawning logic into enemy class
