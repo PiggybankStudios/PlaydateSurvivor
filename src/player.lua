@@ -196,8 +196,9 @@ function spawnMonsters()
 		local eHealth = math.random(3, 9)
 		local eSpeed = math.random(1, 4)
 		local eDamage = math.random(1, 3)
+		local eAccel = 0.5
 
-		newEnemy = enemy(enemyX, enemyY, eHealth, eSpeed, eDamage)
+		newEnemy = enemy(enemyX, enemyY, eHealth, eDamage, eSpeed, eAccel)
 		newEnemy:add()
 
 		enemies[#enemies + 1] = newEnemy
