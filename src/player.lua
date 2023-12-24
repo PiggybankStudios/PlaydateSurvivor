@@ -29,13 +29,14 @@ local playerHealthbar
 -- Bullets
 bullets = {}
 bulletSpeed = 200
-
 theShotTime = 0
-
 
 -- Enemies
 enemies = {}
 theSpawnTime = 0
+
+-- Items
+items = {}
 
 -- +--------------------------------------------------------------+
 -- |            Player Sprite and Collider Interaction            |
@@ -72,11 +73,30 @@ function player:damage(amount)
 	playerHealthbar:damage(amount)
 end
 
+function heal(amount)
+	health += amount
+	if health > maxHealth then health = maxHealth end
+
+	playerHealthbar:heal(amount)
+	print("healed")
+end
+
+function addEXP(amount)
+	print("earnedEXP")
+end
+
+function newWeapon(weapon)
+	print("new weapon")
+end
+
 
 -- Collision response based on tags
 function collider:collisionResponse(other)
 	local tag = other:getTag()
 	if tag == TAGS.weapon then
+		return "overlap"
+	elseif tag == TAGS.item then
+		other:itemGrab()
 		return "overlap"
 	elseif tag == TAGS.enemy then
 		return "overlap"
@@ -155,7 +175,7 @@ function spawnBullets()
 		newBullet = bullet(player.x, player.y, newRotation, newLifeTime)
 		newBullet:add()
 
-		bullets[#bullets + 1] = newBullet
+		bullets[#bullets + 1] = newBullet 
 	end
 end
 
@@ -212,13 +232,38 @@ function updateMonsters()
 	for eIndex,enemy in pairs(enemies) do		
 		enemy:move(player.x, player.y, theCurrTime)
 		if enemies[eIndex].health <= 0 then
+			newItem = item(enemies[eIndex].x, enemies[eIndex].y, enemies[eIndex].drop)
+			newItem:add()
+			items[#items + 1] = newItem
 			enemies[eIndex]:remove()
+			table.remove(enemies,eIndex)
 		end
 	end
 
 	spawnMonsters()
 end
 
+
+-- +--------------------------------------------------------------+
+-- |                  Monster Management                 |
+-- +--------------------------------------------------------------+
+
+function updateItems()
+	for iIndex,item in pairs(items) do		
+		if items[iIndex].pickedUp == 1 then
+			if items[iIndex].type == 1 then
+				heal(1)
+			elseif items[iIndex].type == 2 then
+				newWeapon(1)
+			else
+				addEXP(1)
+			end
+			
+			items[iIndex]:remove()
+			table.remove(items,iIndex)
+		end
+	end
+end
 
 
 -- +--------------------------------------------------------------+
@@ -233,4 +278,5 @@ function updatePlayer(dt)
 
 	updateBullets()
 	updateMonsters()
+	updateItems()
 end

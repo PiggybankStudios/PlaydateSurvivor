@@ -57,7 +57,6 @@ function enemy:collisionResponse(other)
 	end
 end
 
-
 function enemy:damage(amount)
 	self.health -= amount
 	if self.health <= 0 then self.health = 0 end
