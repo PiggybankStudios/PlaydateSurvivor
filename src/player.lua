@@ -170,7 +170,6 @@ function updateBullets()
 			table.remove(bullets, bIndex)
 		end
 	end
-
 	-- Spawning
 	spawnBullets()
 end
@@ -186,18 +185,20 @@ function spawnMonsters()
 		rndLoc = math.random(1,8)
 		theSpawnTime = theCurrTime + 3000
 
-		direction = { 	x = (math.random(0,1) * 2) - 1, 
-						y = (math.random(0,1) * 2) - 1}		-- either -1 or 1
+		direction = { 	x = math.random(-1,1), 
+						y = math.random(-1,1)}		        -- either -1, 0, 1
+		if (direction.x == 0 and direction.y == 0) then
+			direction.x = (math.random(0,1) * 2) - 1 
+			direction.y = (math.random(0,1) * 2) - 1		-- either -1 or 1
+		end
 		distance = { 	x = math.random(), 
 						y = math.random() }					-- between 0 to 1
 		enemyX = player.x + (halfScreenWidth + (halfScreenWidth * distance.x)) * direction.x
 		enemyY = player.y + (halfScreenHeight + (halfScreenHeight * distance.y)) * direction.y
 
-		local eHealth = math.random(3, 9)
-		local eSpeed = math.random(1, 4)
-		local eDamage = math.random(1, 3)
+		local eType = math.random(1, 4)
 
-		newEnemy = enemy(enemyX, enemyY, eHealth, eSpeed, eDamage)
+		newEnemy = enemy(enemyX, enemyY, eType, theCurrTime)
 		newEnemy:add()
 
 		enemies[#enemies + 1] = newEnemy
@@ -207,7 +208,7 @@ end
 
 function updateMonsters()
 	for eIndex,enemy in pairs(enemies) do		
-		enemy:move(player.x, player.y)
+		enemy:move(player.x, player.y, theCurrTime)
 		if enemies[eIndex].health <= 0 then
 			enemies[eIndex]:remove()
 		end

@@ -45,3 +45,12 @@ function healthbar:damage(amount)
 	end
 	self:updateHealth(self.health)
 end
+
+
+function healthbar:heal(amount)
+	self.health += amount
+	if self.health >= self.maxHealth then
+		self.health = self.maxHealth
+	end
+	self:updateHealth(self.health)
+end
