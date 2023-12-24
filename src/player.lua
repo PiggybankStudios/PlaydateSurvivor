@@ -274,7 +274,7 @@ function updatePlayer(dt)
 	theCurrTime = playdate.getCurrentTimeMilliseconds()
 	
 	movePlayer(dt)
-	player:setRotation(crankAngle)
+	player:setRotation(crankAngle - 90)
 
 	updateBullets()
 	updateMonsters()
