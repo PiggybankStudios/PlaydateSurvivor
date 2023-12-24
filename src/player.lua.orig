@@ -109,7 +109,6 @@ end
 -- |                            Input                             |
 -- +--------------------------------------------------------------+
 inputX, inputY = 0, 0
-local physicalCrankAngle = 0
 crankAngle = 0
 
 function playdate.leftButtonDown()
@@ -146,8 +145,7 @@ function playdate.BButtonUp()
 end
 
 function playdate.cranked(change, acceleratedChange)
-	physicalCrankAngle += change
-	crankAngle = physicalCrankAngle - 90
+	crankAngle += change
 end
 
 
@@ -164,7 +162,7 @@ function movePlayer(dt)
 end
 
 -- +--------------------------------------------------------------+
--- |                       Bullet Management                      |
+-- |                  Bullet Management                 |
 -- +--------------------------------------------------------------+
 
 
@@ -197,7 +195,7 @@ function updateBullets()
 end
 
 -- +--------------------------------------------------------------+
--- |                       Monster Management                     |
+-- |                  Monster Management                 |
 -- +--------------------------------------------------------------+
 -- Monster movement and spawning
 	-- TO DO:
@@ -220,10 +218,18 @@ function spawnMonsters()
 		enemyX = player.x + (halfScreenWidth + (halfScreenWidth * distance.x)) * direction.x
 		enemyY = player.y + (halfScreenHeight + (halfScreenHeight * distance.y)) * direction.y
 
-		local eType = math.random(1, 4)
+<<<<<<< HEAD
+		local eHealth = math.random(3, 9)
+		local eSpeed = math.random(1, 4)
+		local eDamage = math.random(1, 3)
 		local eAccel = 0.5
 
+		newEnemy = enemy(enemyX, enemyY, eHealth, eDamage, eSpeed, eAccel)
+=======
+		local eType = math.random(1, 4)
+
 		newEnemy = enemy(enemyX, enemyY, eType, theCurrTime)
+>>>>>>> 2baf80781e6727cd266e0e4d464e4bcaf5fefbfe
 		newEnemy:add()
 
 		enemies[#enemies + 1] = newEnemy
@@ -277,7 +283,7 @@ function updatePlayer(dt)
 	theCurrTime = playdate.getCurrentTimeMilliseconds()
 	
 	movePlayer(dt)
-	player:setRotation(crankAngle)
+	player:setRotation(crankAngle - 90)
 
 	updateBullets()
 	updateMonsters()

@@ -1,4 +1,4 @@
 build/*
 !build/build.bat
 *.sublime-workspace
-raw/
+src/Resources/Raw/

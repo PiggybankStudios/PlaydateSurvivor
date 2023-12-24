@@ -12,6 +12,7 @@ import "enemy"
 import "player"
 import "camera"
 import "gameScene"
+import "item"
 
 local gfx <const> = playdate.graphics
 
