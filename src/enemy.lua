@@ -14,32 +14,32 @@ function enemy:init(x, y, type, theTime)
 	enemy.super.init(self)
 	if type == 1 then
 		self:setImage(gfx.image.new('Resources/Sprites/Enemy1')) --the fast one
-		self.health = 1
+		self.health = 2
 		self.speed = 0
 		self.targetSpeed = 3
 		self.damageAmount = 2
 	elseif type == 2 then
 		self:setImage(gfx.image.new('Resources/Sprites/Enemy2')) --the normal
-		self.health = 3
+		self.health = 5
 		self.speed = 0
 		self.targetSpeed = 2
 		self.damageAmount = 3
 	elseif type == 3 then
 		self:setImage(gfx.image.new('Resources/Sprites/Enemy3')) --the dodger
-		self.health = 2
+		self.health = 3
 		self.speed = 0
 		self.targetSpeed = 4
 		self.damageAmount = 1
 	elseif type == 4 then
 		self:setImage(gfx.image.new('Resources/Sprites/Enemy4')) --the big boi
-		self.health = 10
+		self.health = 20
 		self.speed = 0
 		self.targetSpeed = 1
 		self.damageAmount = 1
 	end
 	self.type = type
 	self.time = theTime
-	self.drop = math.random(0, 10)
+	self.drop = math.random(0, 100)
 	self.AIsmarts = 1
 	self:moveTo(x, y)
 	self:setTag(TAGS.enemy)
@@ -91,16 +91,16 @@ function enemy:move(playerX, playerY, theTime)
 		end
 	elseif (self.type == 4 and self.AIsmarts == 2) then
 		directionVec = vec.new(self.x - playerX, self.y - playerY)
-		if (theTime >= (self.time + 500)) then
+		if (theTime >= (self.time + 1000)) then
 			self.time = theTime
-			self.health += 1
-			self.healthbar:heal(1)
+			self.health += 2
+			self.healthbar:heal(2)
 		end
-		if (self.health == 10) then self.AIsmarts = 1 end
+		if (self.health == 20) then self.AIsmarts = 1 end
 	else
 		directionVec = vec.new(playerX - self.x, playerY - self.y)
 		self.time = theTime
-		if (self.type == 4 and self.health <= 4) then self.AIsmarts = 2 end
+		if (self.type == 4 and self.health <= 6) then self.AIsmarts = 2 end
 	end
 	
 	directionVec:normalize()

@@ -6,18 +6,22 @@ class('item').extends(gfx.sprite)
 
 function item:init(x, y, type)
 	item.super.init(self)
-	if type >= 10 then
+	if type >= 99 then
+		self.type = 3
+	elseif type >= 80 then
 		self.type = 2
-	elseif type >= 7 then
+	elseif type >= 50 then
 		self.type = 1
 	else
 		self.type = 0
 	end
 	
-	if (type == 1) then
+	if (self.type == 1) then
 		self:setImage(gfx.image.new('Resources/Sprites/iHealth'))
-	elseif (type == 2) then
+	elseif (self.type == 2) then
 		self:setImage(gfx.image.new('Resources/Sprites/iAmmo'))
+	elseif (self.type == 3) then
+		self:setImage(gfx.image.new('Resources/Sprites/iShield'))
 	else
 		self:setImage(gfx.image.new('Resources/Sprites/iEXP'))
 	end

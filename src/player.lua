@@ -30,8 +30,8 @@ local playerHealthbar
 
 -- Bullets
 bullets = {}
-bulletSpeed = 200
 theShotTime = 0
+gunType = 0
 
 -- Enemies
 enemies = {}
@@ -89,7 +89,15 @@ function addEXP(amount)
 	print("earnedEXP")
 end
 
+function shield(amount)
+	print("shielded")
+end
+
 function newWeapon(weapon)
+	gunType = weapon
+	if gunType > 3 then
+		gunType -= 4
+	end
 	print("new weapon")
 end
 
@@ -174,14 +182,37 @@ end
 
 function spawnBullets()
 	if theCurrTime >= theShotTime then
-		theShotTime = theCurrTime + 200
-
 		local newRotation = player:getRotation() + 90
 		local newLifeTime = theCurrTime + 1500
-		newBullet = bullet(player.x, player.y, newRotation, newLifeTime)
-		newBullet:add()
+		
+		if gunType == 1 then --cannon
+			theShotTime = theCurrTime + 500
+			newBullet = bullet(player.x, player.y, newRotation, newLifeTime, gunType)
+			newBullet:add()
+			bullets[#bullets + 1] = newBullet 
+		elseif gunType == 2 then -- minigun
+			theShotTime = theCurrTime + 100
+			newBullet = bullet(player.x, player.y, newRotation + math.random(-8, 8), newLifeTime, gunType)
+			newBullet:add()
+			bullets[#bullets + 1] = newBullet
+		elseif gunType == 3 then -- shotgun
+			theShotTime = theCurrTime + 300
+			newBullet = bullet(player.x, player.y, newRotation+ math.random(-8, 8), newLifeTime, gunType)
+			newBullet:add()
+			bullets[#bullets + 1] = newBullet
+			newBullet = bullet(player.x, player.y, newRotation + math.random(10, 25), newLifeTime, gunType)
+			newBullet:add()
+			bullets[#bullets + 1] = newBullet
+			newBullet = bullet(player.x, player.y, newRotation - math.random(10, 25), newLifeTime, gunType)
+			newBullet:add()
+			bullets[#bullets + 1] = newBullet
+		else --peagun
+			theShotTime = theCurrTime + 200
+			newBullet = bullet(player.x, player.y, newRotation, newLifeTime, gunType)
+			newBullet:add()
+			bullets[#bullets + 1] = newBullet 
+		end
 
-		bullets[#bullets + 1] = newBullet 
 	end
 end
 
@@ -190,7 +221,7 @@ end
 function updateBullets()
 	-- Movement
 	for bIndex,bullet in pairs(bullets) do
-		bullet:move(bulletSpeed)
+		bullet:move()
 		if theCurrTime >= bullets[bIndex].lifeTime then
 			bullets[bIndex]:remove()
 			table.remove(bullets, bIndex)
@@ -261,7 +292,9 @@ function updateItems()
 			if items[iIndex].type == 1 then
 				heal(1)
 			elseif items[iIndex].type == 2 then
-				newWeapon(1)
+				newWeapon(math.random(1, 3))
+			elseif items[iIndex].type == 3 then
+				shield(1)
 			else
 				addEXP(1)
 			end
