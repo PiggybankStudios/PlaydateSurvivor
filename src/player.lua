@@ -9,7 +9,9 @@ local setDamageTimer <const> = 200
 
 -- Sprite
 playerSheet = gfx.imagetable.new('Resources/Sheets/player')
+iplayerSheet = gfx.imagetable.new('Resources/Sheets/iplayer')
 animationLoop = gfx.animation.loop.new(16, playerSheet)
+ianimationLoop = gfx.animation.loop.new(16, iplayerSheet)
 player = gfx.sprite:new()
 player:setZIndex(ZINDEX.player)
 player:setImage(animationLoop:image())
@@ -39,6 +41,8 @@ theSpawnTime = 0
 
 -- Items
 items = {}
+invincibleTime = 0
+invincible = false
 
 -- +--------------------------------------------------------------+
 -- |            Player Sprite and Collider Interaction            |
@@ -68,6 +72,8 @@ end
 function player:damage(amount)
 	if damageTimer > theCurrTime then
 		return
+	elseif invincible then
+		return
 	end
 
 	damageTimer = theCurrTime + setDamageTimer
@@ -90,6 +96,8 @@ function addEXP(amount)
 end
 
 function shield(amount)
+	invincibleTime = theCurrTime + amount
+	invincible = true
 	print("shielded")
 end
 
@@ -294,7 +302,7 @@ function updateItems()
 			elseif items[iIndex].type == 2 then
 				newWeapon(math.random(1, 3))
 			elseif items[iIndex].type == 3 then
-				shield(1)
+				shield(10000)
 			else
 				addEXP(1)
 			end
@@ -312,6 +320,20 @@ end
 
 function updatePlayer(dt)
 	theCurrTime = playdate.getCurrentTimeMilliseconds()
+	
+	if invincibleTime > theCurrTime then
+		if ((theCurrTime % 500) >= 250 ) then
+			player:setImage(ianimationLoop:image())
+			print("inverted")
+		else
+			player:setImage(animationLoop:image())
+		end
+	else
+		if invincible then
+			invincible = false
+			player:setImage(animationLoop:image())
+		end
+	end
 	
 	movePlayer(dt)
 	player:setRotation(crankAngle)
