@@ -34,6 +34,7 @@ function healthbar:updateHealth(newHealth)
 		gfx.fillRoundRect(xPosOffset, yPosOffset, healthbarWidth, height, radius)		
 	gfx.popContext()
 	self:setImage(healthbarImage)
+	self:setZIndex(ZINDEX.ui)
 end
 
 

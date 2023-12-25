@@ -1,6 +1,7 @@
 -- playdate screen 400 x 240
 local gfx <const> = playdate.graphics
 --local vec <const> = playdate.geometry.vector2D
+local mathFloor <const> = math.floor
 
 local colliderSize <const> = 24
 local healthbarOffsetY <const> = 20
@@ -10,6 +11,7 @@ local setDamageTimer <const> = 200
 playerSheet = gfx.imagetable.new('Resources/Sheets/player')
 animationLoop = gfx.animation.loop.new(16, playerSheet)
 player = gfx.sprite:new()
+player:setZIndex(ZINDEX.player)
 player:setImage(animationLoop:image())
 
 -- Collider
@@ -52,11 +54,13 @@ function addPlayerSpritesToList()
 end
 
 
--- Moves both player sprite and collider
+-- Moves both player sprite and collider - flooring stops jittering b/c only integers
 function movePlayerWithCollider(x, y)
-	player:moveTo(x, y)
-	collider:moveTo(x, y)
-	playerHealthbar:moveTo(x, y - healthbarOffsetY)
+	local floorX = mathFloor(x)
+	local floorY = mathFloor(y)
+	player:moveTo(floorX, floorY)
+	collider:moveTo(floorX, floorY)
+	playerHealthbar:moveTo(floorX, floorY - healthbarOffsetY)
 end
 
 

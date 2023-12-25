@@ -18,7 +18,7 @@ local gfx <const> = playdate.graphics
 
 gfx.setColor(gfx.kColorWhite)
 gfx.fillRect(0, 0, 400, 240)
-gfx.setBackgroundColor(gfx.kColorWhite)
+gfx.setBackgroundColor(gfx.kColorBlack)
 
 elapsedTime = 0
 

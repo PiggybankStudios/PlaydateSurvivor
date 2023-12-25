@@ -43,6 +43,7 @@ function enemy:init(x, y, type, theTime)
 	self.AIsmarts = 1
 	self:moveTo(x, y)
 	self:setTag(TAGS.enemy)
+	self:setZIndex(ZINDEX.enemy)
 	self:setCollideRect(0, 0, self:getSize())
 
 	self.accel = enemyAcceleration
@@ -143,5 +144,4 @@ function enemy:move(playerX, playerY, theTime)
 			self.healthbar:moveTo(bounceOffset.x, bounceOffset.y - healthbarOffsetY)
 		end
 	end
-
 end

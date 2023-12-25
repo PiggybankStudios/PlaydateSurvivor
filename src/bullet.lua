@@ -10,6 +10,7 @@ function bullet:init(x, y, rotation, newLifeTime)
 	self:moveTo(x, y)
 	self:setRotation(rotation)
 	self:setTag(TAGS.weapon)
+	self:setZIndex(ZINDEX.weapon)
 	self:setCollideRect(0, 0, self:getSize())
 
 	self.lifeTime = newLifeTime

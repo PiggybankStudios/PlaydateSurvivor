@@ -54,8 +54,8 @@ local function moveCamera(dt)
 	currentCameraPos.x = moveTowards(currentCameraPos.x, cameraPos.x, speed)
 	currentCameraPos.y = moveTowards(currentCameraPos.y, cameraPos.y, speed)
 
-	local offsetX = math.floor(halfScreenWidth - currentCameraPos.x)
-	local offsetY = math.floor(halfScreenHeight - currentCameraPos.y)
+	local offsetX = mathFloor(halfScreenWidth - currentCameraPos.x)
+	local offsetY = mathFloor(halfScreenHeight - currentCameraPos.y)
 
 	gfx.setDrawOffset(offsetX, offsetY)
 end
