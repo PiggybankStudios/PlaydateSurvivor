@@ -6,6 +6,8 @@ local mathFloor <const> = math.floor
 local colliderSize <const> = 24
 local healthbarOffsetY <const> = 20
 local setDamageTimer <const> = 200
+local halfScreenWidth <const> = playdate.display.getWidth() / 2
+local halfScreenHeight <const> = playdate.display.getHeight() / 2
 
 -- Sprite
 playerSheet = gfx.imagetable.new('Resources/Sheets/player')
@@ -28,7 +30,9 @@ local playerRunSpeed = 1
 local maxHealth = 10
 local health = maxHealth
 local damageTimer = 0
+local startingExpForLevel = 10
 local playerHealthbar
+local playerExpbar
 
 -- Bullets
 bullets = {}
@@ -54,6 +58,7 @@ function addPlayerSpritesToList()
 	collider:add()
 	health = maxHealth
 	playerHealthbar = healthbar(player.x, player.y - healthbarOffsetY, health)
+	playerExpbar = expbar(startingExpForLevel)
 	movePlayerWithCollider(150,150) -- move to starting location
 end
 
@@ -101,6 +106,7 @@ end
 
 function addEXP(amount)
 	print("earnedEXP")
+	playerExpbar:gainExp(amount)
 end
 
 
@@ -176,7 +182,7 @@ function playdate.BButtonUp()
 end
 
 function playdate.AButtonDown()
-	cameraShake(CAMERA_SHAKE_STRENGTH.small)
+	addEXP(3)
 end
 
 function playdate.cranked(change, acceleratedChange)

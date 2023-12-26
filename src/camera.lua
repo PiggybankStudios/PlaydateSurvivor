@@ -7,10 +7,10 @@ local mathFloor <const> = math.floor
 local currentTime
 
 -- screen size
-local screenHeight <const> = playdate.display.getHeight()
 local screenWidth <const> = playdate.display.getWidth()
-halfScreenHeight = screenHeight / 2
-halfScreenWidth = screenWidth / 2
+local screenHeight <const> = playdate.display.getHeight()
+local halfScreenHeight <const> = screenHeight / 2
+local halfScreenWidth <const> = screenWidth / 2
 
 -- this is the target position the camera is trying to get to
 local cameraPos = {}
@@ -55,7 +55,7 @@ camDistance.y = 40
 function setCameraPos(angle, posX, posY)
 	rad = math.rad(angle)
 	cameraPos.x = camDistance.x * math.cos(rad) + posX
-	cameraPos.y = camDistance.y * math.sin(rad) + posY	
+	cameraPos.y = camDistance.y * math.sin(rad) + posY - getHalfUIBannerHeight()	
 end
 
 
@@ -128,5 +128,4 @@ function updateCamera(dt)
 
 	setCameraPos(crankAngle, player.x, player.y)
 	moveCamera()
-
 end

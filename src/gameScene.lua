@@ -40,6 +40,6 @@ function gameScene:goToLevel(level_name)
 	end
 
 	-- add the player's sprite back to the list
-	--createPlayer()
 	addPlayerSpritesToList()
+	addUIBanner()
 end

@@ -10,6 +10,8 @@ TAGS = {
 
 ZINDEX = {
 	ui = 500,
+	uibanner = 490,
+	healthbar = 480,
 	player = 200,
 	weapon = 150,
 	enemy = 140,
