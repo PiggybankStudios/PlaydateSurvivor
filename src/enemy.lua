@@ -18,24 +18,28 @@ function enemy:init(x, y, type, theTime)
 		self.speed = 0
 		self.targetSpeed = 3
 		self.damageAmount = 2
+		self.shakeStrength = CAMERA_SHAKE_STRENGTH.small
 	elseif type == 2 then
 		self:setImage(gfx.image.new('Resources/Sprites/Enemy2')) --the normal
 		self.health = 5
 		self.speed = 0
 		self.targetSpeed = 2
 		self.damageAmount = 3
+		self.shakeStrength = CAMERA_SHAKE_STRENGTH.medium
 	elseif type == 3 then
 		self:setImage(gfx.image.new('Resources/Sprites/Enemy3')) --the dodger
 		self.health = 3
 		self.speed = 0
 		self.targetSpeed = 4
 		self.damageAmount = 1
+		self.shakeStrength = CAMERA_SHAKE_STRENGTH.tiny
 	elseif type == 4 then
 		self:setImage(gfx.image.new('Resources/Sprites/Enemy4')) --the big boi
 		self.health = 20
 		self.speed = 0
 		self.targetSpeed = 1
 		self.damageAmount = 1
+		self.shakeStrength = CAMERA_SHAKE_STRENGTH.large
 	end
 	self.type = type
 	self.time = theTime
@@ -57,7 +61,7 @@ end
 function enemy:collisionResponse(other)
 	local tag = other:getTag()
 	if tag == TAGS.player then
-		player:damage(self.damageAmount)
+		player:damage(self.damageAmount, self.shakeStrength, self.x, self.y)
 		return 'bounce'
 	elseif tag == TAGS.weapon then
 		return 'freeze'

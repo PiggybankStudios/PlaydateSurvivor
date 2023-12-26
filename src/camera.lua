@@ -1,7 +1,10 @@
 import "tweening"
 
 local gfx <const> = playdate.graphics
+local vec <const> = playdate.geometry.vector2D
 local mathFloor <const> = math.floor
+
+local currentTime
 
 -- screen size
 local screenHeight <const> = playdate.display.getHeight()
@@ -20,21 +23,28 @@ currentCameraPos["x"] = 0
 currentCameraPos["y"] = 0
 
 -- camera shake
-shakeStrength = {
-	tiny = 1,
-	small = 2, 
-	medium = 3,
-	large = 4,
-	massive = 5
-}
+local camAnchor = vec.new(0, 0)
+local camBob = vec.new(0, 0)
+local shakeVelocity = vec.new(0, 0)
+local minCamDifference <const> = 0.02
+local springConstant <const> = 0.5
+local springDampen <const> = 0.85
+local shakeEndDelta = 0.1
+local setShakeTimer = 200
+local shakeTimer = 0
 
+CAMERA_SHAKE_STRENGTH = {
+	tiny = 3,
+	small = 6, 
+	medium = 12,
+	large = 24,
+	massive = 48
+}
 
 local speed = 6
 local camDistance = {}
 camDistance.x = 100
 camDistance.y = 40
-
-
 
 
 -- +--------------------------------------------------------------+
@@ -49,46 +59,74 @@ function setCameraPos(angle, posX, posY)
 end
 
 
--- Seems like this is still getting camera jittering :( need to test on hardware
-local function moveCamera(dt)
+-- Pass positions for shake direction
+function cameraShake(strength, playerPos, enemyPos)
+	local direction
+	if playerPos == nil or enemyPos == nil then
+		local randX, randY
+		randX = math.random() * 2 - 1
+		randY = math.random() * 2 - 1
+		direction = vec.new(randX, randY):normalized()
+	else
+		direction = (enemyPos - playerPos):normalized()
+	end
+
+	shakeVelocity = direction * strength
+	camBob = camAnchor + shakeVelocity
+
+	local timerLength = clamp(setShakeTimer * strength, 400, 1800)
+	shakeTimer = math.max(shakeTimer, currentTime + timerLength)
+end
+
+
+local function calculateCameraShake()
+	-- If the shake velocity is slow enough, just pass the anchor
+	if shakeVelocity:magnitude() <= minCamDifference then 
+		shakeVelocity = vec.new(0, 0)
+		return camAnchor
+	end
+
+	-- If the shake timer has elapsed, move the shake velocity to 0
+	if shakeTimer <= currentTime then
+		shakeVelocity.x = moveTowards(shakeVelocity.x, 0, shakeEndDelta)
+		shakeVelocity.y = moveTowards(shakeVelocity.y, 0, shakeEndDelta)
+		return camAnchor + shakeVelocity
+	end
+
+	-- Calculate spring force
+	local force = camBob - camAnchor
+	local x = force:magnitude()
+
+	force:normalize()
+	force *= (-1 * springConstant * x)
+	shakeVelocity += force
+	shakeVelocity *= springDampen
+
+	return camBob + shakeVelocity
+end
+
+
+local function moveCamera()
 	currentCameraPos.x = moveTowards(currentCameraPos.x, cameraPos.x, speed)
 	currentCameraPos.y = moveTowards(currentCameraPos.y, cameraPos.y, speed)
 
-	local offsetX = mathFloor(halfScreenWidth - currentCameraPos.x)
-	local offsetY = mathFloor(halfScreenHeight - currentCameraPos.y)
+	camAnchor.x = mathFloor(halfScreenWidth - currentCameraPos.x)
+	camAnchor.y = mathFloor(halfScreenHeight - currentCameraPos.y)
+	camBob = calculateCameraShake()
 
-	gfx.setDrawOffset(offsetX, offsetY)
+	gfx.setDrawOffset(camBob.x, camBob.y)
 end
 
-
-function cameraShake()
-
-end
 
 -- +--------------------------------------------------------------+
 -- |                            Update                            |
 -- +--------------------------------------------------------------+
 
+
 function updateCamera(dt)
+	currentTime = playdate.getCurrentTimeMilliseconds()
 
 	setCameraPos(crankAngle, player.x, player.y)
-	moveCamera(dt)
-
-	-- Debugging
-		-- this space draws primitives to the whole screen's background
-		-- need to comment this out when not using, bc it draws to the whole screen every frame
-	--[[
-	local offsetX, offsetY = gfx.getDrawOffset()
-	gfx.sprite.setBackgroundDrawingCallback(
-        function( x, y, width, height )
-        	gfx.clear()	-- clears any drawn shape from the previous frame
-            gfx.setClipRect( x, y, width, height )
-            gfx.setColor(gfx.kColorBlack)
-            gfx.setImageDrawMode(gfx.kDrawModeNXOR)
-            gfx.drawLine(playerX + offsetX, playerY + offsetY, cameraPos.x + offsetX, cameraPos.y + offsetY) -- added w/ draw offset to be accurate to player position
-            gfx.clearClipRect()
-        end
-    )
-    ]]--
+	moveCamera()
 
 end

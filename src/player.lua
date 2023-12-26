@@ -1,6 +1,6 @@
 -- playdate screen 400 x 240
 local gfx <const> = playdate.graphics
---local vec <const> = playdate.geometry.vector2D
+local vec <const> = playdate.geometry.vector2D
 local mathFloor <const> = math.floor
 
 local colliderSize <const> = 24
@@ -69,19 +69,26 @@ end
 
 
 -- Damage player health - called via enemies
-function player:damage(amount)
+function player:damage(amount, camShakeStrength, enemyX, enemyY)
+	-- Invincibility
 	if damageTimer > theCurrTime then
 		return
 	elseif invincible then
 		return
 	end
 
+	-- Damaging
 	damageTimer = theCurrTime + setDamageTimer
 	health -= amount
 	if health < 0 then health = 0 end
-
 	playerHealthbar:damage(amount)
+
+	-- Camera Shake
+	playerPos = vec.new(player.x, player.y)
+	enemyPos = vec.new(enemyX, enemyY)
+	cameraShake(camShakeStrength, playerPos, enemyPos)
 end
+
 
 function heal(amount)
 	health += amount
@@ -91,15 +98,18 @@ function heal(amount)
 	print("healed")
 end
 
+
 function addEXP(amount)
 	print("earnedEXP")
 end
+
 
 function shield(amount)
 	invincibleTime = theCurrTime + amount
 	invincible = true
 	print("shielded")
 end
+
 
 function newWeapon(weapon)
 	gunType = weapon
@@ -165,14 +175,31 @@ function playdate.BButtonUp()
 	playerRunSpeed = 1
 end
 
+function playdate.AButtonDown()
+	cameraShake(CAMERA_SHAKE_STRENGTH.small)
+end
+
 function playdate.cranked(change, acceleratedChange)
 	physicalCrankAngle += change
 	crankAngle = physicalCrankAngle - 90
 end
 
+-- If any buttons are being held or pressed, then FALSE for not clearing. Otherwise return TRUE for no buttons pressed and okay to clear input
+	-- Fixes bug when input increments too far
+function clearPlayerInput()
+	if playdate.getButtonState() == 0 then
+		inputX = 0
+		inputY = 0
+		return true
+	else
+		return false
+	end
+end
+
 
 function movePlayer(dt)
 	if collider == nil then return end	-- If the collider doesn't exist, then don't look for collisions
+	if clearPlayerInput() == true then return end 	-- If no buttons pressed, don't move and clear input
 
 	local moveSpeed = playerSpeed * playerRunSpeed * dt
 	goalX = player.x + inputX * moveSpeed
