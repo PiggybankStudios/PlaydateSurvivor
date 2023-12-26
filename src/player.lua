@@ -54,6 +54,7 @@ invincible = false
 
 -- Add the player sprite and collider back to the drawing list after level load - also sets starting position
 function addPlayerSpritesToList()
+	player:setRotation(crankAngle)
 	player:add()
 	collider:add()
 	health = maxHealth
@@ -145,8 +146,8 @@ end
 -- |                            Input                             |
 -- +--------------------------------------------------------------+
 inputX, inputY = 0, 0
-local physicalCrankAngle = 0
-crankAngle = 0
+local physicalCrankAngle = playdate.getCrankPosition()
+crankAngle = physicalCrankAngle - 90
 
 function playdate.leftButtonDown()
 	inputX -= 1

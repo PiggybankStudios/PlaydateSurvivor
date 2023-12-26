@@ -26,6 +26,8 @@ elapsedTime = 0
 
 gameScene()
 
+-- get start crank angle
+
 function playdate.update()
 	dt = 1/20
 	elapsedTime = elapsedTime + dt
