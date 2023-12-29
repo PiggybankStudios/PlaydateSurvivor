@@ -8,10 +8,14 @@ function item:init(x, y, type)
 	item.super.init(self)
 	if type >= 99 then
 		self.type = 3
-	elseif type >= 80 then
+	elseif type >= 85 then
 		self.type = 2
-	elseif type >= 50 then
+	elseif type >= 65 then
 		self.type = 1
+	elseif type >= 60 then
+		self.type = 4
+	elseif type >= 45 then
+		self.type = 5
 	else
 		self.type = 0
 	end
@@ -22,8 +26,12 @@ function item:init(x, y, type)
 		self:setImage(gfx.image.new('Resources/Sprites/iAmmo'))
 	elseif (self.type == 3) then
 		self:setImage(gfx.image.new('Resources/Sprites/iShield'))
+	elseif (self.type == 4) then
+		self:setImage(gfx.image.new('Resources/Sprites/iEXP9'))
+	elseif (self.type == 5) then
+		self:setImage(gfx.image.new('Resources/Sprites/iEXP3'))
 	else
-		self:setImage(gfx.image.new('Resources/Sprites/iEXP'))
+		self:setImage(gfx.image.new('Resources/Sprites/iEXP1'))
 	end
 	
 	self.pickedUp = 0

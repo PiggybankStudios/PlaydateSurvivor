@@ -33,6 +33,8 @@ local damageTimer = 0
 local startingExpForLevel = 10
 local playerHealthbar
 local playerExpbar
+local playerLevel = 0
+local playerUpgradeAmount = 0
 
 
 -- Bullets
@@ -49,8 +51,12 @@ theSpawnTime = 0
 
 -- Items
 items = {}
-invincibleTime = 0
-invincible = false
+invincibleTime = 10000
+invincible = true
+
+--Menu
+Pause = false
+Unpaused = false
 
 -- +--------------------------------------------------------------+
 -- |            Player Sprite and Collider Interaction            |
@@ -84,6 +90,7 @@ end
 
 -- Damage player health - called via enemies
 function player:damage(amount, camShakeStrength, enemyX, enemyY)
+	if Unpaused then damageTimer += theLastTime end
 	-- Invincibility
 	if damageTimer > theCurrTime then
 		return
@@ -106,6 +113,9 @@ function player:damage(amount, camShakeStrength, enemyX, enemyY)
 	screenFlash()
 end
 
+function updateLevel()
+	playerLevel += 1
+end
 
 function heal(amount)
 	health += amount
@@ -130,7 +140,7 @@ end
 
 
 function newWeapon(weapon)
-	gunType = weapon
+	gunType += weapon
 	if gunType > 3 then
 		gunType -= 4
 	end
@@ -194,7 +204,12 @@ function playdate.BButtonUp()
 end
 
 function playdate.AButtonDown()
-	--screenFlash()
+	if Pause then 
+		Pause = false
+		Unpaused = true
+	else
+		Pause = true
+	end
 end
 
 function playdate.cranked(change, acceleratedChange)
@@ -259,6 +274,7 @@ end
 
 
 function spawnBullets()
+	if Unpaused then theShotTime += theLastTime end
 	if theCurrTime >= theShotTime then
 		local newRotation = player:getRotation() + 90
 		local newLifeTime = theCurrTime + 1500
@@ -300,6 +316,8 @@ function updateBullets()
 	-- Movement
 	for bIndex,bullet in pairs(bullets) do
 		bullet:move()
+		
+	if Unpaused then bullets[bIndex].lifeTime += theLastTime end
 		if theCurrTime >= bullets[bIndex].lifeTime then
 			bullets[bIndex]:remove()
 			table.remove(bullets, bIndex)
@@ -318,6 +336,7 @@ end
 		-- Need to make multiple types of enemies that can be selected
 function spawnMonsters()
 	-- Movement
+	if Unpaused then theSpawnTime += theLastTime end
 	if theCurrTime >= theSpawnTime then
 		rndLoc = math.random(1,8)
 		theSpawnTime = theCurrTime + 3000
@@ -346,6 +365,7 @@ end
 
 function updateMonsters()
 	for eIndex,enemy in pairs(enemies) do		
+		if Unpaused then enemies[eIndex].time += theLastTime end
 		enemy:move(player.x, player.y, theCurrTime)
 		if enemies[eIndex].health <= 0 then
 			newItem = item(enemies[eIndex].x, enemies[eIndex].y, enemies[eIndex].drop)
@@ -368,11 +388,15 @@ function updateItems()
 	for iIndex,item in pairs(items) do		
 		if items[iIndex].pickedUp == 1 then
 			if items[iIndex].type == 1 then
-				heal(1)
+				heal(3)
 			elseif items[iIndex].type == 2 then
 				newWeapon(math.random(1, 3))
 			elseif items[iIndex].type == 3 then
 				shield(10000)
+			elseif items[iIndex].type == 4 then
+				addEXP(9)
+			elseif items[iIndex].type == 5 then
+				addEXP(3)
 			else
 				addEXP(1)
 			end
@@ -391,25 +415,32 @@ end
 function updatePlayer(dt)
 	theCurrTime = playdate.getCurrentTimeMilliseconds()
 	
-	if invincibleTime > theCurrTime then
-		if ((theCurrTime % 500) >= 250 ) then
-			player:setImage(ianimationLoop:image())
-			print("inverted")
+	if Pause == false then
+		if Unpaused then theLastTime = theCurrTime - theLastTime end
+		if Unpaused then invincibleTime += theLastTime end
+		if invincibleTime > theCurrTime then
+			if ((theCurrTime % 500) >= 250 ) then
+				player:setImageDrawMode(gfx.kDrawModeInverted)
+				print("inverted")
+			else
+				player:setImageDrawMode(gfx.kDrawModeCopy)
+			end
 		else
-			player:setImage(animationLoop:image())
+			if invincible then
+				invincible = false
+				player:setImage(animationLoop:image())
+			end
 		end
-	else
-		if invincible then
-			invincible = false
-			player:setImage(animationLoop:image())
-		end
-	end
-	
-	movePlayer(dt)
-	player:setRotation(crankAngle)
+		
+		movePlayer(dt)
+		player:setRotation(crankAngle)
 
-	updateBullets()
-	updateMonsters()
+		updateBullets()
+		updateMonsters()
 	updateParticles()
-	updateItems()
+		updateItems()
+		
+		theLastTime = theCurrTime
+		Unpaused = false
+	end
 end
