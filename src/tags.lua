@@ -8,12 +8,13 @@ TAGS = {
 }
 
 
-ZINDEX = {
+ZINDEX = {	
 	ui = 500,
-	uibanner = 490,
+	uibanner = 490,	
 	healthbar = 480,
+	impactparticle = 470,
 	player = 200,
 	weapon = 150,
 	enemy = 140,
-	default = 100
+	default = 100,
 }

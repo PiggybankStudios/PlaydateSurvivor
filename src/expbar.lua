@@ -33,6 +33,11 @@ function expbar:updateExpbar(newExp)
 	local yPosOffset = math.floor((borderHeight - height) / 2)
 
 	local expbarWidth = (newExp / self.maxExp) * maxWidth
+	if expbarWidth == 0 then 
+		expbarWidth += 3
+		height = 4
+		yPosOffset += 1
+	end
 	local expbarImage = gfx.image.new(borderWidth, borderHeight)
 	gfx.pushContext(expbarImage)
 		-- Border

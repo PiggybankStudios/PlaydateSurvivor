@@ -1,3 +1,5 @@
+local pi <const> = math.pi
+
 
 -- +--------------------------------------------------------------+
 -- |                             Misc                             |
@@ -13,6 +15,12 @@ function sign(x)
 	end
 end
 
+--
+function vecAngle(x, y, x2,  y2)
+	local a = math.atan2(y2, x2) - math.atan2(y, x)
+	return (a + pi) % (pi * 2) - pi
+end
+--
 
 function clamp(value, min, max)
 	if value > max then

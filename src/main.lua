@@ -7,6 +7,7 @@ import "LDtk"
 
 import "tags"
 import "bullet"
+import "particle"
 import "healthbar"
 import "uibanner"
 import "expbar"
@@ -26,16 +27,26 @@ elapsedTime = 0
 
 gameScene()
 
--- get start crank angle
-
 function playdate.update()
 	dt = 1/20
 	elapsedTime = elapsedTime + dt
 	
 	updatePlayer(dt)
-	
-	
 	gfx.sprite.update()
-
 	updateCamera(dt)
 end
+
+
+-- TO DO:
+	-- bullets are slow
+	-- character gun is too offset from bullet spawn point - might adjust spawn point
+		-- remake sprite to make aiming feel better - less bulky
+	-- level layout too dense to start - should open up 
+	-- some kind of additional vfx to go along with screen shake - particles and character sprite flash white
+		-- OR make screen flash on impact instead of/in addition to shake 
+	-- pick up radius for ground objects
+	-- equipped items ui
+	-- enemy cap / object cap
+	-- death screen
+	-- game start screen
+	-- level select screen

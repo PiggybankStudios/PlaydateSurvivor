@@ -4,7 +4,7 @@ local vec <const> = playdate.geometry.vector2D
 local mathFloor <const> = math.floor
 
 local colliderSize <const> = 24
-local healthbarOffsetY <const> = 20
+local healthbarOffsetY <const> = 30
 local setDamageTimer <const> = 200
 local halfScreenWidth <const> = playdate.display.getWidth() / 2
 local halfScreenHeight <const> = playdate.display.getHeight() / 2
@@ -34,10 +34,14 @@ local startingExpForLevel = 10
 local playerHealthbar
 local playerExpbar
 
+
 -- Bullets
 bullets = {}
 theShotTime = 0
 gunType = 0
+
+-- Particles
+particles = {}
 
 -- Enemies
 enemies = {}
@@ -54,7 +58,11 @@ invincible = false
 
 -- Add the player sprite and collider back to the drawing list after level load - also sets starting position
 function addPlayerSpritesToList()
+	-- adjust crank angle and player angle on level load - ensures physical crank angle always matches the player rotation
+	physicalCrankAngle = playdate.getCrankPosition()
+	crankAngle = physicalCrankAngle - 90
 	player:setRotation(crankAngle)
+
 	player:add()
 	collider:add()
 	health = maxHealth
@@ -90,9 +98,12 @@ function player:damage(amount, camShakeStrength, enemyX, enemyY)
 	playerHealthbar:damage(amount)
 
 	-- Camera Shake
-	playerPos = vec.new(player.x, player.y)
-	enemyPos = vec.new(enemyX, enemyY)
-	cameraShake(camShakeStrength, playerPos, enemyPos)
+	local playerPos = vec.new(player.x, player.y)
+	local enemyPos = vec.new(enemyX, enemyY)
+	local direction = (enemyPos - playerPos):normalized()
+	cameraShake(camShakeStrength, direction)
+	spawnParticles(PARTICLE_TYPE.impact, 5, direction)
+	screenFlash()
 end
 
 
@@ -183,7 +194,7 @@ function playdate.BButtonUp()
 end
 
 function playdate.AButtonDown()
-	addEXP(3)
+	--screenFlash()
 end
 
 function playdate.cranked(change, acceleratedChange)
@@ -215,6 +226,31 @@ function movePlayer(dt)
 	-- The actual position is determined via collision response above
 	local actualX, actualY, collisions = collider:checkCollisions(goalX, goalY)
 	movePlayerWithCollider(actualX, actualY)
+end
+
+
+-- +--------------------------------------------------------------+
+-- |                     Paraticle Management                     |
+-- +--------------------------------------------------------------+
+
+
+function spawnParticles(type, amount, direction)
+	for i = 1, amount do
+		newParticle = particle(player.x, player.y, type, theCurrTime, direction)
+		particles[#particles + 1] = newParticle
+	end
+end
+
+
+-- update function for moving particles and removing from particle list
+local function updateParticles()
+	for index, particle in pairs(particles) do
+		particle:move(theCurrTime)
+		if theCurrTime >= particle.lifeTime then
+			particle:remove()
+			table.remove(particles, index)
+		end
+	end
 end
 
 -- +--------------------------------------------------------------+
@@ -325,7 +361,7 @@ end
 
 
 -- +--------------------------------------------------------------+
--- |                  Monster Management                 |
+-- |                       Item Management                        |
 -- +--------------------------------------------------------------+
 
 function updateItems()
@@ -374,5 +410,6 @@ function updatePlayer(dt)
 
 	updateBullets()
 	updateMonsters()
+	updateParticles()
 	updateItems()
 end

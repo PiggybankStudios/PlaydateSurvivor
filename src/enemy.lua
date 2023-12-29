@@ -18,7 +18,7 @@ function enemy:init(x, y, type, theTime)
 		self.speed = 0
 		self.targetSpeed = 3
 		self.damageAmount = 2
-		self.shakeStrength = CAMERA_SHAKE_STRENGTH.small
+		self.shakeStrength = CAMERA_SHAKE_STRENGTH.tiny
 	elseif type == 2 then
 		self:setImage(gfx.image.new('Resources/Sprites/Enemy2')) --the normal
 		self.health = 5

@@ -13,12 +13,6 @@ local halfBannerHeight <const> = bannerHeight / 2
 -- +--------------------------------------------------------------+
 
 local bannerImage = gfx.image.new('Resources/Sprites/UIBanner')
---local bannerImage = gfx.image.new(screenWidth, bannerHeight)
---gfx.pushContext(bannerImage)
-	--gfx.setColor(gfx.kColorBlack)
-	--gfx.fillRect(0, 0, screenWidth, bannerHeight)
---gfx.popContext()
-
 local bannerSprite = gfx.sprite.new(bannerImage)
 bannerSprite:setIgnoresDrawOffset(true)	-- forces sprite to be draw to screen, not world
 bannerSprite:setZIndex(ZINDEX.uibanner)

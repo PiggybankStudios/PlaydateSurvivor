@@ -1,6 +1,7 @@
 import "tweening"
 
 local gfx <const> = playdate.graphics
+local dsp <const> = playdate.display
 local vec <const> = playdate.geometry.vector2D
 local mathFloor <const> = math.floor
 
@@ -21,6 +22,10 @@ cameraPos["y"] = 0
 local currentCameraPos = {}
 currentCameraPos["x"] = 0
 currentCameraPos["y"] = 0
+local speed = 6
+local camDistance = {}
+camDistance.x = 100
+camDistance.y = 40
 
 -- camera shake
 local camAnchor = vec.new(0, 0)
@@ -34,17 +39,34 @@ local setShakeTimer = 200
 local shakeTimer = 0
 
 CAMERA_SHAKE_STRENGTH = {
-	tiny = 3,
-	small = 6, 
-	medium = 12,
+	tiny = 2,
+	small = 4, 
+	medium = 10,
 	large = 24,
 	massive = 48
 }
 
-local speed = 6
-local camDistance = {}
-camDistance.x = 100
-camDistance.y = 40
+-- screen flash
+local setFlashTimer = 100
+local flashTimer
+
+
+-- +--------------------------------------------------------------+
+-- |                         Screen Flash                         |
+-- +--------------------------------------------------------------+
+
+
+function screenFlash()
+	dsp.setInverted(true)
+	flashTimer = currentTime + setFlashTimer
+end
+
+
+local function manageScreenFlash()
+	if dsp.getInverted() == true and flashTimer <= currentTime then
+		dsp.setInverted(false)
+	end
+end
 
 
 -- +--------------------------------------------------------------+
@@ -60,15 +82,12 @@ end
 
 
 -- Pass positions for shake direction
-function cameraShake(strength, playerPos, enemyPos)
-	local direction
-	if playerPos == nil or enemyPos == nil then
+function cameraShake(strength, direction)
+	if direction == nil then
 		local randX, randY
 		randX = math.random() * 2 - 1
 		randY = math.random() * 2 - 1
 		direction = vec.new(randX, randY):normalized()
-	else
-		direction = (enemyPos - playerPos):normalized()
 	end
 
 	shakeVelocity = direction * strength
@@ -128,4 +147,6 @@ function updateCamera(dt)
 
 	setCameraPos(crankAngle, player.x, player.y)
 	moveCamera()
+
+	manageScreenFlash()
 end
