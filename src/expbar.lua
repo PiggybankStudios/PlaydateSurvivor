@@ -74,8 +74,9 @@ end
 
 
 function expbar:levelUp()
-	print("leveled up")
-	local function maxExpLevelCurve(maxExp)
+	print("leveled up") -- speed, hp, slot, magnet, luck, spin, armor, mod
+	updateLevel()
+	local function maxExpLevelCurve(maxExp) --crit, damage, rate, bounce, pierce, velocity, bullettime, amount, 
 		return maxExp *= expGrowthFactor
 	end
 
