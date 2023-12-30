@@ -11,9 +11,7 @@ local halfScreenHeight <const> = playdate.display.getHeight() / 2
 
 -- Sprite
 playerSheet = gfx.imagetable.new('Resources/Sheets/player')
-iplayerSheet = gfx.imagetable.new('Resources/Sheets/iplayer')
 animationLoop = gfx.animation.loop.new(16, playerSheet)
-ianimationLoop = gfx.animation.loop.new(16, iplayerSheet)
 player = gfx.sprite:new()
 player:setZIndex(ZINDEX.player)
 player:setImage(animationLoop:image())
@@ -40,7 +38,7 @@ local playerUpgradeAmount = 0
 -- Bullets
 bullets = {}
 theShotTime = 0
-gunType = 0
+gunType = 1
 
 -- Particles
 particles = {}
@@ -139,11 +137,12 @@ function shield(amount)
 end
 
 
-function newWeapon(weapon)
+function newWeapon(slot, weapon)
 	gunType += weapon
-	if gunType > 3 then
+	if gunType > 4 then
 		gunType -= 4
 	end
+	updateMenuWeapon(slot, gunType)
 	print("new weapon")
 end
 
@@ -172,12 +171,14 @@ crankAngle = physicalCrankAngle - 90
 
 function playdate.leftButtonDown()
 	inputX -= 1
+	if Pause then pauseMenuMoveL() end
 end
 function playdate.leftButtonUp()
 	inputX += 1
 end
 function playdate.rightButtonDown()
 	inputX += 1
+	if Pause then pauseMenuMoveR() end
 end
 function playdate.rightButtonUp()
 	inputX -= 1
@@ -206,9 +207,11 @@ end
 function playdate.AButtonDown()
 	if Pause then 
 		Pause = false
+		closePauseMenu()
 		Unpaused = true
 	else
 		Pause = true
+		openPauseMenu()
 	end
 end
 
@@ -279,17 +282,17 @@ function spawnBullets()
 		local newRotation = player:getRotation() + 90
 		local newLifeTime = theCurrTime + 1500
 		
-		if gunType == 1 then --cannon
+		if gunType == 2 then --cannon
 			theShotTime = theCurrTime + 500
 			newBullet = bullet(player.x, player.y, newRotation, newLifeTime, gunType)
 			newBullet:add()
 			bullets[#bullets + 1] = newBullet 
-		elseif gunType == 2 then -- minigun
+		elseif gunType == 3 then -- minigun
 			theShotTime = theCurrTime + 100
 			newBullet = bullet(player.x, player.y, newRotation + math.random(-8, 8), newLifeTime, gunType)
 			newBullet:add()
 			bullets[#bullets + 1] = newBullet
-		elseif gunType == 3 then -- shotgun
+		elseif gunType == 4 then -- shotgun
 			theShotTime = theCurrTime + 300
 			newBullet = bullet(player.x, player.y, newRotation+ math.random(-8, 8), newLifeTime, gunType)
 			newBullet:add()
@@ -317,7 +320,7 @@ function updateBullets()
 	for bIndex,bullet in pairs(bullets) do
 		bullet:move()
 		
-	if Unpaused then bullets[bIndex].lifeTime += theLastTime end
+		if Unpaused then bullets[bIndex].lifeTime += theLastTime end
 		if theCurrTime >= bullets[bIndex].lifeTime then
 			bullets[bIndex]:remove()
 			table.remove(bullets, bIndex)
@@ -390,7 +393,7 @@ function updateItems()
 			if items[iIndex].type == 1 then
 				heal(3)
 			elseif items[iIndex].type == 2 then
-				newWeapon(math.random(1, 3))
+				newWeapon(1, math.random(1, 3))
 			elseif items[iIndex].type == 3 then
 				shield(10000)
 			elseif items[iIndex].type == 4 then
@@ -421,14 +424,13 @@ function updatePlayer(dt)
 		if invincibleTime > theCurrTime then
 			if ((theCurrTime % 500) >= 250 ) then
 				player:setImageDrawMode(gfx.kDrawModeInverted)
-				print("inverted")
 			else
 				player:setImageDrawMode(gfx.kDrawModeCopy)
 			end
 		else
 			if invincible then
 				invincible = false
-				player:setImage(animationLoop:image())
+				player:setImageDrawMode(gfx.kDrawModeCopy)
 			end
 		end
 		
@@ -437,7 +439,7 @@ function updatePlayer(dt)
 
 		updateBullets()
 		updateMonsters()
-	updateParticles()
+		updateParticles()
 		updateItems()
 		
 		theLastTime = theCurrTime
