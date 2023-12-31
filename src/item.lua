@@ -20,7 +20,7 @@ function item:init(x, y, type)
 	--[[
 	if type >= 99 then
 		self.type = 3
-	elseif type >= 85 then
+	elseif type >= 35 then
 		self.type = 2
 	elseif type >= 65 then
 		self.type = 1

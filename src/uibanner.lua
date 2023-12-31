@@ -28,6 +28,9 @@ function addUIBanner()
 	bannerSprite:add()
 end
 
+function hideUIBanner()
+	bannerSprite:remove()
+end
 
 function getHalfUIBannerHeight()
 	return halfBannerHeight

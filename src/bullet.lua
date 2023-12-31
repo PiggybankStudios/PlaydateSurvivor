@@ -6,15 +6,15 @@ class('bullet').extends(gfx.sprite)
 
 function bullet:init(x, y, rotation, newLifeTime, type)
 	bullet.super.init(self)
-	if type == 1 then
+	if type == 2 then
 		self:setImage(gfx.image.new('Resources/Sprites/BulletCannon'))
 		self.speed = 400
 		self.damage = 5
-	elseif type == 2 then
+	elseif type == 3 then
 		self:setImage(gfx.image.new('Resources/Sprites/BulletMinigun'))
 		self.speed = 100
 		self.damage = 1
-	elseif type == 3 then
+	elseif type == 4 then
 		self:setImage(gfx.image.new('Resources/Sprites/BulletShotgun'))
 		self.speed = 150
 		self.damage = 1

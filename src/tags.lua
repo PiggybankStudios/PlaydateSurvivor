@@ -10,6 +10,7 @@ TAGS = {
 
 
 ZINDEX = {	
+	uidetails = 510,
 	ui = 500,
 	uibanner = 490,	
 	healthbar = 480,
