@@ -3,7 +3,7 @@ local gfx <const> = playdate.graphics
 local vec <const> = playdate.geometry.vector2D
 local mathFloor <const> = math.floor
 
-local colliderSize <const> = 24
+
 local healthbarOffsetY <const> = 30
 local setDamageTimer <const> = 200
 local halfScreenWidth <const> = playdate.display.getWidth() / 2
@@ -19,10 +19,20 @@ player:setZIndex(ZINDEX.player)
 player:setImage(animationLoop:image())
 
 -- Collider
+local colliderSize <const> = 24
 collider = gfx.sprite:new()
 collider:setTag(TAGS.player)
 collider:setSize(colliderSize, colliderSize)
 collider:setCollideRect(0, 0, colliderSize, colliderSize)
+
+-- ItemAbsorber
+local itemAbsorberSizeStart <const> = 100
+local absorbSpeed <const> = 45
+local itemAbsorberRange = itemAbsorberSizeStart
+itemAbsorber = gfx.sprite:new()
+itemAbsorber:setTag(TAGS.itemAbsorber)
+itemAbsorber:setSize(itemAbsorberSizeStart, itemAbsorberSizeStart)
+itemAbsorber:setCollideRect(0, 0, itemAbsorberSizeStart, itemAbsorberSizeStart)
 
 -- Player
 local playerSpeed = 50
@@ -63,14 +73,14 @@ Unpaused = false
 -- +--------------------------------------------------------------+
 
 -- Add the player sprite and collider back to the drawing list after level load - also sets starting position
-function addPlayerSpritesToList()
-	-- adjust crank angle and player angle on level load - ensures physical crank angle always matches the player rotation
-	physicalCrankAngle = playdate.getCrankPosition()
-	crankAngle = physicalCrankAngle - 90
+function addPlayerSpritesToList()	
+	physicalCrankAngle = playdate.getCrankPosition()	-- Adjust crank angle and player angle on level load.
+	crankAngle = physicalCrankAngle - 90				-- ensures physical crank angle always matches the player rotation
 	player:setRotation(crankAngle)
 
 	player:add()
 	collider:add()
+	itemAbsorber:add()
 	health = maxHealth
 	playerHealthbar = healthbar(player.x, player.y - healthbarOffsetY, health)
 	playerExpbar = expbar(startingExpForLevel)
@@ -84,6 +94,7 @@ function movePlayerWithCollider(x, y)
 	local floorY = mathFloor(y)
 	player:moveTo(floorX, floorY)
 	collider:moveTo(floorX, floorY)
+	itemAbsorber:moveTo(floorX, floorY)
 	playerHealthbar:moveTo(floorX, floorY - healthbarOffsetY)
 end
 
@@ -148,7 +159,22 @@ function newWeapon(weapon)
 end
 
 
+function changeItemAbsorbRangeBy(value)
+	itemAbsorberRange += value
+	itemAbsorber:setSize(itemAbsorberRange, itemAbsorberRange)
+	itemAbsorber:setCollideRect(0, 0, itemAbsorberRange, itemAbsorberRange)
+end
+
+
+function setItemAbsorbRange(value)
+	itemAbsorberRange = value
+	itemAbsorber:setSize(itemAbsorberRange, itemAbsorberRange)
+	itemAbsorber:setCollideRect(0, 0, itemAbsorberRange, itemAbsorberRange)
+end
+
+
 -- Collision response based on tags
+-- Player Collider
 function collider:collisionResponse(other)
 	local tag = other:getTag()
 	if tag == TAGS.weapon then
@@ -156,10 +182,40 @@ function collider:collisionResponse(other)
 	elseif tag == TAGS.item then
 		other:itemGrab()
 		return "overlap"
+	elseif tag == TAGS.itemAbsorber then
+		return "overlap"
 	elseif tag == TAGS.enemy then
 		return "overlap"
 	else -- Any collision that's not set is defaulted to Wall Collision
 		return "slide"
+	end
+end
+
+
+-- Item Abosrber Collider
+function itemAbsorber:collisionResponse(other)
+	local tag = other:getTag()
+	if tag == TAGS.item then
+		-- if already being mass attracted, skip this absorb movement
+		if other:getMassAttraction() == true then
+			return "overlap"
+		end
+
+		-- if not within a circular range of the player, skip
+		local distance = vec.new(player.x, player.y) - vec.new(other.x, other.y)
+		if distance:magnitude() > (itemAbsorberRange / 2) then
+			return "overlap"
+		end
+
+		-- okay to apply absorb movement
+		local dt = 1/20
+		local dir = distance:normalized()
+		local x = other.x + dir.x * absorbSpeed * dt
+		local y = other.y + dir.y * absorbSpeed * dt
+		other:moveTo(x, y)
+		return "overlap"
+	else 
+		return "overlap"	-- only looking for item collisions, all others don't matter.
 	end
 end
 
@@ -204,12 +260,15 @@ function playdate.BButtonUp()
 end
 
 function playdate.AButtonDown()
+	--[[
 	if Pause then 
 		Pause = false
 		Unpaused = true
 	else
 		Pause = true
 	end
+	]]--
+	changeItemAbsorbRangeBy(5)
 end
 
 function playdate.cranked(change, acceleratedChange)
@@ -217,30 +276,30 @@ function playdate.cranked(change, acceleratedChange)
 	crankAngle = physicalCrankAngle - 90
 end
 
--- If any buttons are being held or pressed, then FALSE for not clearing. Otherwise return TRUE for no buttons pressed and okay to clear input
-	-- Fixes bug when input increments too far
-function clearPlayerInput()
-	if playdate.getButtonState() == 0 then
-		inputX = 0
-		inputY = 0
-		return true
-	else
-		return false
-	end
-end
-
 
 function movePlayer(dt)
 	if collider == nil then return end	-- If the collider doesn't exist, then don't look for collisions
-	if clearPlayerInput() == true then return end 	-- If no buttons pressed, don't move and clear input
+
+	-- Reset input to 0 if nothing is held
+	if playdate.getButtonState() == 0 then
+		inputX = 0
+		inputY = 0
+	end
 
 	local moveSpeed = playerSpeed * playerRunSpeed * dt
-	goalX = player.x + inputX * moveSpeed
-	goalY = player.y + inputY * moveSpeed
+	local goalX = player.x + inputX * moveSpeed
+	local goalY = player.y + inputY * moveSpeed
 
 	-- The actual position is determined via collision response above
 	local actualX, actualY, collisions = collider:checkCollisions(goalX, goalY)
 	movePlayerWithCollider(actualX, actualY)
+end
+
+
+-- Checking for collisions with items to move them towards the player
+function itemAbsorberCollisions()
+	if itemAbsorber == nil then return end
+	itemAbsorber:checkCollisions(player.x, player.y)
 end
 
 
@@ -368,7 +427,7 @@ function updateMonsters()
 		if Unpaused then enemies[eIndex].time += theLastTime end
 		enemy:move(player.x, player.y, theCurrTime)
 		if enemies[eIndex].health <= 0 then
-			newItem = item(enemies[eIndex].x, enemies[eIndex].y, enemies[eIndex].drop)
+			newItem = item(enemies[eIndex].x, enemies[eIndex].y, enemies[eIndex]:getDrop())
 			newItem:add()
 			items[#items + 1] = newItem
 			enemies[eIndex]:remove()
@@ -384,21 +443,42 @@ end
 -- |                       Item Management                        |
 -- +--------------------------------------------------------------+
 
-function updateItems()
-	for iIndex,item in pairs(items) do		
+
+function attractAllItems()
+	print("attracting items")
+	for iIndex,item in pairs(items) do	
+		item:startMassAttraction()
+	end
+end
+
+
+function updateItems(dt)
+	for iIndex,item in pairs(items) do	
+
+		-- Moving all items if being attracted
+		if item:getMassAttraction() == true then
+			local dir = (vec.new(player.x, player.y) - vec.new(item.x, item.y)):normalized()
+			local x = item.x + dir.x * absorbSpeed * dt * 3
+			local y = item.y + dir.y * absorbSpeed * dt * 3
+			item:moveTo(x, y)
+		end
+
+		-- Item effect when picked up	
 		if items[iIndex].pickedUp == 1 then
-			if items[iIndex].type == 1 then
+			if items[iIndex].type == ITEM_TYPE.health then
 				heal(3)
-			elseif items[iIndex].type == 2 then
+			elseif items[iIndex].type == ITEM_TYPE.ammo then
 				newWeapon(math.random(1, 3))
-			elseif items[iIndex].type == 3 then
+			elseif items[iIndex].type == ITEM_TYPE.shield then
 				shield(10000)
-			elseif items[iIndex].type == 4 then
+			elseif items[iIndex].type == ITEM_TYPE.exp9 then
 				addEXP(9)
-			elseif items[iIndex].type == 5 then
+			elseif items[iIndex].type == ITEM_TYPE.exp3 then
 				addEXP(3)
+			elseif items[iIndex].type == ITEM_TYPE.absorbAll then 
+				attractAllItems()
 			else
-				addEXP(1)
+				addEXP(1)	-- default is exp1
 			end
 			
 			items[iIndex]:remove()
@@ -434,11 +514,12 @@ function updatePlayer(dt)
 		
 		movePlayer(dt)
 		player:setRotation(crankAngle)
+		itemAbsorberCollisions()
 
 		updateBullets()
 		updateMonsters()
-	updateParticles()
-		updateItems()
+		updateParticles()
+		updateItems(dt)
 		
 		theLastTime = theCurrTime
 		Unpaused = false

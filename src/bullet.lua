@@ -42,6 +42,8 @@ function bullet:collisionResponse(other)
 		return 'overlap'
 	elseif tag == TAGS.item then
 		return 'overlap'
+	elseif tag == TAGS.itemAbsorber then
+		return 'overlap'
 	elseif tag == TAGS.enemy then
 		other:damage(self.damage)
 		self.lifeTime = 0

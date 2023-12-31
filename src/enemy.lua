@@ -19,6 +19,8 @@ function enemy:init(x, y, type, theTime)
 		self.targetSpeed = 3
 		self.damageAmount = 2
 		self.shakeStrength = CAMERA_SHAKE_STRENGTH.tiny
+		self.drop = { ITEM_TYPE.exp1, ITEM_TYPE.exp3 }
+		self.dropPercent = { 70, 30}
 	elseif type == 2 then
 		self:setImage(gfx.image.new('Resources/Sprites/Enemy2')) --the normal
 		self.health = 5
@@ -26,6 +28,8 @@ function enemy:init(x, y, type, theTime)
 		self.targetSpeed = 2
 		self.damageAmount = 3
 		self.shakeStrength = CAMERA_SHAKE_STRENGTH.medium
+		self.drop = { ITEM_TYPE.exp1, ITEM_TYPE.exp3, ITEM_TYPE.exp9, ITEM_TYPE.health, ITEM_TYPE.shield }
+		self.dropPercent = { 20, 20, 20, 20, 20}
 	elseif type == 3 then
 		self:setImage(gfx.image.new('Resources/Sprites/Enemy3')) --the dodger
 		self.health = 3
@@ -33,6 +37,8 @@ function enemy:init(x, y, type, theTime)
 		self.targetSpeed = 4
 		self.damageAmount = 1
 		self.shakeStrength = CAMERA_SHAKE_STRENGTH.tiny
+		self.drop = { ITEM_TYPE.exp1, ITEM_TYPE.ammo }
+		self.dropPercent = { 70, 30}
 	elseif type == 4 then
 		self:setImage(gfx.image.new('Resources/Sprites/Enemy4')) --the big boi
 		self.health = 20
@@ -40,10 +46,11 @@ function enemy:init(x, y, type, theTime)
 		self.targetSpeed = 1
 		self.damageAmount = 1
 		self.shakeStrength = CAMERA_SHAKE_STRENGTH.large
+		self.drop = { ITEM_TYPE.exp3, ITEM_TYPE.health, ITEM_TYPE.absorbAll }
+		self.dropPercent = { 70, 20, 10}
 	end
 	self.type = type
-	self.time = theTime
-	self.drop = math.random(0, 100)
+	self.time = theTime	
 	self.AIsmarts = 1
 	self:moveTo(x, y)
 	self:setTag(TAGS.enemy)
@@ -72,12 +79,33 @@ function enemy:collisionResponse(other)
 	end
 end
 
+
 function enemy:damage(amount)
 	self.health -= amount
 	if self.health <= 0 then self.health = 0 end
 
 	self.healthbar:damage(amount)
 end
+
+
+-- Gets an item drop from this enemy's list of items from the given percent chances
+function enemy:getDrop()
+	local index = 1
+	local total = 0
+
+	local percent = math.random(1, 100)
+	for i = 1, #self.drop do
+		total += self.dropPercent[i]
+		if percent <= total then
+			index = i
+			break
+		end
+	end
+
+	return self.drop[index]
+end
+
+
 
 
 function enemy:move(playerX, playerY, theTime)

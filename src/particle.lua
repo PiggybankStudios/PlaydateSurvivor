@@ -64,14 +64,13 @@ function particle:move(time)
 	local calcSize = self.maxSize * scalar
 	self.size = math.max(calcSize, 0.5)
 
-	-- move this particle in its direction at its speed
-
 	-- if small enough, remove self and don't update
 	if self.size <= 0.5 then
 		self:remove()
 		do return end
 	end
 
+	-- move particle
 	local x = self.x + (self.direction.x * self.speed)
 	local y = self.y + (self.direction.y * self.speed)
 	self:moveTo(x, y)
