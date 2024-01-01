@@ -18,6 +18,7 @@ import "player"
 import "camera"
 import "gameScene"
 import "item"
+import "mainmenu"
 
 local gfx <const> = playdate.graphics
 
@@ -26,18 +27,50 @@ gfx.fillRect(0, 0, 400, 240)
 gfx.setBackgroundColor(gfx.kColorBlack)
 
 elapsedTime = 0
-
-gameScene()
+currentState = GAMESTATE.startscreen
+lastState = GAMESTATE.nothing
 
 function playdate.update()
 	dt = 1/20
 	elapsedTime = elapsedTime + dt
-	
-	updatePlayer(dt)
+	if currentState == GAMESTATE.startscreen then
+		if lastState == GAMESTATE.nothing then
+			openMainMenu()
+			lastState = currentState
+		else
+			updateMainManu()
+		end
+	elseif currentState == GAMESTATE.maingame then
+		if lastState == GAMESTATE.startscreen then
+			gameScene()
+			closeMainMenu()
+		end
+		updatePlayer(dt)
+		updateCamera(dt)
+		lastState = currentState
+	elseif currentState == GAMESTATE.pausemenu then
+		if lastState == GAMESTATE.startscreen then
+			gameScene()
+			closeMainMenu()
+		end
+		updatePlayer(dt)
+		updateCamera(dt)
+		lastState = currentState
+	end
 	gfx.sprite.update()
-	updateCamera(dt)
 end
 
+function resetGame()
+	print("empty")
+end
+
+function getGameState()
+	return currentState
+end
+
+function setGameState(newState)
+	currentState = newState
+end
 
 -- TO DO:
 	-- bullets are slow

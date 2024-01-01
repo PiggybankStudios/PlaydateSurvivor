@@ -389,13 +389,17 @@ function playdate.BButtonUp()
 end
 
 function playdate.AButtonDown()
-	if Pause then 
+	if getGameState() == GAMESTATE.startscreen then
+		setGameState(GAMESTATE.maingame)
+	elseif getGameState() == GAMESTATE.maingame then
+		Pause = true
+		openPauseMenu()
+		setGameState(GAMESTATE.pausemenu)
+	elseif getGameState() == GAMESTATE.pausemenu then
 		Pause = false
 		closePauseMenu()
 		Unpaused = true
-	else
-		Pause = true
-		openPauseMenu()
+		setGameState(GAMESTATE.maingame)
 	end
 	--changeItemAbsorbRangeBy(5)
 end

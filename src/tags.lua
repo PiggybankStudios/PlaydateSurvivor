@@ -18,5 +18,14 @@ ZINDEX = {
 	player = 200,
 	weapon = 150,
 	enemy = 140,
-	default = 100,
+	default = 100
+}
+
+GAMESTATE = {
+	nothing = 0,
+	startscreen = 1,
+	maingame = 2,
+	pausemenu = 3,
+	levelupmenu = 4,
+	newweaponmenu = 5
 }
