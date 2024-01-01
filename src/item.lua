@@ -15,7 +15,7 @@ ITEM_TYPE = {
 	exp6 = 8, 
 	exp9 = 9, 
 	exp16 = 10, 
-	luck = 10 
+	luck = 11 
 }
 
 

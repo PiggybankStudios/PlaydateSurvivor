@@ -69,11 +69,11 @@ function enemy:init(x, y, type, theTime)
 		self:setImage(gfx.image.new('Resources/Sprites/Enemy6')) --the da boss
 		self.health = 66
 		self.speed = 0
-		self.targetSpeed = 0.8
+		self.targetSpeed = 0.5
 		self.damageAmount = 5
 		self.shakeStrength = CAMERA_SHAKE_STRENGTH.large
-		self.drop = { ITEM_TYPE.exp1, ITEM_TYPE.health }
-		self.dropPercent = { 80, 20}
+		self.drop = { ITEM_TYPE.exp16, ITEM_TYPE.luck }
+		self.dropPercent = { 95, 5}
 		self.rating = 3
 	end
 	self.health *= (1 + math.floor(getDifficulty() / scaleHealth))
@@ -210,6 +210,8 @@ function enemy:move(playerX, playerY, theTime)
 		directionVec = vec.new(playerX - self.x, playerY - self.y)
 		if (theTime >= (self.time + 500)) then
 			self.time = theTime
+			if self.health < (self.fullhealth / 3) then self.targetSpeed += 0.3 end
+			if self.targetSpeed > 4 then self.targetSpeed = 4 end
 			if self.health < self.fullhealth then 
 				self.health += 1
 				self.healthbar:heal(1)
