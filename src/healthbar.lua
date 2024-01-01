@@ -12,6 +12,11 @@ function healthbar:init(x, y, maxHealth)
 	self:add()
 end
 
+function healthbar:updateMaxHealth(amount)
+	self.maxHealth = amount
+	self:updateHealth(self.health)
+end
+
 
 function healthbar:updateHealth(newHealth)
 	local maxWidth = 40

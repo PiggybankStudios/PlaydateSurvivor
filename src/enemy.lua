@@ -8,6 +8,9 @@ local healthbarOffsetY = 20
 local enemyAcceleration = 0.5
 local maxSpeedCap = 8
 local bounceBuffer = 3
+local scaleHealth = 3
+local scaleSpeed = 4
+local scaleDamage = 5
 
 
 function enemy:init(x, y, type, theTime)
@@ -19,8 +22,9 @@ function enemy:init(x, y, type, theTime)
 		self.targetSpeed = 3
 		self.damageAmount = 2
 		self.shakeStrength = CAMERA_SHAKE_STRENGTH.tiny
-		self.drop = { ITEM_TYPE.exp1, ITEM_TYPE.exp3 }
-		self.dropPercent = { 70, 30}
+		self.drop = { ITEM_TYPE.exp1, ITEM_TYPE.health}
+		self.dropPercent = { 95, 5}
+		self.rating = 1
 	elseif type == 2 then
 		self:setImage(gfx.image.new('Resources/Sprites/Enemy2')) --the normal
 		self.health = 5
@@ -28,8 +32,9 @@ function enemy:init(x, y, type, theTime)
 		self.targetSpeed = 2
 		self.damageAmount = 3
 		self.shakeStrength = CAMERA_SHAKE_STRENGTH.medium
-		self.drop = { ITEM_TYPE.exp1, ITEM_TYPE.exp3, ITEM_TYPE.exp9, ITEM_TYPE.health, ITEM_TYPE.shield }
-		self.dropPercent = { 20, 20, 20, 20, 20}
+		self.drop = { ITEM_TYPE.exp1, ITEM_TYPE.health, ITEM_TYPE.shield }
+		self.dropPercent = { 75, 20, 5}
+		self.rating = 1
 	elseif type == 3 then
 		self:setImage(gfx.image.new('Resources/Sprites/Enemy3')) --the dodger
 		self.health = 3
@@ -37,8 +42,9 @@ function enemy:init(x, y, type, theTime)
 		self.targetSpeed = 4
 		self.damageAmount = 1
 		self.shakeStrength = CAMERA_SHAKE_STRENGTH.tiny
-		self.drop = { ITEM_TYPE.exp1, ITEM_TYPE.ammo }
-		self.dropPercent = { 70, 30}
+		self.drop = { ITEM_TYPE.exp1, ITEM_TYPE.weapon }
+		self.dropPercent = { 60, 40}
+		self.rating = 2
 	elseif type == 4 then
 		self:setImage(gfx.image.new('Resources/Sprites/Enemy4')) --the big boi
 		self.health = 20
@@ -46,9 +52,13 @@ function enemy:init(x, y, type, theTime)
 		self.targetSpeed = 1
 		self.damageAmount = 1
 		self.shakeStrength = CAMERA_SHAKE_STRENGTH.large
-		self.drop = { ITEM_TYPE.exp3, ITEM_TYPE.health, ITEM_TYPE.absorbAll }
-		self.dropPercent = { 70, 20, 10}
+		self.drop = { ITEM_TYPE.exp1, ITEM_TYPE.health, ITEM_TYPE.absorbAll }
+		self.dropPercent = { 60, 35, 5}
+		self.rating = 3
 	end
+	self.health *= (1 + math.floor(getDifficulty() / scaleHealth))
+	self.damageAmount *= (1 + math.floor(getDifficulty() / scaleDamage))
+	self.targetSpeed += (math.floor(getDifficulty() / scaleSpeed))
 	self.type = type
 	self.time = theTime	
 	self.AIsmarts = 1
@@ -69,6 +79,7 @@ function enemy:collisionResponse(other)
 	local tag = other:getTag()
 	if tag == TAGS.player then
 		player:damage(self.damageAmount, self.shakeStrength, self.x, self.y)
+		self:damage(player:getPlayerReflectDamage())
 		return 'bounce'
 	elseif tag == TAGS.weapon then
 		return 'freeze'
@@ -101,12 +112,43 @@ function enemy:getDrop()
 			break
 		end
 	end
-
-	return self.drop[index]
+	tmpItem = self.drop[index]
+	if tmpItem == ITEM_TYPE.exp1 then
+		tmpItem = expDropped(self.rating)
+	end
+	return tmpItem
 end
 
-
-
+function expDropped(rate)
+	local index = 1
+	local total = 0
+	
+	local luck = getLuck()
+	local e2 = math.floor(luck / 2) --max 50
+	local e3 = math.floor(luck / 5) --max 20
+	local e6 = math.floor(luck / 5) --max 20
+	local e9 = math.floor(luck / 10) --max 10
+	local e16 = math.floor(luck / 20) --max 5
+	local expPercent = {100,0,0,0,0,0}
+	if rate == 2 then
+		expPercent = { 30 - e9*2 - e16*2, 40 - e3, 20, 9 + e6, 1 + e9*2, e16*2}
+	elseif rate == 3 then
+		expPercent = { 15 - e16*3, 30 - e9*3, 35 - e6, 15 + e6, 5 + e9*3, e16*3}
+	else
+		expPercent = { 70 - e2 - e3, 20 + e2 - e6 - e9 - e16, 10 + e3, e6, e9, e16}
+	end
+	local expDrop = { ITEM_TYPE.exp1, ITEM_TYPE.exp2, ITEM_TYPE.exp3, ITEM_TYPE.exp6, ITEM_TYPE.exp9, ITEM_TYPE.exp16 }
+	
+	local percent = math.random(1, 100)
+	for i = 1, #expDrop do
+		total += expPercent[i]
+		if percent <= total then
+			if expPercent[i] > 0 then index = i end
+			break
+		end
+	end
+	return expDrop[index]
+end
 
 function enemy:move(playerX, playerY, theTime)
 	if (self.type == 3 and self.AIsmarts == 1) then

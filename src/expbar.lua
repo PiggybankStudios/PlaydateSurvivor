@@ -7,7 +7,8 @@ local halfScreenWidth <const> = screenWidth / 2
 class('expbar').extends(gfx.sprite)
 
 
-local expGrowthFactor <const> = 2
+local expGrowthFactor <const> = 3
+local currLevel = 0
 
 
 function expbar:init(maxExp)
@@ -65,9 +66,11 @@ function expbar:gainExp(amount)
 	self.exp += amount
 	if self.exp >= self.maxExp then
 		self:levelUp()
+		updateExpfornextlevel(self.maxExp)
 	else
 		self:updateExpbar(self.exp)
 	end
+	updateExp(self.exp)
 end
 
 
@@ -79,14 +82,13 @@ end
 
 
 function expbar:levelUp()
-	print("leveled up") -- speed, hp, slot, magnet, luck, spin, armor, mod
+	--print("leveled up") 
 	updateLevel()
-	local function maxExpLevelCurve(maxExp) --crit, damage, rate, bounce, pierce, velocity, bullettime, amount, 
-		return maxExp *= expGrowthFactor
-	end
-
+	currLevel += 1
+						--crit, damage, rate, bounce, pierce, velocity, bulletlife, amount, 
+						--speed, hp, slot, magnet, luck, spin, armor, mod
 	self.exp = math.abs(self.exp - self.maxExp) -- move overfill exp into next level
-	self.maxExp = maxExpLevelCurve(self.maxExp)
+	self.maxExp += expGrowthFactor * currLevel
 	self:updateExpbar(self.exp)
 end
 

@@ -23,32 +23,42 @@ collider:setTag(TAGS.player)
 collider:setSize(colliderSize, colliderSize)
 collider:setCollideRect(0, 0, colliderSize, colliderSize)
 
--- ItemAbsorber
-local itemAbsorberSizeStart <const> = 100
-local absorbSpeed <const> = 45
-local itemAbsorberRange = itemAbsorberSizeStart
-itemAbsorber = gfx.sprite:new()
-itemAbsorber:setTag(TAGS.itemAbsorber)
-itemAbsorber:setSize(itemAbsorberSizeStart, itemAbsorberSizeStart)
-itemAbsorber:setCollideRect(0, 0, itemAbsorberSizeStart, itemAbsorberSizeStart)
+-- difficulty
+local difficulty = 1
+local maxDifficulty = 15
 
 -- Player
-local playerSpeed = 50
-local playerRunSpeed = 1
+local playerLevel = 0
 local maxHealth = 10
 local health = maxHealth
+local playerSpeed = 50
+local playerAttackRate = 100
+local playerExp = 0
+local startingExpForLevel = 5
+local playerMagnet = 50
+local playerSlots = 1
+local playerGunDamage = 1
+local playerReflectDamage = 0
+local playerExpBonus = 0
+local playerLuck = 0
+local playerBulletSpeed = 50
+local playerRunSpeed = 1
 local damageTimer = 0
-local startingExpForLevel = 10
 local playerHealthbar
 local playerExpbar
-local playerLevel = 0
-local playerUpgradeAmount = 0
 
+-- ItemAbsorber
+local absorbSpeed <const> = 30
+local itemAbsorberRange = playerMagnet
+itemAbsorber = gfx.sprite:new()
+itemAbsorber:setTag(TAGS.itemAbsorber)
+itemAbsorber:setSize(playerMagnet, playerMagnet)
+itemAbsorber:setCollideRect(0, 0, playerMagnet, playerMagnet)
 
 -- Bullets
 bullets = {}
-theShotTime = 0
-gunType = 1
+theShotTimes = {0, 0, 0, 0}
+theGunSlots = {1, 0, 0, 0}
 
 -- Particles
 particles = {}
@@ -59,8 +69,8 @@ theSpawnTime = 0
 
 -- Items
 items = {}
-invincibleTime = 10000
-invincible = true
+invincibleTime = 0
+invincible = false
 
 --Menu
 Pause = false
@@ -122,8 +132,118 @@ function player:damage(amount, camShakeStrength, enemyX, enemyY)
 	screenFlash()
 end
 
+function updateSlots()
+	playerSlots += 1
+	if playerSlots > 4 then playerSlots = 4 
+	else updateMenuWeapon(playerSlots,0)
+	end
+end
+
 function updateLevel()
 	playerLevel += 1
+	if math.floor(playerLevel / 5) == playerSlots then
+		updateSlots()
+	end
+	if math.floor(playerLevel / 5) == difficulty then
+		if difficulty < maxDifficulty then difficulty += 1 end
+	end
+	upgradeStat(math.random(1, 8))
+end
+
+function updateExp(currExp)
+	playerExp = currExp
+end
+
+function updateExpfornextlevel(nextExp)
+	startingExpForLevel = nextExp
+end
+
+function getPlayerGunDamage()
+	return playerGunDamage
+end
+
+function getPayerBulletSpeed()
+	return playerBulletSpeed
+end
+
+function player:getPlayerReflectDamage()
+	return playerReflectDamage
+end
+
+function getDifficulty()
+	return difficulty
+end
+
+function getLuck()
+	return playerLuck
+end
+
+function upgradeStat(stat)
+	local bonus = math.random(1, 2 + math.floor(playerLuck/20))
+	
+	if stat == 1 then
+		maxHealth += bonus
+		playerHealthbar:updateMaxHealth(maxHealth)
+		print('health increased by ' .. tostring(5 * bonus))
+	elseif stat == 2 then
+		playerSpeed += 5 * bonus
+		print('speed increased by ' .. tostring(5 * bonus))
+	elseif stat == 3 then
+		playerMagnet += 20 * bonus
+		itemAbsorberRange = playerMagnet
+		itemAbsorber:setSize(playerMagnet, playerMagnet)
+		itemAbsorber:setCollideRect(0, 0, playerMagnet, playerMagnet)
+		print('magnet increased by ' .. tostring(5 * bonus))
+	elseif stat == 4 then
+		playerGunDamage += 1 * bonus
+		print('damage luck increased by ' .. tostring(5 * bonus))
+	elseif stat == 5 then
+		playerReflectDamage += 1 * bonus
+		print('reflect increased by ' .. tostring(5 * bonus))
+	elseif stat == 6 then
+		playerExpBonus += 1 * bonus
+		print('bonus exp increased by ' .. tostring(5 * bonus))
+	elseif stat == 7 then
+		playerBulletSpeed += 1 * bonus
+		print('bullet speed increased by ' .. tostring(5 * bonus))
+	elseif stat == 8 then
+		playerAttackRate -= 5 * bonus
+		print('attack rate increased by ' .. tostring(5 * bonus))
+		if playerAttackRate < 5 then 
+			playerAttackRate = 5
+			print('attack rate maxed')
+			upgradeStat(math.random(1, 7))
+		end
+	elseif stat == 9 then
+		playerLuck += 5 * bonus
+		print('luck increased by ' .. tostring(5 * bonus))
+		if playerLuck > 100 then 
+			playerLuck = 100
+			print('luck maxed')
+			upgradeStat(math.random(1, 7))
+		end 
+	else
+		print('error')
+	end
+end
+
+function getPlayerStats()
+	local stats = {}
+	stats[#stats + 1] = playerLevel
+	stats[#stats + 1] = playerExp
+	stats[#stats + 1] = startingExpForLevel
+	stats[#stats + 1] = health
+	stats[#stats + 1] = maxHealth
+	stats[#stats + 1] = playerSpeed
+	stats[#stats + 1] = playerAttackRate
+	stats[#stats + 1] = playerMagnet
+	stats[#stats + 1] = playerSlots
+	stats[#stats + 1] = playerGunDamage
+	stats[#stats + 1] = playerReflectDamage
+	stats[#stats + 1] = playerExpBonus
+	stats[#stats + 1] = playerLuck
+	stats[#stats + 1] = playerBulletSpeed
+	return stats
 end
 
 function heal(amount)
@@ -131,30 +251,29 @@ function heal(amount)
 	if health > maxHealth then health = maxHealth end
 
 	playerHealthbar:heal(amount)
-	print("healed")
 end
 
 
 function addEXP(amount)
-	print("earnedEXP")
-	playerExpbar:gainExp(amount)
+	playerExpbar:gainExp(amount + playerExpBonus)
 end
 
 
 function shield(amount)
 	invincibleTime = theCurrTime + amount
 	invincible = true
-	print("shielded")
 end
 
 
 function newWeapon(slot, weapon)
-	gunType += weapon
-	if gunType > 4 then
-		gunType -= 4
+	if theGunSlots[slot] == 0 then
+		theGunSlots[slot] = math.random(1, 4)
+	else
+		theGunSlots[slot] += weapon
+		if theGunSlots[slot] > 4 then theGunSlots[slot] -= 4 end
 	end
-	updateMenuWeapon(slot, gunType)
-	print("new weapon")
+	
+	updateMenuWeapon(slot, theGunSlots[slot])
 end
 
 
@@ -191,7 +310,7 @@ function collider:collisionResponse(other)
 end
 
 
--- Item Abosrber Collider
+-- Item Absorber Collider
 function itemAbsorber:collisionResponse(other)
 	local tag = other:getTag()
 	if tag == TAGS.item then
@@ -261,7 +380,6 @@ function playdate.BButtonUp()
 end
 
 function playdate.AButtonDown()
-	--[[
 	if Pause then 
 		Pause = false
 		closePauseMenu()
@@ -270,8 +388,7 @@ function playdate.AButtonDown()
 		Pause = true
 		openPauseMenu()
 	end
-	]]--
-	changeItemAbsorbRangeBy(5)
+	--changeItemAbsorbRangeBy(5)
 end
 
 function playdate.cranked(change, acceleratedChange)
@@ -336,39 +453,43 @@ end
 
 
 function spawnBullets()
-	if Unpaused then theShotTime += theLastTime end
-	if theCurrTime >= theShotTime then
-		local newRotation = player:getRotation() + 90
-		local newLifeTime = theCurrTime + 1500
-		
-		if gunType == 2 then --cannon
-			theShotTime = theCurrTime + 500
-			newBullet = bullet(player.x, player.y, newRotation, newLifeTime, gunType)
-			newBullet:add()
-			bullets[#bullets + 1] = newBullet 
-		elseif gunType == 3 then -- minigun
-			theShotTime = theCurrTime + 100
-			newBullet = bullet(player.x, player.y, newRotation + math.random(-8, 8), newLifeTime, gunType)
-			newBullet:add()
-			bullets[#bullets + 1] = newBullet
-		elseif gunType == 4 then -- shotgun
-			theShotTime = theCurrTime + 300
-			newBullet = bullet(player.x, player.y, newRotation+ math.random(-8, 8), newLifeTime, gunType)
-			newBullet:add()
-			bullets[#bullets + 1] = newBullet
-			newBullet = bullet(player.x, player.y, newRotation + math.random(10, 25), newLifeTime, gunType)
-			newBullet:add()
-			bullets[#bullets + 1] = newBullet
-			newBullet = bullet(player.x, player.y, newRotation - math.random(10, 25), newLifeTime, gunType)
-			newBullet:add()
-			bullets[#bullets + 1] = newBullet
-		else --peagun
-			theShotTime = theCurrTime + 200
-			newBullet = bullet(player.x, player.y, newRotation, newLifeTime, gunType)
-			newBullet:add()
-			bullets[#bullets + 1] = newBullet 
-		end
+	for sIndex,theShotTime in pairs(theShotTimes) do
+		if theGunSlots[sIndex] > 0 then
+			if Unpaused then theShotTimes[sIndex] += theLastTime end
+			if theCurrTime >= theShotTime then
+				local newRotation = player:getRotation() + (90 * sIndex)
+				local newLifeTime = theCurrTime + 1500
+				
+				if theGunSlots[sIndex] == 2 then --cannon
+					theShotTimes[sIndex] = theCurrTime + playerAttackRate * 5
+					newBullet = bullet(player.x, player.y, newRotation, newLifeTime, theGunSlots[sIndex])
+					newBullet:add()
+					bullets[#bullets + 1] = newBullet 
+				elseif theGunSlots[sIndex] == 3 then -- minigun
+					theShotTimes[sIndex] = theCurrTime + playerAttackRate
+					newBullet = bullet(player.x, player.y, newRotation + math.random(-8, 8), newLifeTime, theGunSlots[sIndex])
+					newBullet:add()
+					bullets[#bullets + 1] = newBullet
+				elseif theGunSlots[sIndex] == 4 then -- shotgun
+					theShotTimes[sIndex] = theCurrTime + playerAttackRate * 3
+					newBullet = bullet(player.x, player.y, newRotation+ math.random(-8, 8), newLifeTime, theGunSlots[sIndex])
+					newBullet:add()
+					bullets[#bullets + 1] = newBullet
+					newBullet = bullet(player.x, player.y, newRotation + math.random(10, 25), newLifeTime, theGunSlots[sIndex])
+					newBullet:add()
+					bullets[#bullets + 1] = newBullet
+					newBullet = bullet(player.x, player.y, newRotation - math.random(10, 25), newLifeTime, theGunSlots[sIndex])
+					newBullet:add()
+					bullets[#bullets + 1] = newBullet
+				else --peagun
+					theShotTimes[sIndex] = theCurrTime + playerAttackRate * 2
+					newBullet = bullet(player.x, player.y, newRotation, newLifeTime, theGunSlots[sIndex])
+					newBullet:add()
+					bullets[#bullets + 1] = newBullet 
+				end
 
+			end
+		end
 	end
 end
 
@@ -401,7 +522,7 @@ function spawnMonsters()
 	if Unpaused then theSpawnTime += theLastTime end
 	if theCurrTime >= theSpawnTime then
 		rndLoc = math.random(1,8)
-		theSpawnTime = theCurrTime + 3000
+		theSpawnTime = theCurrTime + 3200 - 200 * difficulty
 
 		direction = { 	x = math.random(-1,1), 
 						y = math.random(-1,1)}		        -- either -1, 0, 1
@@ -470,16 +591,24 @@ function updateItems(dt)
 		if items[iIndex].pickedUp == 1 then
 			if items[iIndex].type == ITEM_TYPE.health then
 				heal(3)
-			elseif items[iIndex].type == ITEM_TYPE.ammo then
-				newWeapon(1, math.random(1, 3))
+			elseif items[iIndex].type == ITEM_TYPE.weapon then
+				newWeapon(math.random(1, playerSlots), math.random(1, 3))
 			elseif items[iIndex].type == ITEM_TYPE.shield then
 				shield(10000)
-			elseif items[iIndex].type == ITEM_TYPE.exp9 then
-				addEXP(9)
-			elseif items[iIndex].type == ITEM_TYPE.exp3 then
-				addEXP(3)
 			elseif items[iIndex].type == ITEM_TYPE.absorbAll then 
 				attractAllItems()
+			elseif items[iIndex].type == ITEM_TYPE.exp1 then
+				addEXP(1)
+			elseif items[iIndex].type == ITEM_TYPE.exp2 then
+				addEXP(2)
+			elseif items[iIndex].type == ITEM_TYPE.exp3 then
+				addEXP(3)
+			elseif items[iIndex].type == ITEM_TYPE.exp6 then
+				addEXP(6)
+			elseif items[iIndex].type == ITEM_TYPE.exp9 then
+				addEXP(9)
+			elseif items[iIndex].type == ITEM_TYPE.exp16 then
+				addEXP(16)
 			else
 				addEXP(1)	-- default is exp1
 			end

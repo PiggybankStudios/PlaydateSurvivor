@@ -8,20 +8,20 @@ function bullet:init(x, y, rotation, newLifeTime, type)
 	bullet.super.init(self)
 	if type == 2 then
 		self:setImage(gfx.image.new('Resources/Sprites/BulletCannon'))
-		self.speed = 400
-		self.damage = 5
+		self.speed = getPayerBulletSpeed() * 8
+		self.damage = 3 + getPlayerGunDamage() * 2
 	elseif type == 3 then
 		self:setImage(gfx.image.new('Resources/Sprites/BulletMinigun'))
-		self.speed = 100
-		self.damage = 1
+		self.speed = getPayerBulletSpeed() * 2
+		self.damage = 1 + math.floor(getPlayerGunDamage() / 2)
 	elseif type == 4 then
 		self:setImage(gfx.image.new('Resources/Sprites/BulletShotgun'))
-		self.speed = 150
-		self.damage = 1
+		self.speed = getPayerBulletSpeed() * 3
+		self.damage = 1 + math.floor(getPlayerGunDamage() / 2)
 	else
 		self:setImage(gfx.image.new('Resources/Sprites/BulletPeagun'))
-		self.speed = 200
-		self.damage = 2
+		self.speed = getPayerBulletSpeed() * 4
+		self.damage = 1 + getPlayerGunDamage()
 	end
 	
 	self:moveTo(x, y)

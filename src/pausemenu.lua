@@ -5,6 +5,9 @@ local screenHeight <const> = playdate.display.getHeight()
 local halfScreenWidth <const> = screenWidth / 2
 local halfScreenHeight <const> = screenHeight / 2
 local menuSpot = 0
+
+writings = {}
+
 --setup main menu
 local pauseImage = gfx.image.new('Resources/Sprites/pauseMenu')
 local pauseSprite = gfx.sprite.new(pauseImage)
@@ -20,15 +23,16 @@ selectSprite:setZIndex(ZINDEX.uidetails)
 selectSprite:moveTo(55, 212)
 
 --setup guns
+local gunxImage = gfx.image.new('Resources/Sprites/gLocked')
 local gun0Image = gfx.image.new('Resources/Sprites/gEmpty')
 local gun1Image = gfx.image.new('Resources/Sprites/gPea')
 local gun2Image = gfx.image.new('Resources/Sprites/gCannon')
 local gun3Image = gfx.image.new('Resources/Sprites/gMini')
 local gun4Image = gfx.image.new('Resources/Sprites/gShot')
 local gun1Sprite = gfx.sprite.new(gun1Image)
-local gun2Sprite = gfx.sprite.new(gun0Image)
-local gun3Sprite = gfx.sprite.new(gun0Image)
-local gun4Sprite = gfx.sprite.new(gun0Image)
+local gun2Sprite = gfx.sprite.new(gunxImage)
+local gun3Sprite = gfx.sprite.new(gunxImage)
+local gun4Sprite = gfx.sprite.new(gunxImage)
 gun1Sprite:setIgnoresDrawOffset(true)	-- forces sprite to be draw to screen, not world
 gun2Sprite:setIgnoresDrawOffset(true)	-- forces sprite to be draw to screen, not world
 gun3Sprite:setIgnoresDrawOffset(true)	-- forces sprite to be draw to screen, not world
@@ -49,6 +53,8 @@ function openPauseMenu()
 	gun2Sprite:add()
 	gun3Sprite:add()
 	gun4Sprite:add()
+	addStats()
+	addDifficulty()
 	--print("paused")
 end
 
@@ -60,6 +66,12 @@ function closePauseMenu()
 	gun3Sprite:remove()
 	gun4Sprite:remove()
 	selectSprite:moveTo(55, 212)
+	for gIndex,gchar in pairs(writings) do --need all graphics removed first
+		writings[gIndex]:remove()
+	end
+	for gIndex,gchar in pairs(writings) do --need to clear the table now
+		table.remove(writings,gIndex)
+	end
 	--print("unpaused")
 end
 
@@ -91,11 +103,12 @@ end
 
 function updateMenuWeapon(slot, gun)
 	local newGun = gun0Image
-	if gun == 1 then newGun = gun1Image
+	if gun == 0 then newGun = gun0Image
+	elseif gun == 1 then newGun = gun1Image
 	elseif gun == 2 then newGun = gun2Image
 	elseif gun == 3 then newGun = gun3Image
 	elseif gun == 4 then newGun = gun4Image
-	else newGun = gun0Image
+	else newGun = gunxImage
 	end
 	
 	if slot == 1 then gun1Sprite:setImage(newGun)
@@ -106,3 +119,117 @@ function updateMenuWeapon(slot, gun)
 	end
 end
 
+function addStats()
+	local spacing = 4
+	local newline = 8
+	local statrow = 1
+	local row = 26
+	local column = 12
+	local pstats = getPlayerStats()
+	local lchars = {}
+	lchars = lstrtochar("level: " .. tostring(pstats[1]))
+	for lIndex,letter in pairs(lchars) do
+		newLetter = write((column + spacing * lIndex), (row + newline * statrow), letter, true)
+		newLetter:add()
+		writings[#writings + 1] = newLetter
+	end
+	statrow += 1 --move on to the next line
+	lchars = lstrtochar("exp: " .. tostring(pstats[2]) .. "/" .. tostring(pstats[3]))
+	for lIndex,letter in pairs(lchars) do
+		newLetter = write((column + spacing * lIndex), (row + newline * statrow), letter, true)
+		newLetter:add()
+		writings[#writings + 1] = newLetter
+	end
+	statrow += 1 --move on to the next line
+	lchars = lstrtochar("health: " .. tostring(pstats[4]) .. "/" .. tostring(pstats[5]))
+	for lIndex,letter in pairs(lchars) do
+		newLetter = write((column + spacing * lIndex), (row + newline * statrow), letter, true)
+		newLetter:add()
+		writings[#writings + 1] = newLetter
+	end
+	statrow += 1 --move on to the next line
+	lchars = lstrtochar("speed: " .. tostring(pstats[6]))
+	for lIndex,letter in pairs(lchars) do
+		newLetter = write((column + spacing * lIndex), (row + newline * statrow), letter, true)
+		newLetter:add()
+		writings[#writings + 1] = newLetter
+	end
+	statrow += 1 --move on to the next line
+	lchars = lstrtochar("att rate: " .. tostring(pstats[7]) .. " msec")
+	for lIndex,letter in pairs(lchars) do
+		newLetter = write((column + spacing * lIndex), (row + newline * statrow), letter, true)
+		newLetter:add()
+		writings[#writings + 1] = newLetter
+	end
+	statrow += 1 --move on to the next line
+	lchars = lstrtochar("magnet: " .. tostring(pstats[8]))
+	for lIndex,letter in pairs(lchars) do
+		newLetter = write((column + spacing * lIndex), (row + newline * statrow), letter, true)
+		newLetter:add()
+		writings[#writings + 1] = newLetter
+	end
+	statrow += 1 --move on to the next line
+	lchars = lstrtochar("slots: " .. tostring(pstats[9]) .. "/4")
+	for lIndex,letter in pairs(lchars) do
+		newLetter = write((column + spacing * lIndex), (row + newline * statrow), letter, true)
+		newLetter:add()
+		writings[#writings + 1] = newLetter
+	end
+	statrow += 1 --move on to the next line
+	lchars = lstrtochar("damage: " .. tostring(pstats[10]))
+	for lIndex,letter in pairs(lchars) do
+		newLetter = write((column + spacing * lIndex), (row + newline * statrow), letter, true)
+		newLetter:add()
+		writings[#writings + 1] = newLetter
+	end
+	statrow += 1 --move on to the next line
+	lchars = lstrtochar("reflect: " .. tostring(pstats[11]))
+	for lIndex,letter in pairs(lchars) do
+		newLetter = write((column + spacing * lIndex), (row + newline * statrow), letter, true)
+		newLetter:add()
+		writings[#writings + 1] = newLetter
+	end
+	statrow += 1 --move on to the next line
+	lchars = lstrtochar("bonus exp: " .. tostring(pstats[12]))
+	for lIndex,letter in pairs(lchars) do
+		newLetter = write((column + spacing * lIndex), (row + newline * statrow), letter, true)
+		newLetter:add()
+		writings[#writings + 1] = newLetter
+	end
+	statrow += 1 --move on to the next line
+	lchars = lstrtochar("luck: " .. tostring(pstats[13]))
+	for lIndex,letter in pairs(lchars) do
+		newLetter = write((column + spacing * lIndex), (row + newline * statrow), letter, true)
+		newLetter:add()
+		writings[#writings + 1] = newLetter
+	end
+	statrow += 1 --move on to the next line
+	lchars = lstrtochar("shot speed: " .. tostring(pstats[14]))
+	for lIndex,letter in pairs(lchars) do
+		newLetter = write((column + spacing * lIndex), (row + newline * statrow), letter, true)
+		newLetter:add()
+		writings[#writings + 1] = newLetter
+	end
+end
+
+function lstrtochar(lstring)
+	local lchar = {}
+	local lstr = lstring
+	for i = 1, #lstr do
+		lchar[i] = lstr:sub(i,i)
+	end
+	return lchar
+end
+
+function addDifficulty()
+	local spacing = 4
+	local row = 20
+	local column = 162
+	local lchars = {}
+	lchars = lstrtochar("difficulty --" .. tostring(getDifficulty()) .. "--")
+	for lIndex,letter in pairs(lchars) do
+		newLetter = write((column + spacing * lIndex), (row), letter, true)
+		newLetter:add()
+		writings[#writings + 1] = newLetter
+	end
+end
