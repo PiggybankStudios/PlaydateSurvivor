@@ -14,7 +14,8 @@ ITEM_TYPE = {
 	exp3 = 7, 
 	exp6 = 8, 
 	exp9 = 9, 
-	exp16 = 10 
+	exp16 = 10, 
+	luck = 10 
 }
 
 
@@ -30,6 +31,8 @@ function item:init(x, y, type)
 		self:setImage(gfx.image.new('Resources/Sprites/iShield'))
 	elseif (self.type == ITEM_TYPE.absorbAll) then
 		self:setImage(gfx.image.new('Resources/Sprites/iAbsorbAll'))
+	elseif (self.type == ITEM_TYPE.luck) then
+		self:setImage(gfx.image.new('Resources/Sprites/iLuck'))
 	elseif (self.type == ITEM_TYPE.exp1) then
 		self:setImage(gfx.image.new('Resources/Sprites/iEXP1'))
 	elseif (self.type == ITEM_TYPE.exp2) then

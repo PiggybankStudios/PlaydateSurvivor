@@ -22,8 +22,8 @@ function enemy:init(x, y, type, theTime)
 		self.targetSpeed = 3
 		self.damageAmount = 2
 		self.shakeStrength = CAMERA_SHAKE_STRENGTH.tiny
-		self.drop = { ITEM_TYPE.exp1, ITEM_TYPE.health}
-		self.dropPercent = { 95, 5}
+		self.drop = { ITEM_TYPE.exp1, ITEM_TYPE.health, ITEM_TYPE.luck}
+		self.dropPercent = { 94, 5, 1}
 		self.rating = 1
 	elseif type == 2 then
 		self:setImage(gfx.image.new('Resources/Sprites/Enemy2')) --the normal
@@ -42,8 +42,8 @@ function enemy:init(x, y, type, theTime)
 		self.targetSpeed = 4
 		self.damageAmount = 1
 		self.shakeStrength = CAMERA_SHAKE_STRENGTH.tiny
-		self.drop = { ITEM_TYPE.exp1, ITEM_TYPE.weapon }
-		self.dropPercent = { 60, 40}
+		self.drop = { ITEM_TYPE.exp1, ITEM_TYPE.weapon, ITEM_TYPE.luck }
+		self.dropPercent = { 59, 40, 1}
 		self.rating = 2
 	elseif type == 4 then
 		self:setImage(gfx.image.new('Resources/Sprites/Enemy4')) --the big boi
@@ -55,10 +55,31 @@ function enemy:init(x, y, type, theTime)
 		self.drop = { ITEM_TYPE.exp1, ITEM_TYPE.health, ITEM_TYPE.absorbAll }
 		self.dropPercent = { 60, 35, 5}
 		self.rating = 3
+	elseif type == 5 then
+		self:setImage(gfx.image.new('Resources/Sprites/Enemy5')) --the Bullet Bill
+		self.health = 6
+		self.speed = 0
+		self.targetSpeed = 5
+		self.damageAmount = 2
+		self.shakeStrength = CAMERA_SHAKE_STRENGTH.large
+		self.drop = { ITEM_TYPE.exp1, ITEM_TYPE.health, ITEM_TYPE.luck }
+		self.dropPercent = { 60, 39, 1}
+		self.rating = 2
+	elseif type == 6 then
+		self:setImage(gfx.image.new('Resources/Sprites/Enemy6')) --the da boss
+		self.health = 66
+		self.speed = 0
+		self.targetSpeed = 0.8
+		self.damageAmount = 5
+		self.shakeStrength = CAMERA_SHAKE_STRENGTH.large
+		self.drop = { ITEM_TYPE.exp1, ITEM_TYPE.health }
+		self.dropPercent = { 80, 20}
+		self.rating = 3
 	end
 	self.health *= (1 + math.floor(getDifficulty() / scaleHealth))
 	self.damageAmount *= (1 + math.floor(getDifficulty() / scaleDamage))
 	self.targetSpeed += (math.floor(getDifficulty() / scaleSpeed))
+	self.fullhealth = self.health
 	self.type = type
 	self.time = theTime	
 	self.AIsmarts = 1
@@ -69,6 +90,7 @@ function enemy:init(x, y, type, theTime)
 
 	self.accel = enemyAcceleration
 	self.velocity = vec.new(0, 0)
+	self.direction = vec.new(0, 0)
 
 	-- draw healthbar
 	self.healthbar = healthbar(x, y - healthbarOffsetY, self.health)
@@ -163,6 +185,19 @@ function enemy:move(playerX, playerY, theTime)
 			self.time = theTime
 			self.AIsmarts = 1
 		end
+	elseif (self.type == 5 and self.AIsmarts == 1) then
+		directionVec = vec.new(playerX - self.x, playerY - self.y)
+		self.direction = directionVec
+		if (theTime >= (self.time + 1000)) then
+			self.time = theTime
+			self.AIsmarts = 2
+		end
+	elseif (self.type == 5 and self.AIsmarts == 2) then
+		directionVec = self.direction
+		if (theTime >= (self.time + 2000)) then
+			self.time = theTime
+			self.AIsmarts = 1
+		end
 	elseif (self.type == 4 and self.AIsmarts == 2) then
 		directionVec = vec.new(self.x - playerX, self.y - playerY)
 		if (theTime >= (self.time + 1000)) then
@@ -170,20 +205,36 @@ function enemy:move(playerX, playerY, theTime)
 			self.health += 2
 			self.healthbar:heal(2)
 		end
-		if (self.health == 20) then self.AIsmarts = 1 end
+		if (self.health == self.fullhealth) then self.AIsmarts = 1 end
+	elseif (self.type == 6) then
+		directionVec = vec.new(playerX - self.x, playerY - self.y)
+		if (theTime >= (self.time + 500)) then
+			self.time = theTime
+			if self.health < self.fullhealth then 
+				self.health += 1
+				self.healthbar:heal(1)
+			end
+		end
 	else
 		directionVec = vec.new(playerX - self.x, playerY - self.y)
 		self.time = theTime
-		if (self.type == 4 and self.health <= 6) then self.AIsmarts = 2 end
+		if (self.type == 4 and self.health <= math.floor(self.fullhealth / 3)) then self.AIsmarts = 2 end
 	end
 	
 	directionVec:normalize()
-
+	
 	-- velocity trying to get to direction - variable speed
 	self.velocity.x = clamp(self.velocity.x + directionVec.x * self.accel, -self.speed, self.speed)
 	self.velocity.y = clamp(self.velocity.y + directionVec.y * self.accel, -self.speed, self.speed)
 	if self.speed ~= self.targetSpeed then
 		self.speed = moveTowards(self.speed, self.targetSpeed, self.accel)
+	end
+
+	if (self.type == 5 and self.AIsmarts == 1) then
+		local tRadians = math.atan2(directionVec.y, directionVec.x)
+		self:setRotation(math.deg(tRadians) - 90)
+		self.velocity.x = 0
+		self.velocity.y = 0
 	end
 
 	-- Moving the enemy and attached UI

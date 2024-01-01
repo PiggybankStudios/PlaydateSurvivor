@@ -26,6 +26,7 @@ collider:setCollideRect(0, 0, colliderSize, colliderSize)
 -- difficulty
 local difficulty = 1
 local maxDifficulty = 15
+local spawnInc = 0
 
 -- Player
 local playerLevel = 0
@@ -144,7 +145,7 @@ function updateLevel()
 	if math.floor(playerLevel / 5) == playerSlots then
 		updateSlots()
 	end
-	if math.floor(playerLevel / 5) == difficulty then
+	if math.floor(playerLevel / 3) == difficulty then
 		if difficulty < maxDifficulty then difficulty += 1 end
 	end
 	upgradeStat(math.random(1, 8))
@@ -176,6 +177,14 @@ end
 
 function getLuck()
 	return playerLuck
+end
+
+function incLuck()
+	playerLuck += 5
+	print('luck increased by 5')
+	if playerLuck > 100 then 
+		playerLuck = 100
+	end
 end
 
 function upgradeStat(stat)
@@ -535,13 +544,22 @@ function spawnMonsters()
 		enemyX = player.x + (halfScreenWidth + (halfScreenWidth * distance.x)) * direction.x
 		enemyY = player.y + (halfScreenHeight + (halfScreenHeight * distance.y)) * direction.y
 
-		local eType = math.random(1, 4)
+		local eType = math.random(1, 5)
 		local eAccel = 0.5
 
 		newEnemy = enemy(enemyX, enemyY, eType, theCurrTime)
 		newEnemy:add()
-
+		
 		enemies[#enemies + 1] = newEnemy
+		spawnInc += math.random(1, difficulty)
+		if spawnInc > 5 then
+			spawnInc = 0
+			eType = math.random(1, 6)
+			newEnemy = enemy(-enemyX, -enemyY, eType, theCurrTime)
+			newEnemy:add()
+			
+			enemies[#enemies + 1] = newEnemy
+		end
 	end
 end
 
@@ -597,6 +615,8 @@ function updateItems(dt)
 				shield(10000)
 			elseif items[iIndex].type == ITEM_TYPE.absorbAll then 
 				attractAllItems()
+			elseif items[iIndex].type == ITEM_TYPE.luck then
+				incLuck()
 			elseif items[iIndex].type == ITEM_TYPE.exp1 then
 				addEXP(1)
 			elseif items[iIndex].type == ITEM_TYPE.exp2 then
