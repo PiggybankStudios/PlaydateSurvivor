@@ -23,6 +23,8 @@ import "deathmenu"
 
 local gfx <const> = playdate.graphics
 
+local reset = false
+
 gfx.setColor(gfx.kColorWhite)
 gfx.fillRect(0, 0, 400, 240)
 gfx.setBackgroundColor(gfx.kColorBlack)
@@ -35,11 +37,11 @@ function playdate.update()
 	dt = 1/20
 	elapsedTime = elapsedTime + dt
 	if currentState == GAMESTATE.startscreen then
-		if lastState == GAMESTATE.nothing then
+		if lastState == GAMESTATE.deathscreen then
+			closeDeadMenu()
 			openMainMenu()
 			lastState = currentState
-		elseif lastState == GAMESTATE.deathscreen then
-			closeDeadMenu()
+		elseif lastState ~= currentState then
 			openMainMenu()
 			lastState = currentState
 		else
@@ -50,17 +52,17 @@ function playdate.update()
 			gameScene()
 			closeMainMenu()
 			lastState = currentState
+		elseif reset == true then
+			gameScene()
+			lastState = currentState
+			reset = false
 		elseif lastState ~= currentState then
 			lastState = currentState
 		end
 		updatePlayer(dt)
 		updateCamera(dt)
 	elseif currentState == GAMESTATE.pausemenu then
-		if lastState == GAMESTATE.startscreen then
-			gameScene()
-			closeMainMenu()
-			lastState = currentState
-		elseif lastState ~= currentState then
+		if lastState ~= currentState then
 			lastState = currentState
 		end
 		updateCamera(dt)
@@ -85,6 +87,10 @@ end
 
 function setGameState(newState)
 	currentState = newState
+end
+
+function restartGame()
+	reset = true
 end
 
 -- TO DO:

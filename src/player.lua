@@ -151,6 +151,10 @@ end
 
 function handleDeath()
 	setGameState(GAMESTATE.deathscreen)
+	clearAllThings()
+end
+
+function clearAllThings()
 	clearItems()
 	clearMonsters()
 	clearBullets()
@@ -508,9 +512,25 @@ function playdate.AButtonDown()
 		openPauseMenu()
 		setGameState(GAMESTATE.pausemenu)
 	elseif getGameState() == GAMESTATE.pausemenu then
-		closePauseMenu()
-		Unpaused = true
-		setGameState(GAMESTATE.maingame)
+		if pauseSelection() == 0 then
+			closePauseMenu()
+			Unpaused = true
+			setGameState(GAMESTATE.maingame)
+		elseif pauseSelection() == 1 then
+			closePauseMenu()
+			Unpaused = true
+			clearAllThings()
+			clearStats()
+			restartGame()
+			setGameState(GAMESTATE.maingame)
+		elseif pauseSelection() == 2 then
+			closePauseMenu()
+			Unpaused = true
+			clearAllThings()
+			clearStats()
+			setGameState(GAMESTATE.startscreen)
+		end
+			
 	elseif getGameState() == GAMESTATE.deathscreen then
 		setGameState(GAMESTATE.startscreen)
 		clearStats()

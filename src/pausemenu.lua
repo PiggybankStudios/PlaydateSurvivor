@@ -66,6 +66,7 @@ function closePauseMenu()
 	gun3Sprite:remove()
 	gun4Sprite:remove()
 	selectSprite:moveTo(55, 212)
+	menuSpot = 0
 	for gIndex,gchar in pairs(writings) do --need all graphics removed first
 		writings[gIndex]:remove()
 	end
@@ -99,6 +100,10 @@ function pauseMenuMoveL()
 		selectSprite:moveTo(204, 212)
 		menuSpot = 1
 	end
+end
+
+function pauseSelection()
+	return menuSpot
 end
 
 function updateMenuWeapon(slot, gun)
