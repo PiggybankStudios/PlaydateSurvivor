@@ -97,10 +97,19 @@ end
 	-- bullets are slow
 	-- character gun is too offset from bullet spawn point - might adjust spawn point
 		-- remake sprite to make aiming feel better - less bulky
-	-- level layout too dense to start - should open up 
-	-- pick up radius for ground objects
 	-- equipped items ui
 	-- enemy cap / object cap
-	-- death screen
-	-- game start screen
 	-- level select screen
+
+
+-- To Make:
+	-- one more gun: laser
+	-- enemy that shoots
+	-- choose level ups
+	-- SHOW the timer for end of the round - it's already made
+	-- end of timer death: reaper? kill the reaper with right setup? game state after reaper? vampires?
+
+-- My next project:
+	-- enemy management
+	-- bullet management
+	-- calc stuff in frame chunks
