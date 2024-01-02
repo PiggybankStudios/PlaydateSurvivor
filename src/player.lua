@@ -152,12 +152,14 @@ end
 function handleDeath()
 	setGameState(GAMESTATE.deathscreen)
 	clearAllThings()
+	clearFlash()
 end
 
 function clearAllThings()
 	clearItems()
 	clearMonsters()
 	clearBullets()
+	clearPauseMenu()
 end
 
 function updateSlots()
@@ -470,30 +472,30 @@ local physicalCrankAngle = playdate.getCrankPosition()
 crankAngle = physicalCrankAngle - 90
 
 function playdate.leftButtonDown()
-	inputX -= 1
+	inputX = -1
 	if getGameState() == GAMESTATE.pausemenu then pauseMenuMoveL() end
 end
 function playdate.leftButtonUp()
-	inputX += 1
+	inputX = 0
 end
 function playdate.rightButtonDown()
-	inputX += 1
+	inputX = 1
 	if getGameState() == GAMESTATE.pausemenu then pauseMenuMoveR() end
 end
 function playdate.rightButtonUp()
-	inputX -= 1
+	inputX = 0
 end
 function playdate.upButtonDown()
-	inputY -= 1
+	inputY = -1
 end
 function playdate.upButtonUp()
-	inputY += 1
+	inputY = 0
 end
 function playdate.downButtonDown()
-	inputY += 1
+	inputY = 1
 end
 function playdate.downButtonUp()
-	inputY -= 1
+	inputY = 0
 end
 
 function playdate.BButtonDown()

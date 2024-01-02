@@ -252,3 +252,10 @@ function addDifficulty()
 		writings[#writings + 1] = newLetter
 	end
 end
+
+function clearPauseMenu()
+	gun1Sprite:setImage(gun1Image)
+	gun2Sprite:setImage(gunxImage)
+	gun3Sprite:setImage(gunxImage)
+	gun4Sprite:setImage(gunxImage)
+end
