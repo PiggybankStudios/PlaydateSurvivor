@@ -5,8 +5,8 @@ local screenHeight <const> = playdate.display.getHeight()
 local halfScreenWidth <const> = screenWidth / 2
 local halfScreenHeight <const> = screenHeight / 2
 
-blinking = false
-lastBlink = 0
+local blinking = false
+local lastBlink = 0
 
 --setup main menu
 local mainImage = gfx.image.new('Resources/Sprites/mainMenu')

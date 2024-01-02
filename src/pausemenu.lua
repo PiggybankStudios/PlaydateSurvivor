@@ -6,7 +6,7 @@ local halfScreenWidth <const> = screenWidth / 2
 local halfScreenHeight <const> = screenHeight / 2
 local menuSpot = 0
 
-writings = {}
+local writings = {}
 
 --setup main menu
 local pauseImage = gfx.image.new('Resources/Sprites/pauseMenu')
@@ -197,14 +197,28 @@ function addStats()
 		writings[#writings + 1] = newLetter
 	end
 	statrow += 1 --move on to the next line
-	lchars = lstrtochar("luck: " .. tostring(pstats[13]))
+	lchars = lstrtochar("luck: " .. tostring(pstats[13]) .. "%")
 	for lIndex,letter in pairs(lchars) do
 		newLetter = write((column + spacing * lIndex), (row + newline * statrow), letter, true)
 		newLetter:add()
 		writings[#writings + 1] = newLetter
 	end
 	statrow += 1 --move on to the next line
-	lchars = lstrtochar("shot speed: " .. tostring(pstats[14]))
+	lchars = lstrtochar("bullet spd: " .. tostring(pstats[14]))
+	for lIndex,letter in pairs(lchars) do
+		newLetter = write((column + spacing * lIndex), (row + newline * statrow), letter, true)
+		newLetter:add()
+		writings[#writings + 1] = newLetter
+	end
+	statrow += 1 --move on to the next line
+	lchars = lstrtochar("armor: " .. tostring(pstats[15]))
+	for lIndex,letter in pairs(lchars) do
+		newLetter = write((column + spacing * lIndex), (row + newline * statrow), letter, true)
+		newLetter:add()
+		writings[#writings + 1] = newLetter
+	end
+	statrow += 1 --move on to the next line
+	lchars = lstrtochar("dodge: " .. tostring(pstats[16]) .. "%")
 	for lIndex,letter in pairs(lchars) do
 		newLetter = write((column + spacing * lIndex), (row + newline * statrow), letter, true)
 		newLetter:add()

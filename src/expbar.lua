@@ -71,6 +71,7 @@ function expbar:gainExp(amount)
 		self:updateExpbar(self.exp)
 	end
 	updateExp(self.exp)
+	addExpTotal(amount)
 end
 
 
@@ -88,7 +89,7 @@ function expbar:levelUp()
 						--crit, damage, rate, bounce, pierce, velocity, bulletlife, amount, 
 						--speed, hp, slot, magnet, luck, spin, armor, mod
 	self.exp = math.abs(self.exp - self.maxExp) -- move overfill exp into next level
-	self.maxExp += currLevel--expGrowthFactor * currLevel
+	self.maxExp += expGrowthFactor
 	self:updateExpbar(self.exp)
 end
 

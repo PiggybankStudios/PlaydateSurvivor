@@ -118,6 +118,7 @@ function enemy:damage(amount)
 	if self.health <= 0 then self.health = 0 end
 
 	self.healthbar:damage(amount)
+	addDamageDealt(amount)
 end
 
 

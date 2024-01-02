@@ -19,6 +19,7 @@ import "camera"
 import "gameScene"
 import "item"
 import "mainmenu"
+import "deathmenu"
 
 local gfx <const> = playdate.graphics
 
@@ -37,6 +38,10 @@ function playdate.update()
 		if lastState == GAMESTATE.nothing then
 			openMainMenu()
 			lastState = currentState
+		elseif lastState == GAMESTATE.deathscreen then
+			closeDeadMenu()
+			openMainMenu()
+			lastState = currentState
 		else
 			updateMainManu()
 		end
@@ -44,18 +49,28 @@ function playdate.update()
 		if lastState == GAMESTATE.startscreen then
 			gameScene()
 			closeMainMenu()
+			lastState = currentState
+		elseif lastState ~= currentState then
+			lastState = currentState
 		end
 		updatePlayer(dt)
 		updateCamera(dt)
-		lastState = currentState
 	elseif currentState == GAMESTATE.pausemenu then
 		if lastState == GAMESTATE.startscreen then
 			gameScene()
 			closeMainMenu()
+			lastState = currentState
+		elseif lastState ~= currentState then
+			lastState = currentState
 		end
-		updatePlayer(dt)
 		updateCamera(dt)
-		lastState = currentState
+	elseif currentState == GAMESTATE.deathscreen then
+		if lastState ~= currentState then
+			openDeadMenu()
+			lastState = currentState
+		else
+			updateDeadManu()
+		end
 	end
 	gfx.sprite.update()
 end

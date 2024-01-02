@@ -27,5 +27,6 @@ GAMESTATE = {
 	maingame = 2,
 	pausemenu = 3,
 	levelupmenu = 4,
-	newweaponmenu = 5
+	newweaponmenu = 5,
+	deathscreen = 6
 }

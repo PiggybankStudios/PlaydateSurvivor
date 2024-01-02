@@ -31,6 +31,7 @@ function bullet:init(x, y, rotation, newLifeTime, type)
 	self:setCollideRect(0, 0, self:getSize())
 
 	self.lifeTime = newLifeTime
+	addShot()
 end
 
 
