@@ -72,6 +72,11 @@ local function manageScreenFlash()
 end
 
 
+function clearFlash()
+	dsp.setInverted(false)
+end
+
+
 -- +--------------------------------------------------------------+
 -- |                           Position                           |
 -- +--------------------------------------------------------------+
