@@ -537,7 +537,6 @@ function playdate.AButtonDown()
 		setGameState(GAMESTATE.startscreen)
 		clearStats()
 	end
-	--changeItemAbsorbRangeBy(5)
 end
 
 function playdate.cranked(change, acceleratedChange)
@@ -671,10 +670,8 @@ end
 -- +--------------------------------------------------------------+
 -- |                       Monster Management                     |
 -- +--------------------------------------------------------------+
--- Monster movement and spawning
-	-- TO DO:
-		-- Need to move spawning logic into enemy class
-		-- Need to make multiple types of enemies that can be selected
+
+
 function spawnMonsters()
 	-- Movement
 	if Unpaused then theSpawnTime += theLastTime end
@@ -696,15 +693,17 @@ function spawnMonsters()
 		local eType = math.random(1, 5)
 		local eAccel = 0.5
 
-		newEnemy = enemy(enemyX, enemyY, eType, theCurrTime)
-		newEnemy:add()
-		
+		--newEnemy = enemy(enemyX, enemyY, eType, theCurrTime)
+		newEnemy = createEnemy(enemyX, enemyY, eType, theCurrTime)
+		newEnemy:add()	
 		enemies[#enemies + 1] = newEnemy
+
 		spawnInc += math.random(1, difficulty)
 		if spawnInc > 5 then
 			spawnInc = 0
 			eType = math.random(1, 6)
-			newEnemy = enemy(-enemyX, -enemyY, eType, theCurrTime)
+			--newEnemy = enemy(-enemyX, -enemyY, eType, theCurrTime)
+			newEnemy = createEnemy(-enemyX, -enemyY, eType, theCurrTime)
 			newEnemy:add()
 			
 			enemies[#enemies + 1] = newEnemy

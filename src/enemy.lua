@@ -1,5 +1,6 @@
 local gfx <const> = playdate.graphics
 local vec <const> = playdate.geometry.vector2D
+local mathp <const> = playdate.math
 
 class('enemy').extends(gfx.sprite)
 
@@ -8,80 +9,55 @@ local healthbarOffsetY = 20
 local enemyAcceleration = 0.5
 local maxSpeedCap = 8
 local bounceBuffer = 3
+local rotateSpeed = 5
 local scaleHealth = 3
 local scaleSpeed = 4
 local scaleDamage = 5
 
+ENEMY_TYPE = {
+	fastBall = 1,
+	normalSquare = 2,
+	bat = 3,
+	bigSquare = 4,
+	bulletBill = 5,
+	chunkyArms = 6
+}
 
-function enemy:init(x, y, type, theTime)
-	enemy.super.init(self)
-	if type == 1 then
-		self:setImage(gfx.image.new('Resources/Sprites/Enemy1')) --the fast one
-		self.health = 2
-		self.speed = 0
-		self.targetSpeed = 3
-		self.damageAmount = 2
-		self.shakeStrength = CAMERA_SHAKE_STRENGTH.tiny
-		self.drop = { ITEM_TYPE.exp1, ITEM_TYPE.health, ITEM_TYPE.luck}
-		self.dropPercent = { 94, 5, 1}
-		self.rating = 1
-	elseif type == 2 then
-		self:setImage(gfx.image.new('Resources/Sprites/Enemy2')) --the normal
-		self.health = 5
-		self.speed = 0
-		self.targetSpeed = 2
-		self.damageAmount = 3
-		self.shakeStrength = CAMERA_SHAKE_STRENGTH.medium
-		self.drop = { ITEM_TYPE.exp1, ITEM_TYPE.health, ITEM_TYPE.shield }
-		self.dropPercent = { 75, 20, 5}
-		self.rating = 1
-	elseif type == 3 then
-		self:setImage(gfx.image.new('Resources/Sprites/Enemy3')) --the dodger
-		self.health = 3
-		self.speed = 0
-		self.targetSpeed = 4
-		self.damageAmount = 1
-		self.shakeStrength = CAMERA_SHAKE_STRENGTH.tiny
-		self.drop = { ITEM_TYPE.exp1, ITEM_TYPE.weapon, ITEM_TYPE.luck }
-		self.dropPercent = { 59, 40, 1}
-		self.rating = 2
-	elseif type == 4 then
-		self:setImage(gfx.image.new('Resources/Sprites/Enemy4')) --the big boi
-		self.health = 20
-		self.speed = 0
-		self.targetSpeed = 1
-		self.damageAmount = 1
-		self.shakeStrength = CAMERA_SHAKE_STRENGTH.large
-		self.drop = { ITEM_TYPE.exp1, ITEM_TYPE.health, ITEM_TYPE.absorbAll }
-		self.dropPercent = { 60, 35, 5}
-		self.rating = 3
-	elseif type == 5 then
-		self:setImage(gfx.image.new('Resources/Sprites/Enemy5')) --the Bullet Bill
-		self.health = 6
-		self.speed = 0
-		self.targetSpeed = 5
-		self.damageAmount = 2
-		self.shakeStrength = CAMERA_SHAKE_STRENGTH.large
-		self.drop = { ITEM_TYPE.exp1, ITEM_TYPE.health, ITEM_TYPE.luck }
-		self.dropPercent = { 60, 39, 1}
-		self.rating = 2
-	elseif type == 6 then
-		self:setImage(gfx.image.new('Resources/Sprites/Enemy6')) --the da boss
-		self.health = 66
-		self.speed = 0
-		self.targetSpeed = 0.5
-		self.damageAmount = 5
-		self.shakeStrength = CAMERA_SHAKE_STRENGTH.large
-		self.drop = { ITEM_TYPE.exp16, ITEM_TYPE.luck }
-		self.dropPercent = { 95, 5}
-		self.rating = 3
+
+function createEnemy(x, y, type, theTime)
+	if type == ENEMY_TYPE.fastBall then
+		return fastBall(x, y, theTime)
+
+	elseif type == ENEMY_TYPE.normalSquare then
+		return normalSquare(x, y, theTime)
+
+	elseif type == ENEMY_TYPE.bat then
+		return bat(x, y, theTime)
+
+	elseif type == ENEMY_TYPE.bigSquare then
+		return bigSquare(x, y, theTime)
+
+	elseif type == ENEMY_TYPE.bulletBill then
+		return bulletBill(x, y, theTime)
+
+	elseif type == ENEMY_TYPE.chunkyArms then
+		return chunkyArms(x, y, theTime)
+
 	end
+end
+
+
+-- Init shared by all enemies
+function enemy:init(x, y, theTime)
+	enemy.super.init(self)
+	
 	self.health *= (1 + math.floor(getDifficulty() / scaleHealth))
 	self.damageAmount *= (1 + math.floor(getDifficulty() / scaleDamage))
 	self.targetSpeed += (math.floor(getDifficulty() / scaleSpeed))
 	self.fullhealth = self.health
-	self.type = type
-	self.time = theTime	
+
+	self.time = theTime
+	
 	self.AIsmarts = 1
 	self:moveTo(x, y)
 	self:setTag(TAGS.enemy)
@@ -90,27 +66,256 @@ function enemy:init(x, y, type, theTime)
 
 	self.accel = enemyAcceleration
 	self.velocity = vec.new(0, 0)
-	self.direction = vec.new(0, 0)
+	self.directionVec = vec.new(0, 0)	
 
 	-- draw healthbar
 	self.healthbar = healthbar(x, y - healthbarOffsetY, self.health)
 end
 
 
-function enemy:collisionResponse(other)
-	local tag = other:getTag()
-	if tag == TAGS.player then
-		player:damage(self.damageAmount, self.shakeStrength, self.x, self.y)
-		self:damage(player:getPlayerReflectDamage())
-		return 'bounce'
-	elseif tag == TAGS.weapon then
-		return 'freeze'
-	elseif tag == TAGS.enemy then
-		return 'overlap'
-	else --tag == walls
-		return 'overlap'
-	end
+-- +--------------------------------------------------------------+
+-- |                         Enemy Types                          |
+-- +--------------------------------------------------------------+
+
+
+------------------------------------------------
+				-- Fast Ball --
+
+class('fastBall').extends(enemy)
+
+function fastBall:init(x, y, theTime)	
+	self:setImage(gfx.image.new('Resources/Sprites/Enemy1'))
+	self.type = ENEMY_TYPE.fastBall
+	self.health = 2
+	self.speed = 0
+	self.targetSpeed = 3
+	self.damageAmount = 2
+	self.shakeStrength = CAMERA_SHAKE_STRENGTH.tiny
+	self.drop = { ITEM_TYPE.exp1, ITEM_TYPE.health, ITEM_TYPE.luck}
+	self.dropPercent = { 94, 5, 1}
+	self.rating = 1
+
+	fastBall.super.init(self, x, y, theTime)
 end
+
+function fastBall:move(targetX, targetY, theTime)
+	self.directionVec = vec.new(targetX - self.x, targetY - self.y)
+
+	fastBall.super.move(self, targetX, targetY, theTime)	-- calling parent method needs the "." not the ":"
+end
+
+
+------------------------------------------------
+				-- Normal Square --
+
+class('normalSquare').extends(enemy)
+
+function normalSquare:init(x, y, theTime)	
+	self:setImage(gfx.image.new('Resources/Sprites/Enemy2'))
+	self.type = ENEMY_TYPE.normalSquare
+	self.health = 5
+	self.speed = 0
+	self.targetSpeed = 2
+	self.damageAmount = 3
+	self.shakeStrength = CAMERA_SHAKE_STRENGTH.medium
+	self.drop = { ITEM_TYPE.exp1, ITEM_TYPE.health, ITEM_TYPE.shield }
+	self.dropPercent = { 75, 20, 5}
+	self.rating = 1
+
+	normalSquare.super.init(self, x, y, theTime)
+end
+
+function normalSquare:move(targetX, targetY, theTime)
+	self.directionVec = vec.new(targetX - self.x, targetY - self.y)
+
+	normalSquare.super.move(self, targetX, targetY, theTime)
+end
+
+
+------------------------------------------------
+					-- Bat --
+
+class('bat').extends(enemy)
+
+function bat:init(x, y, theTime)
+	self:setImage(gfx.image.new('Resources/Sprites/Enemy3'))
+	self.type = ENEMY_TYPE.bat
+	self.health = 3
+	self.speed = 0
+	self.targetSpeed = 4
+	self.damageAmount = 1
+	self.shakeStrength = CAMERA_SHAKE_STRENGTH.tiny
+	self.drop = { ITEM_TYPE.exp1, ITEM_TYPE.weapon, ITEM_TYPE.luck }
+	self.dropPercent = { 59, 40, 1}
+	self.rating = 2
+
+	bat.super.init(self, x, y, theTime)
+end
+
+function bat:move(targetX, targetY, theTime)
+	-- direction toward player
+	self.directionVec = vec.new(targetX - self.x, targetY - self.y)
+
+	-- move towards player for some time
+	if self.AIsmarts == 1 then
+		if theTime >= self.time then
+			self.time = theTime + 1500
+			self.AIsmarts = 2
+		end
+
+	-- move away from player for some other time
+	elseif self.AIsmarts == 2 then
+		self.directionVec *= -1
+		if theTime >= self.time then
+			self.time = theTime + 1200
+			self.AIsmarts = 1
+		end
+	end
+
+	bat.super.move(self, targetX, targetY, theTime)
+end
+
+
+------------------------------------------------
+				   -- Big Square --
+
+class('bigSquare').extends(enemy)
+
+function bigSquare:init(x, y, theTime)
+	self:setImage(gfx.image.new('Resources/Sprites/Enemy4'))
+	self.type = ENEMY_TYPE.bigSquare
+	self.health = 20
+	self.speed = 0
+	self.targetSpeed = 1
+	self.damageAmount = 1
+	self.shakeStrength = CAMERA_SHAKE_STRENGTH.large
+	self.drop = { ITEM_TYPE.exp1, ITEM_TYPE.health, ITEM_TYPE.absorbAll }
+	self.dropPercent = { 60, 35, 5}
+	self.rating = 3
+
+	bigSquare.super.init(self, x, y, theTime)
+end
+
+function bigSquare:move(targetX, targetY, theTime)
+	-- move toward player
+	self.directionVec = vec.new(targetX - self.x, targetY - self.y)
+
+	-- if healing, move away from player
+	if self.AIsmarts == 2 then
+		self.directionVec *= -1
+		if theTime >= self.time then
+			self.time = theTime + 1000
+			self.health += 2
+			self.healthbar:heal(2)
+		end
+		-- once finished healing, move normally again
+		if self.health == self.fullhealth then self.AIsmarts = 1 end
+	
+	-- if moving towards the playere AND when below health threshold, change move direction
+	elseif self.health <= math.floor(self.fullhealth / 3) then
+		self.AIsmarts = 2 
+	end
+
+	bigSquare.super.move(self, targetX, targetY, theTime)	
+end
+
+
+------------------------------------------------
+				-- Bullet Bill --
+
+class('bulletBill').extends(enemy)
+
+function bulletBill:init(x, y, theTime)	
+	self:setImage(gfx.image.new('Resources/Sprites/Enemy5')) --the Bullet Bill
+	self.type = ENEMY_TYPE.bulletBill
+	self.health = 6
+	self.speed = 0
+	self.targetSpeed = 5
+	self.damageAmount = 2
+	self.shakeStrength = CAMERA_SHAKE_STRENGTH.large
+	self.drop = { ITEM_TYPE.exp1, ITEM_TYPE.health, ITEM_TYPE.luck }
+	self.dropPercent = { 60, 39, 1}
+	self.rating = 2
+
+	self.rotateTimerSet = 1000
+	self.moveTimerSet = 2000
+	self.rotation = 0
+	self.savedRot = 0
+
+	bulletBill.super.init(self, x, y, theTime)
+end
+
+function bulletBill:move(targetX, targetY, theTime)
+	-- don't move; find player position and rotate towards it
+	if self.AIsmarts == 1 then
+		self.velocity = vec.new(0, 0)
+		self.directionVec = vec.new(targetX - self.x, targetY - self.y)
+
+		-- lerping to target FROM saved, so always reaches target rot at end of timer
+		local targetRot = math.deg(math.atan2(self.directionVec.y, self.directionVec.x)) - 90
+		targetRot = constrain(targetRot, 0, 360)
+		local diff = self.rotateTimerSet - (self.time - theTime)
+		local t = clamp(diff / self.rotateTimerSet, 0, 1)
+		self.rotation = mathp.lerp(self.savedRot, targetRot, t)
+		self:setRotation(self.rotation)
+		
+		if theTime >= self.time then
+			self.time = theTime + self.moveTimerSet
+			self.AIsmarts = 2
+		end
+
+	-- move towards found player position
+	elseif self.AIsmarts == 2 then
+		self.savedRot = self.rotation
+		if theTime >= self.time then
+			self.time = theTime + self.rotateTimerSet
+			self.AIsmarts = 1
+		end
+	end
+
+	bulletBill.super.move(self, targetX, targetY, theTime)
+end
+
+
+------------------------------------------------
+				-- Chunky Arms --
+
+class('chunkyArms').extends(enemy)
+
+function chunkyArms:init(x, y, theTime)	
+	self:setImage(gfx.image.new('Resources/Sprites/Enemy6'))
+	self.type = ENEMY_TYPE.chunkyArms
+	self.health = 66
+	self.speed = 0
+	self.targetSpeed = 0.5
+	self.damageAmount = 5
+	self.shakeStrength = CAMERA_SHAKE_STRENGTH.large
+	self.drop = { ITEM_TYPE.exp16, ITEM_TYPE.luck }
+	self.dropPercent = { 95, 5}
+	self.rating = 3
+
+	chunkyArms.super.init(self, x, y, theTime)
+end
+
+function chunkyArms:move(targetX, targetY, theTime)
+	self.directionVec = vec.new(targetX - self.x, targetY - self.y)
+	if theTime >= self.time then
+		self.time = theTime + 500
+		if self.health < (self.fullhealth / 3) then self.targetSpeed += 0.3 end
+		if self.targetSpeed > 4 then self.targetSpeed = 4 end
+		if self.health < self.fullhealth then 
+			self.health += 1
+			self.healthbar:heal(1)
+		end
+	end
+
+	chunkyArms.super.move(self, targetX, targetY)
+end
+
+
+-- +--------------------------------------------------------------+
+-- |                             Misc                             |
+-- +--------------------------------------------------------------+
 
 
 function enemy:damage(amount)
@@ -173,71 +378,35 @@ function expDropped(rate)
 	return expDrop[index]
 end
 
-function enemy:move(playerX, playerY, theTime)
-	if (self.type == 3 and self.AIsmarts == 1) then
-		directionVec = vec.new(playerX - self.x, playerY - self.y)
-		if (theTime >= (self.time + 1500)) then
-			self.time = theTime
-			self.AIsmarts = 2
-		end
-	elseif (self.type == 3 and self.AIsmarts == 2) then
-		directionVec = vec.new(self.x - playerX, self.y - playerY)
-		if (theTime >= (self.time + 1200)) then
-			self.time = theTime
-			self.AIsmarts = 1
-		end
-	elseif (self.type == 5 and self.AIsmarts == 1) then
-		directionVec = vec.new(playerX - self.x, playerY - self.y)
-		self.direction = directionVec
-		if (theTime >= (self.time + 1000)) then
-			self.time = theTime
-			self.AIsmarts = 2
-		end
-	elseif (self.type == 5 and self.AIsmarts == 2) then
-		directionVec = self.direction
-		if (theTime >= (self.time + 2000)) then
-			self.time = theTime
-			self.AIsmarts = 1
-		end
-	elseif (self.type == 4 and self.AIsmarts == 2) then
-		directionVec = vec.new(self.x - playerX, self.y - playerY)
-		if (theTime >= (self.time + 1000)) then
-			self.time = theTime
-			self.health += 2
-			self.healthbar:heal(2)
-		end
-		if (self.health == self.fullhealth) then self.AIsmarts = 1 end
-	elseif (self.type == 6) then
-		directionVec = vec.new(playerX - self.x, playerY - self.y)
-		if (theTime >= (self.time + 500)) then
-			self.time = theTime
-			if self.health < (self.fullhealth / 3) then self.targetSpeed += 0.3 end
-			if self.targetSpeed > 4 then self.targetSpeed = 4 end
-			if self.health < self.fullhealth then 
-				self.health += 1
-				self.healthbar:heal(1)
-			end
-		end
+
+-- +--------------------------------------------------------------+
+-- |                           Movement                           |
+-- +--------------------------------------------------------------+
+
+
+function enemy:collisionResponse(other)
+	local tag = other:getTag()
+	if tag == TAGS.player then
+		player:damage(self.damageAmount, self.shakeStrength, self.x, self.y)
+		self:damage(player:getPlayerReflectDamage())
+		return 'bounce'
 	else
-		directionVec = vec.new(playerX - self.x, playerY - self.y)
-		self.time = theTime
-		if (self.type == 4 and self.health <= math.floor(self.fullhealth / 3)) then self.AIsmarts = 2 end
+		return 'overlap'
 	end
+end
+
+
+-- Movement shared by all enemies
+function enemy:move(playerX, playerY)
+
+	-- Normalize the direction now that velocity is being calculated
+	self.directionVec:normalize()
 	
-	directionVec:normalize()
-	
-	-- velocity trying to get to direction - variable speed
-	self.velocity.x = clamp(self.velocity.x + directionVec.x * self.accel, -self.speed, self.speed)
-	self.velocity.y = clamp(self.velocity.y + directionVec.y * self.accel, -self.speed, self.speed)
+	-- velocity trying to get to direction - variable speed, mainly for bounce
+	self.velocity.x = clamp(self.velocity.x + self.directionVec.x * self.accel, -self.speed, self.speed)
+	self.velocity.y = clamp(self.velocity.y + self.directionVec.y * self.accel, -self.speed, self.speed)
 	if self.speed ~= self.targetSpeed then
 		self.speed = moveTowards(self.speed, self.targetSpeed, self.accel)
-	end
-
-	if (self.type == 5 and self.AIsmarts == 1) then
-		local tRadians = math.atan2(directionVec.y, directionVec.x)
-		self:setRotation(math.deg(tRadians) - 90)
-		self.velocity.x = 0
-		self.velocity.y = 0
 	end
 
 	-- Moving the enemy and attached UI
@@ -249,19 +418,20 @@ function enemy:move(playerX, playerY, theTime)
 	-- Bounce interactions
 	for i = 1, #collisions do
 		local bouncePoint = collisions[i].bounce
-		local normal = collisions[i].normal
-		if bouncePoint ~= nil then
+		
+		-- If a bounce was found, the perform necessary steps
+		if bouncePoint ~= nil then			
+
 			-- Setting velocity to bounce
 			local bounceDir = vec.new(bouncePoint.x - playerX, bouncePoint.y - playerY):normalized()
 			self.speed = maxSpeedCap
 			self.velocity = bounceDir * maxSpeedCap
 
 			-- If player is NOT moving towards enemy, don't solve warp problem - more natural movement
+			local normal = collisions[i].normal
 			local exitBounce = 0
-			if normal.x == -1 and inputX == -1 then exitBounce += 1 end		-- left side, pressing left
-			if normal.x == 1 and inputX == 1 then exitBounce += 1 end 		-- right side, pressing right
-			if normal.y == -1 and inputY == -1 then exitBounce += 1 end 	-- top side, pressing up
-			if normal.y == 1 and inputY == 1 then exitBounce += 1 end 		-- bot side, pressing down
+			if normal.x == inputX then exitBounce += 1 end		-- horizontal sides
+			if normal.y == inputY then exitBounce += 1 end 		-- vertical sides
 			if exitBounce == 0 then return end
 
 			-- Teleport the enemy a little bit away from the player on the bounce - solves warping issue during bounce when player moves towards enemy	

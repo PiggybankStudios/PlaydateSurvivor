@@ -25,26 +25,37 @@ function item:init(x, y, type)
 	self.type = type
 	if (self.type == ITEM_TYPE.health) then
 		self:setImage(gfx.image.new('Resources/Sprites/iHealth'))
+
 	elseif (self.type == ITEM_TYPE.weapon) then
 		self:setImage(gfx.image.new('Resources/Sprites/iWeapon'))
+
 	elseif (self.type == ITEM_TYPE.shield) then
 		self:setImage(gfx.image.new('Resources/Sprites/iShield'))
+
 	elseif (self.type == ITEM_TYPE.absorbAll) then
 		self:setImage(gfx.image.new('Resources/Sprites/iAbsorbAll'))
+
 	elseif (self.type == ITEM_TYPE.luck) then
 		self:setImage(gfx.image.new('Resources/Sprites/iLuck'))
+
 	elseif (self.type == ITEM_TYPE.exp1) then
 		self:setImage(gfx.image.new('Resources/Sprites/iEXP1'))
+
 	elseif (self.type == ITEM_TYPE.exp2) then
 		self:setImage(gfx.image.new('Resources/Sprites/iEXP2'))
+
 	elseif (self.type == ITEM_TYPE.exp3) then
 		self:setImage(gfx.image.new('Resources/Sprites/iEXP3'))
+
 	elseif (self.type == ITEM_TYPE.exp6) then
 		self:setImage(gfx.image.new('Resources/Sprites/iEXP6'))
+
 	elseif (self.type == ITEM_TYPE.exp9) then
 		self:setImage(gfx.image.new('Resources/Sprites/iEXP9'))
+
 	elseif (self.type == ITEM_TYPE.exp16) then
 		self:setImage(gfx.image.new('Resources/Sprites/iEXP16'))
+
 	else
 		-- default to exp1
 		self.type = ITEM_TYPE.exp1
@@ -60,12 +71,7 @@ end
 
 
 function item:collisionResponse(other)
-	local tag = other:getTag()
-	if tag == TAGS.player then
-		return 'overlap'
-	else --tag == walls
-		return 'overlap'
-	end 
+	return 'overlap'
 end
 
 

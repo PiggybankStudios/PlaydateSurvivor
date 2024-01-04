@@ -5,6 +5,7 @@ local pi <const> = math.pi
 -- |                             Misc                             |
 -- +--------------------------------------------------------------+
 
+
 function sign(x)
 	if x < 0 then
 		return -1
@@ -15,13 +16,20 @@ function sign(x)
 	end
 end
 
---
-function vecAngle(x, y, x2,  y2)
-	local a = math.atan2(y2, x2) - math.atan2(y, x)
-	return (a + pi) % (pi * 2) - pi
-end
---
 
+-- Keeps a value within range, allowing overflow
+function constrain(value, min, max)
+	if value > max then
+		value -= max
+	elseif value < min then
+		value += max
+	end
+	
+	return value
+end
+
+
+-- Keeps a value within range, ignoring overflow
 function clamp(value, min, max)
 	if value > max then
 		return max

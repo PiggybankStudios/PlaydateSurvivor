@@ -21,6 +21,7 @@ ZINDEX = {
 	default = 100
 }
 
+
 GAMESTATE = {
 	nothing = 0,
 	startscreen = 1,

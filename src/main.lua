@@ -33,9 +33,17 @@ elapsedTime = 0
 currentState = GAMESTATE.startscreen
 lastState = GAMESTATE.nothing
 
+
+-- +--------------------------------------------------------------+
+-- |                         Main Update                          |
+-- +--------------------------------------------------------------+
+
+
 function playdate.update()
 	dt = 1/20
 	elapsedTime = elapsedTime + dt
+
+	-- Start Screen
 	if currentState == GAMESTATE.startscreen then
 		if lastState == GAMESTATE.deathscreen then
 			closeDeadMenu()
@@ -47,6 +55,8 @@ function playdate.update()
 		else
 			updateMainManu()
 		end
+
+	-- Main Game
 	elseif currentState == GAMESTATE.maingame then
 		if lastState == GAMESTATE.startscreen then
 			gameScene()
@@ -61,11 +71,15 @@ function playdate.update()
 		end
 		updatePlayer(dt)
 		updateCamera(dt)
+
+	-- Pause Menu
 	elseif currentState == GAMESTATE.pausemenu then
 		if lastState ~= currentState then
 			lastState = currentState
 		end
 		updateCamera(dt)
+
+	-- Death Screen
 	elseif currentState == GAMESTATE.deathscreen then
 		if lastState ~= currentState then
 			openDeadMenu()
@@ -74,24 +88,36 @@ function playdate.update()
 			updateDeadManu()
 		end
 	end
+
 	gfx.sprite.update()
 end
+
+
+-- +--------------------------------------------------------------+
+-- |                     Game State Functions                     |
+-- +--------------------------------------------------------------+
+
 
 function resetGame()
 	print("empty")
 end
 
+
 function getGameState()
 	return currentState
 end
+
 
 function setGameState(newState)
 	currentState = newState
 end
 
+
 function restartGame()
 	reset = true
 end
+
+
 
 -- TO DO:
 	-- bullets are slow

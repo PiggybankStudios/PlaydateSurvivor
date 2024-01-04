@@ -62,9 +62,6 @@ function screenFlash()
 end
 
 
--- have a force quit for screen flash and timer, mainly for death screen
-
-
 local function manageScreenFlash()
 	if dsp.getInverted() == true and flashTimer <= currentTime then
 		dsp.setInverted(false)
