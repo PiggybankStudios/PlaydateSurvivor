@@ -119,7 +119,7 @@ function normalSquare:init(x, y, theTime)
 	self.damageAmount = 3
 	self.shakeStrength = CAMERA_SHAKE_STRENGTH.medium
 	self.drop = { ITEM_TYPE.exp1, ITEM_TYPE.health, ITEM_TYPE.shield }
-	self.dropPercent = { 75, 20, 5}
+	self.dropPercent = { 85, 10, 5}
 	self.rating = 1
 
 	normalSquare.super.init(self, x, y, theTime)
@@ -146,7 +146,7 @@ function bat:init(x, y, theTime)
 	self.damageAmount = 1
 	self.shakeStrength = CAMERA_SHAKE_STRENGTH.tiny
 	self.drop = { ITEM_TYPE.exp1, ITEM_TYPE.weapon, ITEM_TYPE.luck }
-	self.dropPercent = { 59, 40, 1}
+	self.dropPercent = { 54, 45, 1}
 	self.rating = 2
 	
 	bat.super.init(self, x, y, theTime)
@@ -159,7 +159,7 @@ function bat:move(targetX, targetY, theTime)
 	-- move towards player for some time
 	if self.AIsmarts == 1 then
 		if theTime >= self.time then
-			self.time = theTime + 1500
+			self.time = theTime + 1200
 			self.AIsmarts = 2
 		end
 
@@ -167,7 +167,7 @@ function bat:move(targetX, targetY, theTime)
 	elseif self.AIsmarts == 2 then
 		self.directionVec *= -1
 		if theTime >= self.time then
-			self.time = theTime + 1200
+			self.time = theTime + 1500
 			self.AIsmarts = 1
 		end
 	end
@@ -234,7 +234,7 @@ function bulletBill:init(x, y, theTime)
 	self.damageAmount = 2
 	self.shakeStrength = CAMERA_SHAKE_STRENGTH.large
 	self.drop = { ITEM_TYPE.exp1, ITEM_TYPE.health, ITEM_TYPE.luck }
-	self.dropPercent = { 60, 39, 1}
+	self.dropPercent = { 80, 19, 1}
 	self.rating = 2
 
 	self.rotateTimerSet = 1000

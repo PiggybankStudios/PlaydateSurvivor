@@ -715,7 +715,7 @@ function spawnMonsters()
 
 		local eType = math.random(1, 5)
 		local eAccel = 0.5
-
+		
 		--newEnemy = enemy(enemyX, enemyY, eType, theCurrTime)
 		newEnemy = createEnemy(enemyX, enemyY, eType, theCurrTime)
 		newEnemy:add()	

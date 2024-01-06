@@ -250,7 +250,7 @@ function addStats()
 		writings[#writings + 1] = newLetter
 	end
 	statrow += 1 --move on to the next line
-	lchars = lstrtochar("heal bonus: " .. tostring(pstats[17]) .. "%")
+	lchars = lstrtochar("heal bonus: " .. tostring(pstats[17]))
 	for lIndex,letter in pairs(lchars) do
 		newLetter = write((column + spacing * lIndex), (row + newline * statrow), letter, true)
 		newLetter:add()
