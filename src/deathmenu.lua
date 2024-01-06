@@ -36,12 +36,13 @@ end
 function updateDeadManu()
 	local theCurrTime = playdate.getCurrentTimeMilliseconds()
 	if theCurrTime > lastBlink then
-		lastBlink = theCurrTime + 500
 		if blinking then
+			lastBlink = theCurrTime + 300
 			promptSprite:remove()
 			blinking = false
 			--print("blink..")
 		else
+			lastBlink = theCurrTime + 700
 			promptSprite:add()
 			blinking = true
 		end

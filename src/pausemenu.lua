@@ -83,12 +83,13 @@ end
 function updatePauseManu()
 	local theCurrTime = playdate.getCurrentTimeMilliseconds()
 	if theCurrTime > lastBlink then
-		lastBlink = theCurrTime + 500
 		if blinking == true then
+			lastBlink = theCurrTime + 300
 			selectSprite:remove()
 			blinking = false
 			--print("blink..")
 		else
+			lastBlink = theCurrTime + 700
 			selectSprite:add()
 			blinking = true
 		end

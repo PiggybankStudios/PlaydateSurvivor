@@ -93,12 +93,13 @@ end
 function updateLevelUpManu()
 	local theCurrTime = playdate.getCurrentTimeMilliseconds()
 	if theCurrTime > lastBlink then
-		lastBlink = theCurrTime + 500
 		if blinking == true then
+			lastBlink = theCurrTime + 300
 			selectSprite:remove()
 			blinking = false
 			--print("blink..")
 		else
+			lastBlink = theCurrTime + 700
 			selectSprite:add()
 			blinking = true
 		end
@@ -273,6 +274,20 @@ function addStatOptions()
 		newLetter:add()
 		writings[#writings + 1] = newLetter
 	end
+	statrow += 1 --move on to the next line
+	lchars = lstrtochar("heal bonus: " .. tostring(pstats[17]) .. "%")
+	for lIndex,letter in pairs(lchars) do
+		newLetter = write((column + spacing * lIndex), (row + newline * statrow), letter, true)
+		newLetter:add()
+		writings[#writings + 1] = newLetter
+	end
+	statrow += 1 --move on to the next line
+	lchars = lstrtochar("vampire: " .. tostring(pstats[18]) .. "%")
+	for lIndex,letter in pairs(lchars) do
+		newLetter = write((column + spacing * lIndex), (row + newline * statrow), letter, true)
+		newLetter:add()
+		writings[#writings + 1] = newLetter
+	end
 end
 
 function addLevelOptions()
@@ -285,20 +300,21 @@ function addLevelOptions()
 	local stat1 = astats[randStat]
 	table.remove(astats,randStat)
 	
-	local randStat = math.random(1, #astats)
+	randStat = math.random(1, #astats)
 	local stat2 = astats[randStat]
 	table.remove(astats,randStat)
 	
-	local randStat = math.random(1, #astats)
+	randStat = math.random(1, #astats)
 	local stat3 = astats[randStat]
 	table.remove(astats,randStat)
+	
+	local stat4 = "empty"
 	if bonusStat == 1 then 
-		local randStat = math.random(1, #astats)
-		local stat4 = astats[randStat]
+		randStat = math.random(1, #astats)
+		stat4 = astats[randStat]
 		table.remove(astats,randStat)
-	else
-		local stat4 = "empty"
 	end
+	
 	level1Sprite:setImage(whatStatSprite(stat1,1))
 	level2Sprite:setImage(whatStatSprite(stat2,2))
 	level3Sprite:setImage(whatStatSprite(stat3,3))
@@ -335,7 +351,7 @@ function whatStatSprite(sel,slot)
 	elseif sel == "exp" then
 		theStat = 6
 		theImage = stat6Image
-		addStatDetails("bonus exp +" .. tostring(3 * levelBonus), slot)
+		addStatDetails("bonus exp +" .. tostring(levelBonus), slot)
 	elseif sel == "heal" then
 		theStat = 7
 		theImage = stat7Image

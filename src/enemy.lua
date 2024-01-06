@@ -148,7 +148,7 @@ function bat:init(x, y, theTime)
 	self.drop = { ITEM_TYPE.exp1, ITEM_TYPE.weapon, ITEM_TYPE.luck }
 	self.dropPercent = { 59, 40, 1}
 	self.rating = 2
-
+	
 	bat.super.init(self, x, y, theTime)
 end
 
