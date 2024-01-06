@@ -164,3 +164,12 @@ function letterSelect(letter)
 		return 26
 	end
 end
+
+function lstrtochar(lstring)
+	local lchar = {}
+	local lstr = lstring
+	for i = 1, #lstr do
+		lchar[i] = lstr:sub(i,i)
+	end
+	return lchar
+end

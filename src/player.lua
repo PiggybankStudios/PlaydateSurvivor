@@ -38,7 +38,7 @@ local spawnInc = 0
 
 -- Player
 local playerLevel = 0
-local maxHealth = 10
+local maxHealth = 15
 local health = maxHealth
 local playerSpeed = 50
 local playerAttackRate = 100
@@ -54,6 +54,8 @@ local playerBulletSpeed = 50
 local playerArmor = 0
 local playerDodge = 0
 local playerRunSpeed = 1
+local playerVampire = 0
+local playerHealBonus = 0
 local damageTimer = 0
 local playerHealthbar
 local playerExpbar
@@ -126,7 +128,7 @@ function player:damage(amount, camShakeStrength, enemyX, enemyY)
 		return
 	elseif invincible then
 		return
-	elseif math.random(1,100) < playerDodge then
+	elseif math.random(0,99) < playerDodge then
 		return
 	end
 
@@ -171,13 +173,14 @@ end
 
 function updateLevel()
 	playerLevel += 1
+	openLevelUpMenu()
+	setGameState(GAMESTATE.levelupmenu)
 	if math.floor(playerLevel / 5) == playerSlots then
 		updateSlots()
 	end
 	if math.floor(playerLevel / 3) == difficulty then
 		if difficulty < maxDifficulty then difficulty += 1 end
 	end
-	upgradeStat(math.random(1, 11))
 end
 
 function addShot()
@@ -194,6 +197,7 @@ end
 
 function addKill()
 	enemiesKilled += 1
+	if math.random(0,99) < playerVampire then heal(1) end
 end
 
 function addExpTotal(amount)
@@ -240,61 +244,51 @@ function incLuck()
 	end
 end
 
-function upgradeStat(stat)
-	local bonus = math.random(1, 2 + math.floor(playerLuck/20))
-	
+function upgradeStat(stat, bonus)
 	if stat == 1 then
-		maxHealth += bonus
-		playerHealthbar:updateMaxHealth(maxHealth)
-		print('health increased by ' .. tostring(5 * bonus))
+		playerArmor += bonus
+		print('armor increased by ' .. tostring(bonus))
 	elseif stat == 2 then
-		playerSpeed += 5 * bonus
-		print('speed increased by ' .. tostring(5 * bonus))
+		playerAttackRate -= 5 * bonus
+		print('attack rate increased by ' .. tostring(5 * bonus))
 	elseif stat == 3 then
+		playerBulletSpeed += bonus
+		print('bullet speed increased by ' .. tostring(bonus))
+	elseif stat == 4 then
+		playerGunDamage += bonus
+		print('damage increased by ' .. tostring(bonus))
+	elseif stat == 5 then
+		playerDodge += 3 * bonus
+		print('dodge increased by ' .. tostring(3 * bonus))
+	elseif stat == 6 then
+		playerExpBonus += bonus
+		print('bonus exp increased by ' .. tostring(bonus))
+	elseif stat == 7 then
+		playerHealBonus += bonus
+		print('heal increased by ' .. tostring(bonus))
+	elseif stat == 8 then
+		maxHealth += 2 * bonus
+		playerHealthbar:updateMaxHealth(maxHealth)
+		heal(2 * bonus)
+		print('health increased by ' .. tostring(2 * bonus))
+	elseif stat == 9 then
+		playerLuck += 5 * bonus
+		print('luck increased by ' .. tostring(5 * bonus))
+	elseif stat == 10 then
 		playerMagnet += 20 * bonus
 		itemAbsorberRange = playerMagnet
 		itemAbsorber:setSize(playerMagnet, playerMagnet)
 		itemAbsorber:setCollideRect(0, 0, playerMagnet, playerMagnet)
-		print('magnet increased by ' .. tostring(5 * bonus))
-	elseif stat == 4 then
-		playerGunDamage += 1 * bonus
-		print('damage luck increased by ' .. tostring(5 * bonus))
-	elseif stat == 5 then
-		playerReflectDamage += 1 * bonus
-		print('reflect increased by ' .. tostring(5 * bonus))
-	elseif stat == 6 then
-		playerExpBonus += 1 * bonus
-		print('bonus exp increased by ' .. tostring(5 * bonus))
-	elseif stat == 7 then
-		playerBulletSpeed += 1 * bonus
-		print('bullet speed increased by ' .. tostring(5 * bonus))
-	elseif stat == 8 then
-		playerArmor += 1 * bonus
-		print('armor increased by ' .. tostring(1 * bonus))
-	elseif stat == 9 then
-		playerAttackRate -= 5 * bonus
-		print('attack rate increased by ' .. tostring(5 * bonus))
-		if playerAttackRate < 5 then 
-			playerAttackRate = 5
-			print('attack rate maxed')
-			upgradeStat(math.random(1, 8))
-		end
-	elseif stat == 10 then
-		playerLuck += 5 * bonus
-		print('luck increased by ' .. tostring(5 * bonus))
-		if playerLuck > 100 then 
-			playerLuck = 100
-			print('luck maxed')
-			upgradeStat(math.random(1, 8))
-		end 
+		print('magnet increased by ' .. tostring(20 * bonus))
 	elseif stat == 11 then
-		playerDodge += 1 * bonus
-		print('dodge increased by ' .. tostring(1 * bonus))
-		if playerDodge > 90 then 
-			playerLuck = 90
-			print('luck maxed')
-			upgradeStat(math.random(1, 8))
-		end 
+		playerReflectDamage += bonus
+		print('reflect increased by ' .. tostring(bonus))
+	elseif stat == 12 then
+		playerSpeed += 5 * bonus
+		print('speed increased by ' .. tostring(5 * bonus))
+	elseif stat == 13 then
+		playerVampire += 5 * bonus
+		print('vampire increased by ' .. tostring(5 * bonus))
 	else
 		print('error')
 	end
@@ -311,7 +305,7 @@ function clearStats()
 	maxDifficulty = 15
 	spawnInc = 0
 	playerLevel = 0
-	maxHealth = 10
+	maxHealth = 15
 	health = maxHealth
 	playerSpeed = 50
 	playerAttackRate = 100
@@ -327,6 +321,8 @@ function clearStats()
 	playerArmor = 0
 	playerDodge = 0
 	playerRunSpeed = 1
+	playerVampire = 0
+	playerHealBonus = 0
 	damageTimer = 0
 	theShotTimes = {0, 0, 0, 0}
 	theGunSlots = {1, 0, 0, 0}
@@ -370,11 +366,31 @@ function getPlayerStats()
 	stats[#stats + 1] = playerBulletSpeed
 	stats[#stats + 1] = playerArmor
 	stats[#stats + 1] = playerDodge
+	stats[#stats + 1] = playerHealBonus
+	stats[#stats + 1] = playerVampire
+	return stats
+end
+
+function getAvailLevelUpStats()
+	local stats = {}
+	stats[#stats + 1] = "armor" --1 playerArmor
+	if playerAttackRate > 5 then stats[#stats + 1] = "attrate" end --2 playerAttackRate
+	stats[#stats + 1] = "bullspeed" --3 playerBulletSpeed
+	stats[#stats + 1] = "damage" --4 playerGunDamage
+	if playerDodge < 90 then stats[#stats + 1] = "dodge" end --5 playerDodge
+	stats[#stats + 1] = "exp" --6 playerExpBonus
+	stats[#stats + 1] = "heal" --7 playerHealBonus
+	stats[#stats + 1] = "health" --8 maxHealth
+	if playerLuck < 100 then stats[#stats + 1] = "luck"	end --9 playerLuck
+	stats[#stats + 1] = "magnet" --10 playerMagnet
+	stats[#stats + 1] = "reflect" --11 playerReflectDamage
+	stats[#stats + 1] = "speed" --12 playerSpeed
+	if playerVampire < 100 then stats[#stats + 1] = "vampire" end --13 playerVampire
 	return stats
 end
 
 function heal(amount)
-	health += amount
+	health += amount + playerHealBonus
 	if health > maxHealth then health = maxHealth end
 
 	playerHealthbar:heal(amount)
@@ -474,6 +490,7 @@ crankAngle = physicalCrankAngle - 90
 function playdate.leftButtonDown()
 	inputX = -1
 	if getGameState() == GAMESTATE.pausemenu then pauseMenuMoveL() end
+	if getGameState() == GAMESTATE.levelupmenu then pauseLevelUpMoveL() end
 end
 function playdate.leftButtonUp()
 	inputX = 0
@@ -481,6 +498,7 @@ end
 function playdate.rightButtonDown()
 	inputX = 1
 	if getGameState() == GAMESTATE.pausemenu then pauseMenuMoveR() end
+	if getGameState() == GAMESTATE.levelupmenu then pauseLevelUpMoveR() end
 end
 function playdate.rightButtonUp()
 	inputX = 0
@@ -513,6 +531,11 @@ function playdate.AButtonDown()
 	elseif getGameState() == GAMESTATE.maingame then
 		openPauseMenu()
 		setGameState(GAMESTATE.pausemenu)
+	elseif getGameState() == GAMESTATE.levelupmenu then
+		upgradeStat(levelUpSelection(),levelUpBonus())
+		closeLevelUpMenu()
+		Unpaused = true
+		setGameState(GAMESTATE.maingame)
 	elseif getGameState() == GAMESTATE.pausemenu then
 		if pauseSelection() == 0 then
 			closePauseMenu()

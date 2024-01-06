@@ -6,6 +6,9 @@ local halfScreenWidth <const> = screenWidth / 2
 local halfScreenHeight <const> = screenHeight / 2
 local menuSpot = 0
 
+local blinking = false
+local lastBlink = 0
+
 local writings = {}
 
 --setup main menu
@@ -53,6 +56,7 @@ function openPauseMenu()
 	gun2Sprite:add()
 	gun3Sprite:add()
 	gun4Sprite:add()
+	blinking = true
 	addStats()
 	addDifficulty()
 	--print("paused")
@@ -60,7 +64,7 @@ end
 
 function closePauseMenu()
 	pauseSprite:remove()
-	selectSprite:remove()
+	if blinking == true then selectSprite:remove() end
 	gun1Sprite:remove()
 	gun2Sprite:remove()
 	gun3Sprite:remove()
@@ -74,6 +78,21 @@ function closePauseMenu()
 		table.remove(writings,gIndex)
 	end
 	--print("unpaused")
+end
+
+function updatePauseManu()
+	local theCurrTime = playdate.getCurrentTimeMilliseconds()
+	if theCurrTime > lastBlink then
+		lastBlink = theCurrTime + 500
+		if blinking == true then
+			selectSprite:remove()
+			blinking = false
+			--print("blink..")
+		else
+			selectSprite:add()
+			blinking = true
+		end
+	end
 end
 
 function pauseMenuMoveR()
@@ -229,15 +248,20 @@ function addStats()
 		newLetter:add()
 		writings[#writings + 1] = newLetter
 	end
-end
-
-function lstrtochar(lstring)
-	local lchar = {}
-	local lstr = lstring
-	for i = 1, #lstr do
-		lchar[i] = lstr:sub(i,i)
+	statrow += 1 --move on to the next line
+	lchars = lstrtochar("heal bonus: " .. tostring(pstats[17]) .. "%")
+	for lIndex,letter in pairs(lchars) do
+		newLetter = write((column + spacing * lIndex), (row + newline * statrow), letter, true)
+		newLetter:add()
+		writings[#writings + 1] = newLetter
 	end
-	return lchar
+	statrow += 1 --move on to the next line
+	lchars = lstrtochar("vampire: " .. tostring(pstats[18]) .. "%")
+	for lIndex,letter in pairs(lchars) do
+		newLetter = write((column + spacing * lIndex), (row + newline * statrow), letter, true)
+		newLetter:add()
+		writings[#writings + 1] = newLetter
+	end
 end
 
 function addDifficulty()
