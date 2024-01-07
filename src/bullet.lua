@@ -71,14 +71,16 @@ function bullet:collisionResponse(other)
 		return 'overlap'
 	elseif tag == TAGS.enemy then
 		if self.type == 7 or self.type == 8 then
-			if self.timer < getCurrTime() then 
+			if self.timer < getCurrTime() then
 				other:damage(self.damage)
+				other:potentialStun()
 				self.timer = getCurrTime() + 50
 			end
 			return 'overlap'
 		else
 			self.lifeTime = 0 
 			other:damage(self.damage)
+			other:potentialStun()
 			return 'freeze'
 		end
 	else --tag == walls

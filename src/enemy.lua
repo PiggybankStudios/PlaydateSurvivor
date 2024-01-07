@@ -57,6 +57,7 @@ function enemy:init(x, y, theTime)
 	self.fullhealth = self.health
 
 	self.time = theTime
+	self.stunned = 0
 	
 	self.AIsmarts = 1
 	self:moveTo(x, y)
@@ -316,12 +317,13 @@ end
 -- +--------------------------------------------------------------+
 -- |                             Misc                             |
 -- +--------------------------------------------------------------+
-
+function enemy:potentialStun()
+	if math.random(0,99) < getStun() then self.stunned = getCurrTime() + 100 end
+end
 
 function enemy:damage(amount)
 	self.health -= amount
 	if self.health <= 0 then self.health = 0 end
-
 	self.healthbar:damage(amount)
 	addDamageDealt(amount)
 end
@@ -410,10 +412,15 @@ function enemy:move(playerX, playerY)
 	end
 
 	-- Moving the enemy and attached UI
-	local x = self.x + self.velocity.x
-	local y = self.y + self.velocity.y
-	_, _, collisions = self:moveWithCollisions(x, y)
-	self.healthbar:moveTo(x, y - healthbarOffsetY)
+	if self.stunned > getCurrTime() then
+		_, _, collisions = self:moveWithCollisions(self.x, self.y)
+		self.healthbar:moveTo(self.x, self.y - healthbarOffsetY)
+	else
+		local x = self.x + self.velocity.x
+		local y = self.y + self.velocity.y
+		_, _, collisions = self:moveWithCollisions(x, y)
+		self.healthbar:moveTo(x, y - healthbarOffsetY)
+	end
 
 	-- Bounce interactions
 	for i = 1, #collisions do

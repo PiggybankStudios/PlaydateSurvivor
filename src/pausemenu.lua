@@ -271,6 +271,13 @@ function addStats()
 		newLetter:add()
 		writings[#writings + 1] = newLetter
 	end
+	statrow += 1 --move on to the next line
+	lchars = lstrtochar("stun: " .. tostring(pstats[19]) .. "%")
+	for lIndex,letter in pairs(lchars) do
+		newLetter = write((column + spacing * lIndex), (row + newline * statrow), letter, true)
+		newLetter:add()
+		writings[#writings + 1] = newLetter
+	end
 end
 
 function addDifficulty()

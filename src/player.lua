@@ -60,6 +60,8 @@ local playerRunSpeed = 1
 local playerVampire = 0
 local playerVampireMax = 100 --limit
 local playerHealBonus = 0
+local playerStunChance = 0
+local playerStunChanceMax = 100
 local damageTimer = 0
 local playerHealthbar
 local playerExpbar
@@ -241,6 +243,10 @@ function getLuck()
 	return playerLuck
 end
 
+function getStun()
+	return playerStunChance
+end
+
 function incLuck()
 	playerLuck += 5
 	print('luck increased by 5')
@@ -296,6 +302,10 @@ function upgradeStat(stat, bonus)
 		playerVampire += 5 * bonus
 		if playerVampire > playerVampireMax then playerVampire = playerVampireMax end
 		print('vampire increased by ' .. tostring(5 * bonus))
+	elseif stat == 14 then
+		playerStunChance += 5 * bonus
+		if playerStunChance > playerStunChanceMax then playerStunChance = playerStunChanceMax end
+		print('vampire increased by ' .. tostring(5 * bonus))
 	else
 		print('error')
 	end
@@ -330,6 +340,7 @@ function clearStats()
 	playerRunSpeed = 1
 	playerVampire = 0
 	playerHealBonus = 0
+	playerStunChance = 0
 	damageTimer = 0
 	theShotTimes = {0, 0, 0, 0}
 	theGunSlots = {1, 0, 0, 0}
@@ -376,6 +387,7 @@ function getPlayerStats()
 	stats[#stats + 1] = playerDodge
 	stats[#stats + 1] = playerHealBonus
 	stats[#stats + 1] = playerVampire
+	stats[#stats + 1] = playerStunChance
 	return stats
 end
 
@@ -394,6 +406,7 @@ function getAvailLevelUpStats()
 	stats[#stats + 1] = "reflect" --11 playerReflectDamage
 	stats[#stats + 1] = "speed" --12 playerSpeed
 	if playerVampire < playerVampireMax then stats[#stats + 1] = "vampire" end --13 playerVampire
+	if playerStunChance < playerStunChanceMax then stats[#stats + 1] = "stun" end --14 playerVampire
 	return stats
 end
 

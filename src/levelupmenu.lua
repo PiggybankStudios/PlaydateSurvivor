@@ -42,6 +42,7 @@ local stat10Image = gfx.image.new('Resources/Sprites/lMagnet')
 local stat11Image = gfx.image.new('Resources/Sprites/lReflect')
 local stat12Image = gfx.image.new('Resources/Sprites/lSpeed')
 local stat13Image = gfx.image.new('Resources/Sprites/lVampire')
+local stat14Image = gfx.image.new('Resources/Sprites/lStun')
 local level1Sprite = gfx.sprite.new(statxImage)
 local level2Sprite = gfx.sprite.new(statxImage)
 local level3Sprite = gfx.sprite.new(statxImage)
@@ -288,6 +289,13 @@ function addStatOptions()
 		newLetter:add()
 		writings[#writings + 1] = newLetter
 	end
+	statrow += 1 --move on to the next line
+	lchars = lstrtochar("stun: " .. tostring(pstats[19]) .. "%")
+	for lIndex,letter in pairs(lchars) do
+		newLetter = write((column + spacing * lIndex), (row + newline * statrow), letter, true)
+		newLetter:add()
+		writings[#writings + 1] = newLetter
+	end
 end
 
 function addLevelOptions()
@@ -380,6 +388,10 @@ function whatStatSprite(sel,slot)
 		theStat = 13
 		theImage = stat13Image
 		addStatDetails("vampire % +" .. tostring(5 * levelBonus), slot)
+	elseif sel == "stun" then
+		theStat = 14
+		theImage = stat14Image
+		addStatDetails("stun % +" .. tostring(5 * levelBonus), slot)
 	else
 		theStat = 0
 		theImage = statxImage
