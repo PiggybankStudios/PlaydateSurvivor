@@ -46,7 +46,7 @@ local playerAttackRateMin = 10 --limit
 local playerExp = 0
 local startingExpForLevel = 5
 local playerMagnet = 50
-local playerSlots = 4
+local playerSlots = 1
 local playerGunDamage = 1
 local playerReflectDamage = 0
 local playerExpBonus = 0
@@ -783,7 +783,7 @@ function spawnMonsters()
 		enemyX = player.x + (halfScreenWidth + (halfScreenWidth * distance.x)) * direction.x
 		enemyY = player.y + (halfScreenHeight + (halfScreenHeight * distance.y)) * direction.y
 
-		local eType = 3--math.random(1, 5)
+		local eType = math.random(1, 5)
 		local eAccel = 0.5
 		
 		--newEnemy = enemy(enemyX, enemyY, eType, theCurrTime)
