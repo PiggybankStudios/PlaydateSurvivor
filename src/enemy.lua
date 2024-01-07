@@ -157,14 +157,14 @@ function bat:move(targetX, targetY, theTime)
 	-- direction toward player
 	self.directionVec = vec.new(targetX - self.x, targetY - self.y)
 
-	-- move towards player for some time
+	-- move away from player for some time
 	if self.AIsmarts == 1 then
 		if theTime >= self.time then
-			self.time = theTime + 1200
+			self.time = theTime + 1000
 			self.AIsmarts = 2
 		end
 
-	-- move away from player for some other time
+	-- move toward player for some other time
 	elseif self.AIsmarts == 2 then
 		self.directionVec *= -1
 		if theTime >= self.time then
@@ -206,8 +206,10 @@ function bigSquare:move(targetX, targetY, theTime)
 		self.directionVec *= -1
 		if theTime >= self.time then
 			self.time = theTime + 1000
-			self.health += 2
-			self.healthbar:heal(2)
+			local healnum = 2 * math.floor(getDifficulty() / scaleHealth)
+			self.health += healnum
+			if self.health > self.fullhealth then self.health = self.fullhealth end
+			self.healthbar:heal(healnum)
 		end
 		-- once finished healing, move normally again
 		if self.health == self.fullhealth then self.AIsmarts = 1 end
@@ -302,11 +304,13 @@ function chunkyArms:move(targetX, targetY, theTime)
 	self.directionVec = vec.new(targetX - self.x, targetY - self.y)
 	if theTime >= self.time then
 		self.time = theTime + 500
-		if self.health < (self.fullhealth / 3) then self.targetSpeed += 0.3 end
-		if self.targetSpeed > 4 then self.targetSpeed = 4 end
+		if self.health < (self.fullhealth / 2) then self.targetSpeed += 0.3 end
+		if self.targetSpeed > 5 then self.targetSpeed = 5 end
 		if self.health < self.fullhealth then 
-			self.health += 1
-			self.healthbar:heal(1)
+			local healnum = 1 + math.floor(getDifficulty() / scaleHealth)
+			self.health += healnum
+			if self.health > self.fullhealth then self.health = self.fullhealth end
+			self.healthbar:heal(healnum)
 		end
 	end
 

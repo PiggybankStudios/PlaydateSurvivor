@@ -689,7 +689,7 @@ function spawnBullets()
 						bullets[#bullets + 1] = newBullet
 						theGunLogic[sIndex] += 1
 					else
-						theShotTimes[sIndex] = theCurrTime + playerAttackRate * 4
+						theShotTimes[sIndex] = theCurrTime + playerAttackRate * 3
 						theGunLogic[sIndex] = 0
 					end
 				elseif theGunSlots[sIndex] == 6 then -- grenade
@@ -702,7 +702,7 @@ function spawnBullets()
 					newBullet = bullet(player.x, player.y, newRotation, (newLifeTime + 4500), theGunSlots[sIndex], sIndex)
 					newBullet:add()
 					bullets[#bullets + 1] = newBullet
-				elseif theGunSlots[sIndex] == 8 then -- Rang
+				elseif theGunSlots[sIndex] == 8 then -- wave
 					theShotTimes[sIndex] = theCurrTime + playerAttackRate * 3
 					newBullet = bullet(player.x, player.y, newRotation, (newLifeTime), theGunSlots[sIndex], sIndex)
 					newBullet:add()

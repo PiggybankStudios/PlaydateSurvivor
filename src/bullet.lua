@@ -25,7 +25,7 @@ function bullet:init(x, y, rotation, newLifeTime, type, index)
 	elseif type == 6 then
 		self:setImage(gfx.image.new('Resources/Sprites/BulletGrenade'))
 		self.speed = getPayerBulletSpeed() * 2
-		self.damage = 1 + math.floor(getPlayerGunDamage() / 2)
+		self.damage = 2 + getPlayerGunDamage()
 	elseif type == 7 then
 		self:setImage(gfx.image.new('Resources/Sprites/BulletRanggun'))
 		self.speed = getPayerBulletSpeed() * 2
