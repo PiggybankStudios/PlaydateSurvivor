@@ -21,6 +21,7 @@ import "item"
 import "mainmenu"
 import "deathmenu"
 import "levelupmenu"
+import "weaponmenu"
 
 local gfx <const> = playdate.graphics
 
@@ -87,6 +88,15 @@ function playdate.update()
 			lastState = currentState
 		end
 		updateLevelUpManu()
+		updateCamera(dt)
+
+
+	-- Level Up Menu
+	elseif currentState == GAMESTATE.newweaponmenu then
+		if lastState ~= currentState then
+			lastState = currentState
+		end
+		updateWeaponMenu()
 		updateCamera(dt)
 
 	-- Death Screen

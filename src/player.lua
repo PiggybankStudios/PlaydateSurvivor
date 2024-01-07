@@ -46,7 +46,7 @@ local playerAttackRateMin = 10 --limit
 local playerExp = 0
 local startingExpForLevel = 5
 local playerMagnet = 50
-local playerSlots = 1
+local playerSlots = 4
 local playerGunDamage = 1
 local playerReflectDamage = 0
 local playerExpBonus = 0
@@ -169,6 +169,10 @@ function clearAllThings()
 	clearMonsters()
 	clearBullets()
 	clearPauseMenu()
+end
+
+function getPlayerSlots()
+	return playerSlots
 end
 
 function updateSlots()
@@ -429,15 +433,16 @@ function shield(amount)
 end
 
 
-function newWeapon(slot, weapon)
-	if theGunSlots[slot] == 0 then
-		theGunSlots[slot] = math.random(1, 8) --where random gun is assigned
-	else
-		theGunSlots[slot] += weapon
-		if theGunSlots[slot] > 8 then theGunSlots[slot] -= 8 end
-	end
-	
-	updateMenuWeapon(slot, theGunSlots[slot])
+function newWeaponGrabbed(weapon)
+	setGameState(GAMESTATE.newweaponmenu)
+	openWeaponMenu(weapon)
+	--theGunSlots[slot] = 8 
+	--updateMenuWeapon(slot, theGunSlots[slot])
+end
+
+function newWeaponChosen(weapon, slot)
+	theGunSlots[slot] = weapon 
+	updateMenuWeapon(slot, weapon)
 end
 
 
@@ -526,12 +531,14 @@ function playdate.rightButtonUp()
 end
 function playdate.upButtonDown()
 	inputY = -1
+	if getGameState() == GAMESTATE.newweaponmenu then weaponMenuMoveU() end
 end
 function playdate.upButtonUp()
 	inputY = 0
 end
 function playdate.downButtonDown()
 	inputY = 1
+	if getGameState() == GAMESTATE.newweaponmenu then weaponMenuMoveD() end
 end
 function playdate.downButtonUp()
 	inputY = 0
@@ -555,6 +562,13 @@ function playdate.AButtonDown()
 	elseif getGameState() == GAMESTATE.levelupmenu then
 		upgradeStat(levelUpSelection(),levelUpBonus())
 		closeLevelUpMenu()
+		Unpaused = true
+		setGameState(GAMESTATE.maingame)
+	elseif getGameState() == GAMESTATE.newweaponmenu then
+		if newWeaponSlot() ~= 5 then
+			newWeaponChosen(newWeaponGot(), newWeaponSlot())
+		end
+		closeWeaponMenu()
 		Unpaused = true
 		setGameState(GAMESTATE.maingame)
 	elseif getGameState() == GAMESTATE.pausemenu then
@@ -769,7 +783,7 @@ function spawnMonsters()
 		enemyX = player.x + (halfScreenWidth + (halfScreenWidth * distance.x)) * direction.x
 		enemyY = player.y + (halfScreenHeight + (halfScreenHeight * distance.y)) * direction.y
 
-		local eType = math.random(1, 5)
+		local eType = 3--math.random(1, 5)
 		local eAccel = 0.5
 		
 		--newEnemy = enemy(enemyX, enemyY, eType, theCurrTime)
@@ -848,7 +862,7 @@ function updateItems(dt)
 				heal(3)
 				addItemsGrabbed()
 			elseif items[iIndex].type == ITEM_TYPE.weapon then
-				newWeapon(math.random(1, playerSlots), math.random(1, 7))
+				newWeaponGrabbed(math.random(1, 8))
 				addItemsGrabbed()
 			elseif items[iIndex].type == ITEM_TYPE.shield then
 				shield(10000)
