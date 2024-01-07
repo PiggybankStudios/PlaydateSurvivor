@@ -32,6 +32,10 @@ local gun1Image = gfx.image.new('Resources/Sprites/gPea')
 local gun2Image = gfx.image.new('Resources/Sprites/gCannon')
 local gun3Image = gfx.image.new('Resources/Sprites/gMini')
 local gun4Image = gfx.image.new('Resources/Sprites/gShot')
+local gun5Image = gfx.image.new('Resources/Sprites/gBurst')
+local gun6Image = gfx.image.new('Resources/Sprites/gGrenade')
+local gun7Image = gfx.image.new('Resources/Sprites/gRang')
+local gun8Image = gfx.image.new('Resources/Sprites/gWave')
 local gun1Sprite = gfx.sprite.new(gun1Image)
 local gun2Sprite = gfx.sprite.new(gunxImage)
 local gun3Sprite = gfx.sprite.new(gunxImage)
@@ -128,11 +132,15 @@ end
 
 function updateMenuWeapon(slot, gun)
 	local newGun = gun0Image
-	if gun == 0 then newGun = gun0Image
-	elseif gun == 1 then newGun = gun1Image
-	elseif gun == 2 then newGun = gun2Image
-	elseif gun == 3 then newGun = gun3Image
-	elseif gun == 4 then newGun = gun4Image
+	if gun == 0 then newGun = gun0Image --empty
+	elseif gun == 1 then newGun = gun1Image --Pea
+	elseif gun == 2 then newGun = gun2Image --Cannon
+	elseif gun == 3 then newGun = gun3Image --Mini
+	elseif gun == 4 then newGun = gun4Image --Shot
+	elseif gun == 5 then newGun = gun5Image --Burst
+	elseif gun == 6 then newGun = gun6Image --Grenade
+	elseif gun == 7 then newGun = gun7Image --Rang
+	elseif gun == 8 then newGun = gun8Image --Wave
 	else newGun = gunxImage
 	end
 	
