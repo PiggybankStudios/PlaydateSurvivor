@@ -158,10 +158,11 @@ end
 
 function addWeaponDetails(theString)
 	local spacing = 4
-	local row = 140
-	local column = 130
+	local row = 132
+	local column = 148
 	local lchars = {}
 	lchars = lstrtochar(theString)
+	column -= math.floor(#lchars * spacing / 2)
 	for lIndex,letter in pairs(lchars) do
 		newLetter = write((column + spacing * lIndex), row, letter, true)
 		newLetter:add()

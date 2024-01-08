@@ -14,6 +14,7 @@ import "pausemenu"
 import "write"
 import "expbar"
 import "enemy"
+import "controls"
 import "player"
 import "camera"
 import "gameScene"
@@ -26,6 +27,7 @@ import "weaponmenu"
 local gfx <const> = playdate.graphics
 
 local reset = false
+local recycleValue = 0
 
 gfx.setColor(gfx.kColorWhite)
 gfx.fillRect(0, 0, 400, 240)
@@ -40,6 +42,9 @@ lastState = GAMESTATE.nothing
 -- |                         Main Update                          |
 -- +--------------------------------------------------------------+
 
+function recycleGun(value)
+	recycleValue = value
+end
 
 function playdate.update()
 	dt = 1/20
@@ -70,6 +75,10 @@ function playdate.update()
 			reset = false
 		elseif lastState ~= currentState then
 			lastState = currentState
+			if recycleValue ~= 0 then
+				addEXP(recycleValue)
+				recycleValue = 0
+			end
 		end
 		updatePlayer(dt)
 		updateCamera(dt)
