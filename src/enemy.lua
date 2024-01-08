@@ -205,12 +205,9 @@ function medic:move(targetX, targetY, theTime)
 	if self.AIsmarts == 2 then
 		self.directionVec *= -1
 		if theTime >= self.time then
-			print("healing")
-			print(tostring(self.health))
 			self.time = theTime + 1000
 			self.healthbar:heal(2 * (1 + math.floor(getDifficulty() / scaleHealth)))
 			self.health = self.healthbar:currentHP()
-			print(tostring(self.health))
 		end
 		-- once finished healing, move normally again
 		if self.health == self.fullhealth then self.AIsmarts = 1 end
