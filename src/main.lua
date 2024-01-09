@@ -24,6 +24,7 @@ import "deathmenu"
 local gfx <const> = playdate.graphics
 
 local reset = false
+local currentFrame = 0
 
 gfx.setColor(gfx.kColorWhite)
 gfx.fillRect(0, 0, 400, 240)
@@ -42,6 +43,7 @@ lastState = GAMESTATE.nothing
 function playdate.update()
 	dt = 1/20
 	elapsedTime = elapsedTime + dt
+	currentFrame = (currentFrame + 1) % 60
 
 	-- Start Screen
 	if currentState == GAMESTATE.startscreen then
@@ -71,6 +73,7 @@ function playdate.update()
 		end
 		updatePlayer(dt)
 		updateCamera(dt)
+		updateEnemies(dt, currentFrame)
 
 	-- Pause Menu
 	elseif currentState == GAMESTATE.pausemenu then
@@ -137,5 +140,9 @@ end
 
 -- My next project:
 	-- enemy management
-	-- bullet management
+	-- camera setoffset INSTEAD of draw offset
+	-- bullet management -- push image contexts?
 	-- calc stuff in frame chunks
+	-- playdate Itch.io page, updates to playdate discord with dev logs
+
+-- Healthbar bug -- fix asap

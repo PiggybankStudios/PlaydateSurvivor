@@ -6,8 +6,6 @@ local mathFloor <const> = math.floor
 
 local healthbarOffsetY <const> = 30
 local setDamageTimer <const> = 200
-local halfScreenWidth <const> = playdate.display.getWidth() / 2
-local halfScreenHeight <const> = playdate.display.getHeight() / 2
 
 -- Sprite
 playerSheet = gfx.imagetable.new('Resources/Sheets/player')
@@ -34,13 +32,13 @@ local itemsGrabbed = 0
 -- difficulty
 local difficulty = 1
 local maxDifficulty = 15
-local spawnInc = 0
 
 -- Player
 local playerLevel = 0
 local maxHealth = 10
 local health = maxHealth
 local playerSpeed = 50
+local playerVelocity = vec.new(0, 0)
 local playerAttackRate = 100
 local playerExp = 0
 local startingExpForLevel = 5
@@ -75,10 +73,6 @@ theGunSlots = {1, 0, 0, 0}
 -- Particles
 particles = {}
 
--- Enemies
-enemies = {}
-theSpawnTime = 0
-
 -- Items
 items = {}
 invincibleTime = 0
@@ -104,17 +98,6 @@ function addPlayerSpritesToList()
 	playerHealthbar = healthbar(player.x, player.y - healthbarOffsetY, health)
 	playerExpbar = expbar(startingExpForLevel)
 	movePlayerWithCollider(150,150) -- move to starting location
-end
-
-
--- Moves both player sprite and collider - flooring stops jittering b/c only integers
-function movePlayerWithCollider(x, y)
-	local floorX = mathFloor(x)
-	local floorY = mathFloor(y)
-	player:moveTo(floorX, floorY)
-	collider:moveTo(floorX, floorY)
-	itemAbsorber:moveTo(floorX, floorY)
-	playerHealthbar:moveTo(floorX, floorY - healthbarOffsetY)
 end
 
 
@@ -148,7 +131,6 @@ function player:damage(amount, camShakeStrength, enemyX, enemyY)
 end
 
 
-
 function handleDeath()
 	setGameState(GAMESTATE.deathscreen)
 	clearAllThings()
@@ -157,7 +139,7 @@ end
 
 function clearAllThings()
 	clearItems()
-	clearMonsters()
+	clearEnemies()
 	clearBullets()
 	clearPauseMenu()
 end
@@ -330,7 +312,7 @@ function clearStats()
 	damageTimer = 0
 	theShotTimes = {0, 0, 0, 0}
 	theGunSlots = {1, 0, 0, 0}
-	theSpawnTime = 0
+	--theSpawnTime = 0
 	invincibleTime = 0
 	invincible = false
 	Unpaused = false
@@ -500,6 +482,8 @@ end
 
 function playdate.BButtonDown()
 	playerRunSpeed = 2
+
+	createEnemy(player.x + 100, player.y, 5, theCurrTime)
 end
 
 function playdate.BButtonUp()
@@ -555,12 +539,30 @@ function movePlayer(dt)
 	end
 
 	local moveSpeed = playerSpeed * playerRunSpeed * dt
-	local goalX = player.x + inputX * moveSpeed
-	local goalY = player.y + inputY * moveSpeed
+	playerVelocity.x = inputX * moveSpeed
+	playerVelocity.y = inputY * moveSpeed
+	local goalX = player.x + playerVelocity.x
+	local goalY = player.y + playerVelocity.y
 
 	-- The actual position is determined via collision response above
 	local actualX, actualY, collisions = collider:checkCollisions(goalX, goalY)
 	movePlayerWithCollider(actualX, actualY)
+end
+
+
+-- Moves both player sprite and collider - flooring stops jittering b/c only integers
+function movePlayerWithCollider(x, y)
+	local floorX = mathFloor(x)
+	local floorY = mathFloor(y)
+	player:moveTo(floorX, floorY)
+	collider:moveTo(floorX, floorY)
+	itemAbsorber:moveTo(floorX, floorY)
+	playerHealthbar:moveTo(floorX, floorY - healthbarOffsetY)
+end
+
+
+function getPlayerVelocity()
+	return playerVelocity
 end
 
 
@@ -671,7 +673,7 @@ end
 -- |                       Monster Management                     |
 -- +--------------------------------------------------------------+
 
-
+--[[
 function spawnMonsters()
 	-- Movement
 	if Unpaused then theSpawnTime += theLastTime end
@@ -737,7 +739,7 @@ function clearMonsters()
 		table.remove(enemies,eIndex)
 	end
 end
-
+]]--
 
 -- +--------------------------------------------------------------+
 -- |                       Item Management                        |
@@ -842,7 +844,7 @@ function updatePlayer(dt)
 	itemAbsorberCollisions()
 
 	updateBullets()
-	updateMonsters()
+	--updateMonsters()
 	updateParticles()
 	updateItems(dt)
 	
