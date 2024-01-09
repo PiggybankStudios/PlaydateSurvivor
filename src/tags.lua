@@ -31,3 +31,27 @@ GAMESTATE = {
 	newweaponmenu = 5,
 	deathscreen = 6
 }
+
+
+CAMERA_SHAKE_STRENGTH = {
+	tiny = 2,
+	small = 4, 
+	medium = 10,
+	large = 24,
+	massive = 48
+}
+
+
+ITEM_TYPE = {
+	health = 1,
+	weapon = 2, 
+	shield = 3, 
+	absorbAll = 4,
+	exp1 = 5, 
+	exp2 = 6, 
+	exp3 = 7, 
+	exp6 = 8, 
+	exp9 = 9, 
+	exp16 = 10, 
+	luck = 11 
+}

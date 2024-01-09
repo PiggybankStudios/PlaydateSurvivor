@@ -6,6 +6,9 @@ local halfScreenWidth <const> = screenWidth / 2
 local halfScreenHeight <const> = screenHeight / 2
 local menuSpot = 0
 
+local blinking = false
+local lastBlink = 0
+
 local writings = {}
 
 --setup main menu
@@ -29,10 +32,14 @@ local gun1Image = gfx.image.new('Resources/Sprites/gPea')
 local gun2Image = gfx.image.new('Resources/Sprites/gCannon')
 local gun3Image = gfx.image.new('Resources/Sprites/gMini')
 local gun4Image = gfx.image.new('Resources/Sprites/gShot')
-local gun1Sprite = gfx.sprite.new(gun1Image)
-local gun2Sprite = gfx.sprite.new(gunxImage)
-local gun3Sprite = gfx.sprite.new(gunxImage)
-local gun4Sprite = gfx.sprite.new(gunxImage)
+local gun5Image = gfx.image.new('Resources/Sprites/gBurst')
+local gun6Image = gfx.image.new('Resources/Sprites/gGrenade')
+local gun7Image = gfx.image.new('Resources/Sprites/gRang')
+local gun8Image = gfx.image.new('Resources/Sprites/gWave')
+gun1Sprite = gfx.sprite.new(gun1Image)
+gun2Sprite = gfx.sprite.new(gunxImage)
+gun3Sprite = gfx.sprite.new(gunxImage)
+gun4Sprite = gfx.sprite.new(gunxImage)
 gun1Sprite:setIgnoresDrawOffset(true)	-- forces sprite to be draw to screen, not world
 gun2Sprite:setIgnoresDrawOffset(true)	-- forces sprite to be draw to screen, not world
 gun3Sprite:setIgnoresDrawOffset(true)	-- forces sprite to be draw to screen, not world
@@ -53,6 +60,7 @@ function openPauseMenu()
 	gun2Sprite:add()
 	gun3Sprite:add()
 	gun4Sprite:add()
+	blinking = true
 	addStats()
 	addDifficulty()
 	--print("paused")
@@ -60,7 +68,7 @@ end
 
 function closePauseMenu()
 	pauseSprite:remove()
-	selectSprite:remove()
+	if blinking == true then selectSprite:remove() end
 	gun1Sprite:remove()
 	gun2Sprite:remove()
 	gun3Sprite:remove()
@@ -74,6 +82,22 @@ function closePauseMenu()
 		table.remove(writings,gIndex)
 	end
 	--print("unpaused")
+end
+
+function updatePauseManu()
+	local theCurrTime = playdate.getCurrentTimeMilliseconds()
+	if theCurrTime > lastBlink then
+		if blinking == true then
+			lastBlink = theCurrTime + 300
+			selectSprite:remove()
+			blinking = false
+			--print("blink..")
+		else
+			lastBlink = theCurrTime + 700
+			selectSprite:add()
+			blinking = true
+		end
+	end
 end
 
 function pauseMenuMoveR()
@@ -106,20 +130,26 @@ function pauseSelection()
 	return menuSpot
 end
 
-function updateMenuWeapon(slot, gun)
-	local newGun = gun0Image
-	if gun == 0 then newGun = gun0Image
-	elseif gun == 1 then newGun = gun1Image
-	elseif gun == 2 then newGun = gun2Image
-	elseif gun == 3 then newGun = gun3Image
-	elseif gun == 4 then newGun = gun4Image
-	else newGun = gunxImage
+function selectWeaponImage(gun)
+	local newGun = gunxImage
+	if gun == 0 then newGun = gun0Image --empty
+	elseif gun == 1 then newGun = gun1Image --Pea
+	elseif gun == 2 then newGun = gun2Image --Cannon
+	elseif gun == 3 then newGun = gun3Image --Mini
+	elseif gun == 4 then newGun = gun4Image --Shot
+	elseif gun == 5 then newGun = gun5Image --Burst
+	elseif gun == 6 then newGun = gun6Image --Grenade
+	elseif gun == 7 then newGun = gun7Image --Rang
+	elseif gun == 8 then newGun = gun8Image --Wave
 	end
-	
-	if slot == 1 then gun1Sprite:setImage(newGun)
-	elseif slot == 2 then gun2Sprite:setImage(newGun)
-	elseif slot == 3 then gun3Sprite:setImage(newGun)
-	elseif slot == 4 then gun4Sprite:setImage(newGun)
+	return newGun
+end
+
+function updateMenuWeapon(slot, gun)
+	if slot == 1 then gun1Sprite:setImage(selectWeaponImage(gun))
+	elseif slot == 2 then gun2Sprite:setImage(selectWeaponImage(gun))
+	elseif slot == 3 then gun3Sprite:setImage(selectWeaponImage(gun))
+	elseif slot == 4 then gun4Sprite:setImage(selectWeaponImage(gun))
 	else print("slot doesnt exist")
 	end
 end
@@ -229,15 +259,27 @@ function addStats()
 		newLetter:add()
 		writings[#writings + 1] = newLetter
 	end
-end
-
-function lstrtochar(lstring)
-	local lchar = {}
-	local lstr = lstring
-	for i = 1, #lstr do
-		lchar[i] = lstr:sub(i,i)
+	statrow += 1 --move on to the next line
+	lchars = lstrtochar("heal bonus: " .. tostring(pstats[17]))
+	for lIndex,letter in pairs(lchars) do
+		newLetter = write((column + spacing * lIndex), (row + newline * statrow), letter, true)
+		newLetter:add()
+		writings[#writings + 1] = newLetter
 	end
-	return lchar
+	statrow += 1 --move on to the next line
+	lchars = lstrtochar("vampire: " .. tostring(pstats[18]) .. "%")
+	for lIndex,letter in pairs(lchars) do
+		newLetter = write((column + spacing * lIndex), (row + newline * statrow), letter, true)
+		newLetter:add()
+		writings[#writings + 1] = newLetter
+	end
+	statrow += 1 --move on to the next line
+	lchars = lstrtochar("stun: " .. tostring(pstats[19]) .. "%")
+	for lIndex,letter in pairs(lchars) do
+		newLetter = write((column + spacing * lIndex), (row + newline * statrow), letter, true)
+		newLetter:add()
+		writings[#writings + 1] = newLetter
+	end
 end
 
 function addDifficulty()

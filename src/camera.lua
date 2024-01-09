@@ -38,14 +38,6 @@ local shakeEndDelta = 0.1
 local setShakeTimer = 200
 local shakeTimer = 0
 
-CAMERA_SHAKE_STRENGTH = {
-	tiny = 2,
-	small = 4, 
-	medium = 10,
-	large = 24,
-	massive = 48
-}
-
 -- screen flash
 local setFlashTimer = 100
 local flashTimer
@@ -150,7 +142,7 @@ end
 function updateCamera(dt)
 	currentTime = playdate.getCurrentTimeMilliseconds()
 
-	setCameraPos(crankAngle, player.x, player.y)
+	setCameraPos(getCrankAngle(), player.x, player.y)
 	moveCamera()
 
 	manageScreenFlash()

@@ -36,12 +36,13 @@ end
 function updateDeadManu()
 	local theCurrTime = playdate.getCurrentTimeMilliseconds()
 	if theCurrTime > lastBlink then
-		lastBlink = theCurrTime + 500
 		if blinking then
+			lastBlink = theCurrTime + 300
 			promptSprite:remove()
 			blinking = false
 			--print("blink..")
 		else
+			lastBlink = theCurrTime + 700
 			promptSprite:add()
 			blinking = true
 		end
@@ -69,96 +70,87 @@ function addFinalStats()
 	local column = 12
 	local pstats = getFinalStats()
 	local lchars = {}
-	lchars = dstrtochar("difficulty reached: " .. tostring(pstats[1]))
+	lchars = lstrtochar("difficulty reached: " .. tostring(pstats[1]))
 	for lIndex,letter in pairs(lchars) do
 		newLetter = write((column + spacing * lIndex), (row + newline * statrow), letter, true)
 		newLetter:add()
 		writings[#writings + 1] = newLetter
 	end
 	statrow += 1 --move on to the next line
-	lchars = dstrtochar("max level: " .. tostring(pstats[2]))
+	lchars = lstrtochar("max level: " .. tostring(pstats[2]))
 	for lIndex,letter in pairs(lchars) do
 		newLetter = write((column + spacing * lIndex), (row + newline * statrow), letter, true)
 		newLetter:add()
 		writings[#writings + 1] = newLetter
 	end
 	statrow += 1 --move on to the next line
-	lchars = dstrtochar("exp gained: " .. tostring(pstats[3]))
+	lchars = lstrtochar("exp gained: " .. tostring(pstats[3]))
 	for lIndex,letter in pairs(lchars) do
 		newLetter = write((column + spacing * lIndex), (row + newline * statrow), letter, true)
 		newLetter:add()
 		writings[#writings + 1] = newLetter
 	end
 	statrow += 1 --move on to the next line
-	lchars = dstrtochar("damage dealt: " .. tostring(pstats[4]))
+	lchars = lstrtochar("damage dealt: " .. tostring(pstats[4]))
 	for lIndex,letter in pairs(lchars) do
 		newLetter = write((column + spacing * lIndex), (row + newline * statrow), letter, true)
 		newLetter:add()
 		writings[#writings + 1] = newLetter
 	end
 	statrow += 1 --move on to the next line
-	lchars = dstrtochar("shots fired: " .. tostring(pstats[5]))
+	lchars = lstrtochar("shots fired: " .. tostring(pstats[5]))
 	for lIndex,letter in pairs(lchars) do
 		newLetter = write((column + spacing * lIndex), (row + newline * statrow), letter, true)
 		newLetter:add()
 		writings[#writings + 1] = newLetter
 	end
 	statrow += 1 --move on to the next line
-	lchars = dstrtochar("enemies killed: " .. tostring(pstats[6]))
+	lchars = lstrtochar("enemies killed: " .. tostring(pstats[6]))
 	for lIndex,letter in pairs(lchars) do
 		newLetter = write((column + spacing * lIndex), (row + newline * statrow), letter, true)
 		newLetter:add()
 		writings[#writings + 1] = newLetter
 	end
 	statrow += 1 --move on to the next line
-	lchars = dstrtochar("damage received: " .. tostring(pstats[7]))
+	lchars = lstrtochar("damage received: " .. tostring(pstats[7]))
 	for lIndex,letter in pairs(lchars) do
 		newLetter = write((column + spacing * lIndex), (row + newline * statrow), letter, true)
 		newLetter:add()
 		writings[#writings + 1] = newLetter
 	end
 	statrow += 1 --move on to the next line
-	lchars = dstrtochar("items grabbed: " .. tostring(pstats[8]))
+	lchars = lstrtochar("items grabbed: " .. tostring(pstats[8]))
 	for lIndex,letter in pairs(lchars) do
 		newLetter = write((column + spacing * lIndex), (row + newline * statrow), letter, true)
 		newLetter:add()
 		writings[#writings + 1] = newLetter
 	end
 	statrow += 1 --move on to the next line
-	lchars = dstrtochar("time survived: " .. tostring(pstats[9]) .. " seconds")
+	lchars = lstrtochar("time survived: " .. tostring(pstats[9]) .. " seconds")
 	for lIndex,letter in pairs(lchars) do
 		newLetter = write((column + spacing * lIndex), (row + newline * statrow), letter, true)
 		newLetter:add()
 		writings[#writings + 1] = newLetter
 	end
 	statrow += 1 --move on to the next line
-	lchars = dstrtochar("*****************************")
+	lchars = lstrtochar("*****************************")
 	for lIndex,letter in pairs(lchars) do
 		newLetter = write((column + spacing * lIndex), (row + newline * statrow), letter, true)
 		newLetter:add()
 		writings[#writings + 1] = newLetter
 	end
 	statrow += 1 --move on to the next line
-	lchars = dstrtochar("final score: " .. tostring(pstats[10]) .. " points")
+	lchars = lstrtochar("final score: " .. tostring(pstats[10]) .. " points")
 	for lIndex,letter in pairs(lchars) do
 		newLetter = write((column + spacing * lIndex), (row + newline * statrow), letter, true)
 		newLetter:add()
 		writings[#writings + 1] = newLetter
 	end
 	statrow += 1 --move on to the next line
-	lchars = dstrtochar("*****************************")
+	lchars = lstrtochar("*****************************")
 	for lIndex,letter in pairs(lchars) do
 		newLetter = write((column + spacing * lIndex), (row + newline * statrow), letter, true)
 		newLetter:add()
 		writings[#writings + 1] = newLetter
 	end
-end
-
-function dstrtochar(lstring)
-	local lchar = {}
-	local lstr = lstring
-	for i = 1, #lstr do
-		lchar[i] = lstr:sub(i,i)
-	end
-	return lchar
 end

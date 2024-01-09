@@ -19,7 +19,6 @@ local rotateSpeed = 5
 local scaleHealth = 3
 local scaleSpeed = 4
 local scaleDamage = 5
-local stunWiggleAmount = 3
 
 ENEMY_TYPE = {
 	fastBall = 1,
@@ -35,33 +34,39 @@ enemyList2 = {}
 enemyList3 = {}
 local theSpawnTime = 0
 local spawnInc = 0
-local currentTime
+local currentFrame = 0
+
 
 -- +--------------------------------------------------------------+
 -- |                          Creation                            |
 -- +--------------------------------------------------------------+
 
 
-function createEnemy(x, y, type)
+function createEnemy(x, y, type, theTime)
 	local newEnemy
 
 	if type == ENEMY_TYPE.fastBall then
-		newEnemy = fastBall(x, y)
+		newEnemy = fastBall(x, y, theTime)
 
 	elseif type == ENEMY_TYPE.bat then
-		newEnemy = bat(x, y)
+		newEnemy = bat(x, y, theTime)
 
+<<<<<<< HEAD
+	elseif type == ENEMY_TYPE.bigSquare then
+		newEnemy = bigSquare(x, y, theTime)
+=======
 	elseif type == ENEMY_TYPE.medic then
-		newEnemy = medic(x, y)
+		return medic(x, y, theTime)
+>>>>>>> 772d89790be2f259b63de1cd16b3ca3b000d04b3
 
 	elseif type == ENEMY_TYPE.bulletBill then
-		newEnemy = bulletBill(x, y)
+		newEnemy = bulletBill(x, y, theTime)
 
 	elseif type == ENEMY_TYPE.chunkyArms then
-		newEnemy = chunkyArms(x, y)
+		newEnemy = chunkyArms(x, y, theTime)
 
 	else --type == ENEMY_TYPE.normalSquare	-- default
-		newEnemy = normalSquare(x, y)
+		newEnemy = normalSquare(x, y, theTime)
 
 	end
 
@@ -87,18 +92,16 @@ end
 
 
 -- Init shared by all enemies
-function enemy:init(x, y)
+function enemy:init(x, y, theTime)
 	enemy.super.init(self)
 	
 	self.health *= (1 + math.floor(getDifficulty() / scaleHealth))
 	self.damageAmount *= (1 + math.floor(getDifficulty() / scaleDamage))
-	self.speed += (math.floor(getDifficulty() / scaleSpeed))
+	--self.targetSpeed += (math.floor(getDifficulty() / scaleSpeed))
 	self.fullhealth = self.health
 
-	self.time = currentTime
+	self.time = theTime
 	self.stunned = 0
-	self.wiggleDir = 1
-	self.wigglePos = vec.new(0, 0)
 	
 	self.AIsmarts = 1
 	self:moveTo(x, y)
@@ -125,7 +128,7 @@ end
 
 class('fastBall').extends(enemy)
 
-function fastBall:init(x, y)	
+function fastBall:init(x, y, theTime)	
 	self:setImage(gfx.image.new('Resources/Sprites/Enemy1'))
 	self.type = ENEMY_TYPE.fastBall
 	self.health = 2
@@ -137,11 +140,11 @@ function fastBall:init(x, y)
 	self.dropPercent = { 94, 5, 1}
 	self.rating = 1
 
-	fastBall.super.init(self, x, y)		-- calling parent method needs the "." not the ":"
+	fastBall.super.init(self, x, y, theTime)		-- calling parent method needs the "." not the ":"
 end
 
 -- Just calculates the direction to move in
-function fastBall:calculateMove(targetX, targetY)
+function fastBall:calculateMove(targetX, targetY, theTime)
 	self.directionVec = vec.new(targetX - self.x, targetY - self.y)
 
 	fastBall.super.calculateMove(self)
@@ -153,7 +156,7 @@ end
 
 class('normalSquare').extends(enemy)
 
-function normalSquare:init(x, y)	
+function normalSquare:init(x, y, theTime)	
 	self:setImage(gfx.image.new('Resources/Sprites/Enemy2'))
 	self.type = ENEMY_TYPE.normalSquare
 	self.health = 5
@@ -165,10 +168,10 @@ function normalSquare:init(x, y)
 	self.dropPercent = { 85, 10, 5}
 	self.rating = 1
 
-	normalSquare.super.init(self, x, y)
+	normalSquare.super.init(self, x, y, theTime)
 end
 
-function normalSquare:calculateMove(targetX, targetY)
+function normalSquare:calculateMove(targetX, targetY, theTime)
 	self.directionVec = vec.new(targetX - self.x, targetY - self.y)
 
 	normalSquare.super.calculateMove(self)
@@ -180,7 +183,7 @@ end
 
 class('bat').extends(enemy)
 
-function bat:init(x, y)
+function bat:init(x, y, theTime)
 	self:setImage(gfx.image.new('Resources/Sprites/Enemy3'))
 	self.type = ENEMY_TYPE.bat
 	self.health = 3
@@ -192,25 +195,25 @@ function bat:init(x, y)
 	self.dropPercent = { 54, 45, 1}
 	self.rating = 2
 	
-	bat.super.init(self, x, y)
+	bat.super.init(self, x, y, theTime)
 end
 
-function bat:calculateMove(targetX, targetY)
+function bat:calculateMove(targetX, targetY, theTime)
 	-- direction toward player
 	self.directionVec = vec.new(targetX - self.x, targetY - self.y)
 
 	-- move toward player for some time
 	if self.AIsmarts == 1 then
-		if currentTime >= self.time then
-			self.time = currentTime + 1000 --set how long in other mode
+		if theTime >= self.time then
+			self.time = theTime + 1000 --set how long in other mode
 			self.AIsmarts = 2
 		end
 
 	-- move away from player for some other time
 	elseif self.AIsmarts == 2 then
 		self.directionVec *= -1
-		if currentTime >= self.time then
-			self.time = currentTime + 1500 --set how long in other mode
+		if theTime >= self.time then
+			self.time = theTime + 1500 --set how long in other mode
 			self.AIsmarts = 1
 		end
 	end
@@ -220,11 +223,11 @@ end
 
 
 ------------------------------------------------
-				   -- Medic --
+				   -- Big Square --
 
 class('medic').extends(enemy)
 
-function medic:init(x, y)
+function medic:init(x, y, theTime)
 	self:setImage(gfx.image.new('Resources/Sprites/Enemy4'))
 	self.type = ENEMY_TYPE.medic
 	self.health = 20
@@ -236,18 +239,22 @@ function medic:init(x, y)
 	self.dropPercent = { 60, 35, 5}
 	self.rating = 3
 
-	medic.super.init(self, x, y)
+	medic.super.init(self, x, y, theTime)
 end
 
-function medic:calculateMove(targetX, targetY)
+<<<<<<< HEAD
+function bigSquare:calculateMove(targetX, targetY, theTime)
+=======
+function medic:move(targetX, targetY, theTime)
+>>>>>>> 772d89790be2f259b63de1cd16b3ca3b000d04b3
 	-- move toward player
 	self.directionVec = vec.new(targetX - self.x, targetY - self.y)
 
 	-- if healing, move away from player
 	if self.AIsmarts == 2 then
 		self.directionVec *= -1
-		if currentTime >= self.time then
-			self.time = currentTime + 1000
+		if theTime >= self.time then
+			self.time = theTime + 1000
 			self.healthbar:heal(2 * (1 + math.floor(getDifficulty() / scaleHealth)))
 			self.health = self.healthbar:currentHP()
 		end
@@ -259,7 +266,11 @@ function medic:calculateMove(targetX, targetY)
 		self.AIsmarts = 2 
 	end
 
-	medic.super.calculateMove(self)
+<<<<<<< HEAD
+	bigSquare.super.calculateMove(self)
+=======
+	medic.super.move(self, targetX, targetY, theTime)	
+>>>>>>> 772d89790be2f259b63de1cd16b3ca3b000d04b3
 end
 
 
@@ -268,7 +279,7 @@ end
 
 class('bulletBill').extends(enemy)
 
-function bulletBill:init(x, y)	
+function bulletBill:init(x, y, theTime)	
 	self:setImage(gfx.image.new('Resources/Sprites/Enemy5')) --the Bullet Bill
 	self.type = ENEMY_TYPE.bulletBill
 	self.health = 6
@@ -285,33 +296,38 @@ function bulletBill:init(x, y)
 	self.rotation = 0
 	self.savedRot = 0
 
-	bulletBill.super.init(self, x, y)
+	bulletBill.super.init(self, x, y, theTime)
 end
 
-function bulletBill:calculateMove(targetX, targetY)
+function bulletBill:calculateMove(targetX, targetY, theTime)
 	-- don't move; find player position and rotate towards it
+<<<<<<< HEAD
+	if self.AIsmarts == 1 then
+=======
 	if self.AIsmarts == 2 then
+		self.velocity = vec.new(0, 0)
+>>>>>>> 772d89790be2f259b63de1cd16b3ca3b000d04b3
 		self.directionVec = vec.new(targetX - self.x, targetY - self.y)
 		self.velocity *= 0.05
 
 		-- lerping to target FROM saved, so always reaches target rot at end of timer
 		local targetRot = math.deg(math.atan2(self.directionVec.y, self.directionVec.x)) - 90
 		targetRot = constrain(targetRot, 0, 360)
-		local diff = self.rotateTimerSet - (self.time - currentTime)
+		local diff = self.rotateTimerSet - (self.time - theTime)
 		local t = clamp(diff / self.rotateTimerSet, 0, 1)
 		self.rotation = mathp.lerp(self.savedRot, targetRot, t)
 		self:setRotation(self.rotation)
 		
-		if currentTime >= self.time then
-			self.time = currentTime + self.moveTimerSet
+		if theTime >= self.time then
+			self.time = theTime + self.moveTimerSet
 			self.AIsmarts = 1
 		end
 
 	-- move towards found player position
 	elseif self.AIsmarts == 1 then
 		self.savedRot = self.rotation
-		if currentTime >= self.time then
-			self.time = currentTime + self.rotateTimerSet
+		if theTime >= self.time then
+			self.time = theTime + self.rotateTimerSet
 			self.AIsmarts = 2
 		end
 	end
@@ -325,7 +341,7 @@ end
 
 class('chunkyArms').extends(enemy)
 
-function chunkyArms:init(x, y)	
+function chunkyArms:init(x, y, theTime)	
 	self:setImage(gfx.image.new('Resources/Sprites/Enemy6'))
 	self.type = ENEMY_TYPE.chunkyArms
 	self.health = 66
@@ -337,15 +353,20 @@ function chunkyArms:init(x, y)
 	self.dropPercent = { 95, 5}
 	self.rating = 3
 
-	chunkyArms.super.init(self, x, y)
+	chunkyArms.super.init(self, x, y, theTime)
 end
 
-function chunkyArms:calculateMove(targetX, targetY)
+function chunkyArms:calculateMove(targetX, targetY, theTime)
 	self.directionVec = vec.new(targetX - self.x, targetY - self.y)
-	if currentTime >= self.time then
-		self.time = currentTime + 500
-		if self.health < (self.fullhealth / 2) then self.speed += 0.3 end
-		if self.speed > (3 + math.floor(getDifficulty() / scaleDamage)) then self.speed = 5 end
+	if theTime >= self.time then
+		self.time = theTime + 500
+<<<<<<< HEAD
+		if self.health < (self.fullhealth / 3) then self.speed += 0.3 end
+		if self.speed > 4 then self.speed = 4 end
+=======
+		if self.health < (self.fullhealth / 2) then self.targetSpeed += 0.3 end
+		if self.targetSpeed > (3 + math.floor(getDifficulty() / scaleDamage)) then self.targetSpeed = 5 end
+>>>>>>> 772d89790be2f259b63de1cd16b3ca3b000d04b3
 		if self.health < self.fullhealth then 
 			self.healthbar:heal(1 + math.floor(getDifficulty() / scaleHealth))
 			self.health = self.healthbar:currentHP()
@@ -359,22 +380,9 @@ end
 -- +--------------------------------------------------------------+
 -- |                         Interaction                          |
 -- +--------------------------------------------------------------+
-
-
 function enemy:potentialStun()
-	if math.random(0,99) < getStun() then 
-		self.stunned = currentTime + 100
-		self.wigglePos = vec.new(self.x, self.y)
-		self.velocity = vec.new(0, 0)
-	end
+	if math.random(0,99) < getStun() then self.stunned = getCurrTime() + 100 end
 end
-
-
-function enemy:applyKnockback(impactX, impactY, force)
-	local impactDir = (vec.new(self.x, self.y) - vec.new(impactX, impactY)):normalized()
-	self.velocity += impactDir * force
-end
-
 
 function enemy:damage(amount)
 	--self.health -= amount
@@ -404,7 +412,6 @@ function enemy:getDrop()
 	end
 	return tmpItem
 end
-
 
 function expDropped(rate)
 	local index = 1
@@ -446,8 +453,8 @@ end
 function enemy:collisionResponse(other)
 	local tag = other:getTag()
 	if tag == TAGS.player then
-		player:damage(self.damageAmount, self.shakeStrength, self.x, self.y)
-		self:damage(player:getPlayerReflectDamage())
+		--player:damage(self.damageAmount, self.shakeStrength, self.x, self.y)
+		--self:damage(player:getPlayerReflectDamage())
 		return 'bounce'
 	else
 		return 'overlap'
@@ -457,13 +464,6 @@ end
 
 -- Movement calculation shared by all enemies
 function enemy:calculateMove()
-
-	-- Stun - stops enemy from moving itself
-	if self.stunned > 0 then
-		do return end
-	end
-
-	-- Normal movement
 	self.directionVec:normalize()	-- Normalize the direction now that velocity is being calculated
 
 	local maxSpeedChange = self.accel * dt * 3 -- mul by 3 b/c this is only done once every 3 frames
@@ -477,13 +477,18 @@ end
 
 
 -- Movement shared by all enemies
-function enemy:move()
+function enemy:move(dt)
 
 	-- Moving the enemy and attached UI
-	local x = self.x + self.velocity.x
-	local y = self.y + self.velocity.y
-	_, _, collisions = self:moveWithCollisions(x, y)
-	self.healthbar:moveTo(x, y - healthbarOffsetY)
+	if self.stunned > getCurrTime() then
+		_, _, collisions = self:moveWithCollisions(self.x, self.y)
+		self.healthbar:moveTo(self.x, self.y - healthbarOffsetY)
+	else
+		local x = self.x + self.velocity.x
+		local y = self.y + self.velocity.y
+		_, _, collisions = self:moveWithCollisions(x, y)
+		self.healthbar:moveTo(x, y - healthbarOffsetY)
+	end
 
 	-- Bounce interactions
 	for i = 1, #collisions do
@@ -493,15 +498,24 @@ function enemy:move()
 		if bouncePoint ~= nil then			
 			-- Get player position
 			local playerSprite = collisions[i].other
-			local playerDirToEnemy = vec.new(playerSprite.x - self.previousPos.x, playerSprite.y - self.previousPos.y)			
+			local playerDirToEnemy = vec.new(playerSprite.x - self.previousPos.x, playerSprite.y - self.previousPos.y)
+			local bounceDir
 
 			-- Determine if player is moving towards this enemy -- need to use prev pos b/c current pos is displaced from 'moveWithCollisions'
 			local velocityDot = getPlayerVelocity():dotProduct(playerDirToEnemy)
 
+<<<<<<< HEAD
 			-- If player is NOT moving towards enemy, then perform normal bounce - dot product is positive when moving away
-			local bounceDir
 			if velocityDot >= 0 then
 				bounceDir = vec.new(bouncePoint.x - playerSprite.x, bouncePoint.y - playerSprite.y):normalized()				
+=======
+			-- If player is NOT moving towards enemy, don't solve warp problem - more natural movement
+			local normal = collisions[i].normal
+			local exitBounce = 0
+			if normal.x == getInputX() then exitBounce += 1 end		-- horizontal sides
+			if normal.y == getInputY() then exitBounce += 1 end 		-- vertical sides
+			if exitBounce == 0 then return end
+>>>>>>> 772d89790be2f259b63de1cd16b3ca3b000d04b3
 
 			-- else player is moving TOWARDS enemy (negative dot), so teleport enemy to a point in front of player's next position, FROM prev pos
 			else
@@ -522,24 +536,8 @@ function enemy:move()
 
 	-- After movement and possible bounces are finished, then update previous position
 	self.previousPos = vec.new(self.x, self.y)
-
 end
 
-
-function enemy:updateVFX()
-
-	-- Stun - wiggle sprite
-	if self.stunned > currentTime then
-		self.wiggleDir *= -1
-		local newX = self.wigglePos.x + (self.wiggleDir * stunWiggleAmount)
-		self:moveTo(newX, self.y)
-
-	elseif self.stunned > 0 then -- only sets a single time, once stun is finished
-		self.stunned = 0 									-- set to 0 to indicate stun is over
-		self:moveTo(self.previousPos.x, self.previousPos.y)	-- return sprite to original position
-	end
-
-end
 
 -- +--------------------------------------------------------------+
 -- |                          Management                          |
@@ -547,11 +545,11 @@ end
 
 function spawnMonsters()
 	-- Movement
-	--if Unpaused then theSpawnTime += theLastTime end
-	if currentTime >= theSpawnTime then
+	if Unpaused then theSpawnTime += theLastTime end
+	if theCurrTime >= theSpawnTime then
 		local difficulty = getDifficulty()
 		rndLoc = math.random(1,8)
-		theSpawnTime = currentTime + 3200 - 200 * difficulty
+		theSpawnTime = theCurrTime + 3200 - 200 * difficulty
 
 		direction = { 	x = math.random(-1,1), 
 						y = math.random(-1,1)}		        -- either -1, 0, 1
@@ -564,14 +562,15 @@ function spawnMonsters()
 		enemyX = player.x + (halfScreenWidth + (halfScreenWidth * distance.x)) * direction.x
 		enemyY = player.y + (halfScreenHeight + (halfScreenHeight * distance.y)) * direction.y
 
-		local eType = math.random(1, 5)
-		createEnemy(enemyX, enemyY, eType)
+		local eType = math.random(5, 5)
+		local eAccel = 0.5
+		createEnemy(enemyX, enemyY, eType, theCurrTime)
 
 		spawnInc += math.random(1, difficulty)
 		if spawnInc > 5 then
 			spawnInc = 0
-			eType = math.random(1, 6)
-			createEnemy(-enemyX, -enemyY, eType)
+			eType = math.random(5, 5)
+			createEnemy(-enemyX, -enemyY, eType, theCurrTime)
 		end
 	end
 end
@@ -582,8 +581,7 @@ local function moveEnemies(dt)
 	local function moveInList(list)
 		--if Unpaused then enemyList[i].time += theLastTime end
 		for i, enemy in pairs(list) do
-			enemy:move()
-			enemy:updateVFX()
+			enemy:move(dt)
 		end
 	end
 
@@ -598,8 +596,7 @@ local function updateEnemyLists(frame)
 	local function updateList(enemyList)
 		for i, enemy in pairs(enemyList) do
 			--if Unpaused then enemyList[i].time += theLastTime end
-			local playerPos = getPlayerPosition()
-			enemy:calculateMove(playerPos.x, playerPos.y)
+			enemy:calculateMove(player.x, player.y, theCurrTime)
 			if enemyList[i].health <= 0 then
 				newItem = item(enemyList[i].x, enemyList[i].y, enemyList[i]:getDrop())
 				newItem:add()
@@ -646,9 +643,7 @@ end
 
 
 function updateEnemies(dt, frame)
-	currentTime = playdate.getCurrentTimeMilliseconds()
-
-	spawnMonsters()
+	--spawnMonsters()
 	updateEnemyLists(frame)
 	moveEnemies(dt)
 end

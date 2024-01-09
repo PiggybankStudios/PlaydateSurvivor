@@ -27,8 +27,11 @@ import "weaponmenu"
 local gfx <const> = playdate.graphics
 
 local reset = false
-local recycleValue = 0
+<<<<<<< HEAD
 local currentFrame = 0
+=======
+local recycleValue = 0
+>>>>>>> 772d89790be2f259b63de1cd16b3ca3b000d04b3
 
 gfx.setColor(gfx.kColorWhite)
 gfx.fillRect(0, 0, 400, 240)
@@ -148,6 +151,7 @@ end
 function restartGame()
 	reset = true
 end
+
 
 
 -- TO DO:
