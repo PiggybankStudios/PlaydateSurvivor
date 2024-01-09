@@ -160,9 +160,10 @@ end
 function addStatDetails(theString, slot)
 	local spacing = 4
 	local row = 154
-	local column = 37 + (60 * slot)
+	local column = 53 + (60 * slot)
 	local lchars = {}
 	lchars = lstrtochar(theString)
+	column -= math.floor(#lchars * spacing / 2)
 	for lIndex,letter in pairs(lchars) do
 		newLetter = write((column + spacing * lIndex), (row), letter, true)
 		newLetter:add()
@@ -335,7 +336,7 @@ function whatStatSprite(sel,slot)
 	if sel == "empty" then
 		theStat = 0
 		theImage = statxImage
-		addStatDetails("need more luck", slot)
+		addStatDetails("need luck!", slot)
 	elseif sel == "armor" then
 		theStat = 1
 		theImage = stat1Image

@@ -1,7 +1,6 @@
 -- playdate screen 400 x 240
 local gfx <const> = playdate.graphics
 local vec <const> = playdate.geometry.vector2D
-local mathFloor <const> = math.floor
 
 
 local healthbarOffsetY <const> = 30
@@ -101,10 +100,8 @@ Unpaused = false
 -- +--------------------------------------------------------------+
 
 -- Add the player sprite and collider back to the drawing list after level load - also sets starting position
-function addPlayerSpritesToList()	
-	physicalCrankAngle = playdate.getCrankPosition()	-- Adjust crank angle and player angle on level load.
-	crankAngle = physicalCrankAngle - 90				-- ensures physical crank angle always matches the player rotation
-	player:setRotation(crankAngle)
+function addPlayerSpritesToList()
+	player:setRotation(getCrankAngle())
 
 	player:add()
 	collider:add()
@@ -118,14 +115,19 @@ end
 
 -- Moves both player sprite and collider - flooring stops jittering b/c only integers
 function movePlayerWithCollider(x, y)
-	local floorX = mathFloor(x)
-	local floorY = mathFloor(y)
+	local floorX = math.floor(x)
+	local floorY = math.floor(y)
 	player:moveTo(floorX, floorY)
 	collider:moveTo(floorX, floorY)
 	itemAbsorber:moveTo(floorX, floorY)
 	playerHealthbar:moveTo(floorX, floorY - healthbarOffsetY)
 end
 
+
+function heal(amount)
+	playerHealthbar:heal(amount + playerHealBonus)
+	health = playerHealthbar:currentHP()
+end
 
 -- Damage player health - called via enemies
 function player:damage(amount, camShakeStrength, enemyX, enemyY)
@@ -136,15 +138,15 @@ function player:damage(amount, camShakeStrength, enemyX, enemyY)
 	elseif invincible then
 		return
 	elseif math.random(0,99) < playerDodge then
+		screenFlash()
 		return
 	end
 
 	-- Damaging
 	local amountLost = math.max(amount - playerArmor, 1)
 	damageTimer = theCurrTime + setDamageTimer
-	health -= amountLost
-	if health < 0 then health = 0 end
 	playerHealthbar:damage(amountLost)
+	health = playerHealthbar:currentHP()
 	addDamageReceived(amountLost)
 
 	-- Camera Shake
@@ -156,19 +158,8 @@ function player:damage(amount, camShakeStrength, enemyX, enemyY)
 	screenFlash()
 end
 
-
-
-function handleDeath()
-	setGameState(GAMESTATE.deathscreen)
-	clearAllThings()
-	clearFlash()
-end
-
-function clearAllThings()
-	clearItems()
-	clearMonsters()
-	clearBullets()
-	clearPauseMenu()
+function getPlayerSlots()
+	return playerSlots
 end
 
 function updateSlots()
@@ -410,14 +401,6 @@ function getAvailLevelUpStats()
 	return stats
 end
 
-function heal(amount)
-	health += amount + playerHealBonus
-	if health > maxHealth then health = maxHealth end
-
-	playerHealthbar:heal(amount)
-end
-
-
 function addEXP(amount)
 	playerExpbar:gainExp(amount + playerExpBonus)
 end
@@ -429,15 +412,16 @@ function shield(amount)
 end
 
 
-function newWeapon(slot, weapon)
-	if theGunSlots[slot] == 0 then
-		theGunSlots[slot] = math.random(1, 8) --where random gun is assigned
-	else
-		theGunSlots[slot] += weapon
-		if theGunSlots[slot] > 8 then theGunSlots[slot] -= 8 end
-	end
-	
-	updateMenuWeapon(slot, theGunSlots[slot])
+function newWeaponGrabbed(weapon)
+	setGameState(GAMESTATE.newweaponmenu)
+	openWeaponMenu(weapon)
+	--theGunSlots[slot] = 8 
+	--updateMenuWeapon(slot, theGunSlots[slot])
+end
+
+function newWeaponChosen(weapon, slot)
+	theGunSlots[slot] = weapon 
+	updateMenuWeapon(slot, weapon)
 end
 
 
@@ -504,103 +488,15 @@ end
 -- +--------------------------------------------------------------+
 -- |                            Input                             |
 -- +--------------------------------------------------------------+
-inputX, inputY = 0, 0
-local physicalCrankAngle = playdate.getCrankPosition()
-crankAngle = physicalCrankAngle - 90
-
-function playdate.leftButtonDown()
-	inputX = -1
-	if getGameState() == GAMESTATE.pausemenu then pauseMenuMoveL() end
-	if getGameState() == GAMESTATE.levelupmenu then pauseLevelUpMoveL() end
-end
-function playdate.leftButtonUp()
-	inputX = 0
-end
-function playdate.rightButtonDown()
-	inputX = 1
-	if getGameState() == GAMESTATE.pausemenu then pauseMenuMoveR() end
-	if getGameState() == GAMESTATE.levelupmenu then pauseLevelUpMoveR() end
-end
-function playdate.rightButtonUp()
-	inputX = 0
-end
-function playdate.upButtonDown()
-	inputY = -1
-end
-function playdate.upButtonUp()
-	inputY = 0
-end
-function playdate.downButtonDown()
-	inputY = 1
-end
-function playdate.downButtonUp()
-	inputY = 0
-end
-
-function playdate.BButtonDown()
-	playerRunSpeed = 2
-end
-
-function playdate.BButtonUp()
-	playerRunSpeed = 1
-end
-
-function playdate.AButtonDown()
-	if getGameState() == GAMESTATE.startscreen then
-		setGameState(GAMESTATE.maingame)
-		gameStartTime = playdate.getCurrentTimeMilliseconds()
-	elseif getGameState() == GAMESTATE.maingame then
-		openPauseMenu()
-		setGameState(GAMESTATE.pausemenu)
-	elseif getGameState() == GAMESTATE.levelupmenu then
-		upgradeStat(levelUpSelection(),levelUpBonus())
-		closeLevelUpMenu()
-		Unpaused = true
-		setGameState(GAMESTATE.maingame)
-	elseif getGameState() == GAMESTATE.pausemenu then
-		if pauseSelection() == 0 then
-			closePauseMenu()
-			Unpaused = true
-			setGameState(GAMESTATE.maingame)
-		elseif pauseSelection() == 1 then
-			closePauseMenu()
-			Unpaused = true
-			clearAllThings()
-			clearStats()
-			restartGame()
-			setGameState(GAMESTATE.maingame)
-		elseif pauseSelection() == 2 then
-			closePauseMenu()
-			Unpaused = true
-			clearAllThings()
-			clearStats()
-			setGameState(GAMESTATE.startscreen)
-		end
-			
-	elseif getGameState() == GAMESTATE.deathscreen then
-		setGameState(GAMESTATE.startscreen)
-		clearStats()
-	end
-end
-
-function playdate.cranked(change, acceleratedChange)
-	physicalCrankAngle += change
-	crankAngle = physicalCrankAngle - 90
-end
-
-
 function movePlayer(dt)
 	if collider == nil then return end	-- If the collider doesn't exist, then don't look for collisions
 
 	-- Reset input to 0 if nothing is held
-	if playdate.getButtonState() == 0 then
-		inputX = 0
-		inputY = 0
-	end
+	if playdate.getButtonState() == 0 then resetInputXY() end
 
 	local moveSpeed = playerSpeed * playerRunSpeed * dt
-	local goalX = player.x + inputX * moveSpeed
-	local goalY = player.y + inputY * moveSpeed
+	local goalX = player.x + getInputX() * moveSpeed
+	local goalY = player.y + getInputY() * moveSpeed
 
 	-- The actual position is determined via collision response above
 	local actualX, actualY, collisions = collider:checkCollisions(goalX, goalY)
@@ -848,7 +744,7 @@ function updateItems(dt)
 				heal(3)
 				addItemsGrabbed()
 			elseif items[iIndex].type == ITEM_TYPE.weapon then
-				newWeapon(math.random(1, playerSlots), math.random(1, 7))
+				newWeaponGrabbed(math.random(1, 8))
 				addItemsGrabbed()
 			elseif items[iIndex].type == ITEM_TYPE.shield then
 				shield(10000)
@@ -906,6 +802,10 @@ function getCurrTime()
 	return theCurrTime
 end
 
+function setUnpaused(value)
+	Unpaused = value
+end
+
 function updatePlayer(dt)
 	theCurrTime = playdate.getCurrentTimeMilliseconds()
 	
@@ -929,7 +829,7 @@ function updatePlayer(dt)
 	end
 	
 	movePlayer(dt)
-	player:setRotation(crankAngle)
+	player:setRotation(getCrankAngle())
 	itemAbsorberCollisions()
 
 	updateBullets()

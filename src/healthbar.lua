@@ -60,3 +60,7 @@ function healthbar:heal(amount)
 	end
 	self:updateHealth(self.health)
 end
+
+function healthbar:currentHP()
+	return self.health
+end

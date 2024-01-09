@@ -36,10 +36,10 @@ local gun5Image = gfx.image.new('Resources/Sprites/gBurst')
 local gun6Image = gfx.image.new('Resources/Sprites/gGrenade')
 local gun7Image = gfx.image.new('Resources/Sprites/gRang')
 local gun8Image = gfx.image.new('Resources/Sprites/gWave')
-local gun1Sprite = gfx.sprite.new(gun1Image)
-local gun2Sprite = gfx.sprite.new(gunxImage)
-local gun3Sprite = gfx.sprite.new(gunxImage)
-local gun4Sprite = gfx.sprite.new(gunxImage)
+gun1Sprite = gfx.sprite.new(gun1Image)
+gun2Sprite = gfx.sprite.new(gunxImage)
+gun3Sprite = gfx.sprite.new(gunxImage)
+gun4Sprite = gfx.sprite.new(gunxImage)
 gun1Sprite:setIgnoresDrawOffset(true)	-- forces sprite to be draw to screen, not world
 gun2Sprite:setIgnoresDrawOffset(true)	-- forces sprite to be draw to screen, not world
 gun3Sprite:setIgnoresDrawOffset(true)	-- forces sprite to be draw to screen, not world
@@ -130,8 +130,8 @@ function pauseSelection()
 	return menuSpot
 end
 
-function updateMenuWeapon(slot, gun)
-	local newGun = gun0Image
+function selectWeaponImage(gun)
+	local newGun = gunxImage
 	if gun == 0 then newGun = gun0Image --empty
 	elseif gun == 1 then newGun = gun1Image --Pea
 	elseif gun == 2 then newGun = gun2Image --Cannon
@@ -141,13 +141,15 @@ function updateMenuWeapon(slot, gun)
 	elseif gun == 6 then newGun = gun6Image --Grenade
 	elseif gun == 7 then newGun = gun7Image --Rang
 	elseif gun == 8 then newGun = gun8Image --Wave
-	else newGun = gunxImage
 	end
-	
-	if slot == 1 then gun1Sprite:setImage(newGun)
-	elseif slot == 2 then gun2Sprite:setImage(newGun)
-	elseif slot == 3 then gun3Sprite:setImage(newGun)
-	elseif slot == 4 then gun4Sprite:setImage(newGun)
+	return newGun
+end
+
+function updateMenuWeapon(slot, gun)
+	if slot == 1 then gun1Sprite:setImage(selectWeaponImage(gun))
+	elseif slot == 2 then gun2Sprite:setImage(selectWeaponImage(gun))
+	elseif slot == 3 then gun3Sprite:setImage(selectWeaponImage(gun))
+	elseif slot == 4 then gun4Sprite:setImage(selectWeaponImage(gun))
 	else print("slot doesnt exist")
 	end
 end

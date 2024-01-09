@@ -18,7 +18,7 @@ ENEMY_TYPE = {
 	fastBall = 1,
 	normalSquare = 2,
 	bat = 3,
-	bigSquare = 4,
+	medic = 4,
 	bulletBill = 5,
 	chunkyArms = 6
 }
@@ -34,8 +34,8 @@ function createEnemy(x, y, type, theTime)
 	elseif type == ENEMY_TYPE.bat then
 		return bat(x, y, theTime)
 
-	elseif type == ENEMY_TYPE.bigSquare then
-		return bigSquare(x, y, theTime)
+	elseif type == ENEMY_TYPE.medic then
+		return medic(x, y, theTime)
 
 	elseif type == ENEMY_TYPE.bulletBill then
 		return bulletBill(x, y, theTime)
@@ -157,18 +157,18 @@ function bat:move(targetX, targetY, theTime)
 	-- direction toward player
 	self.directionVec = vec.new(targetX - self.x, targetY - self.y)
 
-	-- move away from player for some time
+	-- move toward player for some time
 	if self.AIsmarts == 1 then
 		if theTime >= self.time then
-			self.time = theTime + 1000
+			self.time = theTime + 1000 --set how long in other mode
 			self.AIsmarts = 2
 		end
 
-	-- move toward player for some other time
+	-- move away from player for some other time
 	elseif self.AIsmarts == 2 then
 		self.directionVec *= -1
 		if theTime >= self.time then
-			self.time = theTime + 1500
+			self.time = theTime + 1500 --set how long in other mode
 			self.AIsmarts = 1
 		end
 	end
@@ -180,11 +180,11 @@ end
 ------------------------------------------------
 				   -- Big Square --
 
-class('bigSquare').extends(enemy)
+class('medic').extends(enemy)
 
-function bigSquare:init(x, y, theTime)
+function medic:init(x, y, theTime)
 	self:setImage(gfx.image.new('Resources/Sprites/Enemy4'))
-	self.type = ENEMY_TYPE.bigSquare
+	self.type = ENEMY_TYPE.medic
 	self.health = 20
 	self.speed = 0
 	self.targetSpeed = 1
@@ -194,10 +194,10 @@ function bigSquare:init(x, y, theTime)
 	self.dropPercent = { 60, 35, 5}
 	self.rating = 3
 
-	bigSquare.super.init(self, x, y, theTime)
+	medic.super.init(self, x, y, theTime)
 end
 
-function bigSquare:move(targetX, targetY, theTime)
+function medic:move(targetX, targetY, theTime)
 	-- move toward player
 	self.directionVec = vec.new(targetX - self.x, targetY - self.y)
 
@@ -206,10 +206,8 @@ function bigSquare:move(targetX, targetY, theTime)
 		self.directionVec *= -1
 		if theTime >= self.time then
 			self.time = theTime + 1000
-			local healnum = 2 * math.floor(getDifficulty() / scaleHealth)
-			self.health += healnum
-			if self.health > self.fullhealth then self.health = self.fullhealth end
-			self.healthbar:heal(healnum)
+			self.healthbar:heal(2 * (1 + math.floor(getDifficulty() / scaleHealth)))
+			self.health = self.healthbar:currentHP()
 		end
 		-- once finished healing, move normally again
 		if self.health == self.fullhealth then self.AIsmarts = 1 end
@@ -219,7 +217,7 @@ function bigSquare:move(targetX, targetY, theTime)
 		self.AIsmarts = 2 
 	end
 
-	bigSquare.super.move(self, targetX, targetY, theTime)	
+	medic.super.move(self, targetX, targetY, theTime)	
 end
 
 
@@ -250,7 +248,7 @@ end
 
 function bulletBill:move(targetX, targetY, theTime)
 	-- don't move; find player position and rotate towards it
-	if self.AIsmarts == 1 then
+	if self.AIsmarts == 2 then
 		self.velocity = vec.new(0, 0)
 		self.directionVec = vec.new(targetX - self.x, targetY - self.y)
 
@@ -264,15 +262,15 @@ function bulletBill:move(targetX, targetY, theTime)
 		
 		if theTime >= self.time then
 			self.time = theTime + self.moveTimerSet
-			self.AIsmarts = 2
+			self.AIsmarts = 1
 		end
 
 	-- move towards found player position
-	elseif self.AIsmarts == 2 then
+	elseif self.AIsmarts == 1 then
 		self.savedRot = self.rotation
 		if theTime >= self.time then
 			self.time = theTime + self.rotateTimerSet
-			self.AIsmarts = 1
+			self.AIsmarts = 2
 		end
 	end
 
@@ -305,12 +303,10 @@ function chunkyArms:move(targetX, targetY, theTime)
 	if theTime >= self.time then
 		self.time = theTime + 500
 		if self.health < (self.fullhealth / 2) then self.targetSpeed += 0.3 end
-		if self.targetSpeed > 5 then self.targetSpeed = 5 end
+		if self.targetSpeed > (3 + math.floor(getDifficulty() / scaleDamage)) then self.targetSpeed = 5 end
 		if self.health < self.fullhealth then 
-			local healnum = 1 + math.floor(getDifficulty() / scaleHealth)
-			self.health += healnum
-			if self.health > self.fullhealth then self.health = self.fullhealth end
-			self.healthbar:heal(healnum)
+			self.healthbar:heal(1 + math.floor(getDifficulty() / scaleHealth))
+			self.health = self.healthbar:currentHP()
 		end
 	end
 
@@ -326,9 +322,10 @@ function enemy:potentialStun()
 end
 
 function enemy:damage(amount)
-	self.health -= amount
-	if self.health <= 0 then self.health = 0 end
+	--self.health -= amount
+	--if self.health <= 0 then self.health = 0 end
 	self.healthbar:damage(amount)
+	self.health = self.healthbar:currentHP()
 	addDamageDealt(amount)
 end
 
@@ -441,8 +438,8 @@ function enemy:move(playerX, playerY)
 			-- If player is NOT moving towards enemy, don't solve warp problem - more natural movement
 			local normal = collisions[i].normal
 			local exitBounce = 0
-			if normal.x == inputX then exitBounce += 1 end		-- horizontal sides
-			if normal.y == inputY then exitBounce += 1 end 		-- vertical sides
+			if normal.x == getInputX() then exitBounce += 1 end		-- horizontal sides
+			if normal.y == getInputY() then exitBounce += 1 end 		-- vertical sides
 			if exitBounce == 0 then return end
 
 			-- Teleport the enemy a little bit away from the player on the bounce - solves warping issue during bounce when player moves towards enemy	
