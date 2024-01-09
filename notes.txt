@@ -2,10 +2,25 @@
 This is a file that you can put any notes or TODO lists in
 
 # TODO List
-	@ Anyone
-		[ ] Knockback stat for weapons in general
+	@ Anyone		
 		[!] Infinite map
-		[ ] -
+		[ ] Movement direction input bug
+				* holding left still doesn't work sometimes
+				* input gets stuck sometimes - don't know if only a simulator bug or not
+		[ ] Playdate Itch.io pages and Discord Updates
+				* Page for Survivors
+				* Page for CDoku
+				* Page for Floragram
+				* updates to playdate discord with dev logs
+		[ ] Show End-Of-Round Timer on screen (somewhere)
+		[!] Talk about End-Of-Timer End State
+				* vampire surivor reaper that kills player?
+				* endless modes?
+				* progression?
+				* what's the most interesting thing to us?
+		[ ] Character gun is too offset from bullet spawn point
+				* might adjust spawn point of bullets
+				* also need to make a better player sprite
 	@ Taylor
 		[ ] Add some guns
 			[ ] Potion gun
@@ -67,4 +82,19 @@ This is a file that you can put any notes or TODO lists in
 	@ Devon
 		[ ] -
 	@ Sean
-		[ ] -
+		[ ] Knockback stat for weapons in general
+				* knockback for enemies already working 
+				* need to apply to bullets				
+		[ ] Bullet management
+				* destroy when off-screen
+				* destroy at end-of-life
+				* need to give bullets their own subclasses
+		[ ] Enemies spawn in radius rather than from screen size
+		[ ] Max enemy cap and recycling
+				* when enemies are off-screen for too long, teleport them closer to the player
+					* in player's move direction?
+		[ ] Fix HP bar bug
+				* disappears before enemy HP is actually gone
+		[ ] Camera fixes
+				* camera setoffset INSTEAD of draw offset for shake effects
+		[ ] Particle effect for when Chunky Arms starts to rage

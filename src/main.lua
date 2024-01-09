@@ -149,28 +149,3 @@ function restartGame()
 	reset = true
 end
 
-
--- TO DO:
-	-- bullets are slow
-	-- character gun is too offset from bullet spawn point - might adjust spawn point
-		-- remake sprite to make aiming feel better - less bulky
-	-- equipped items ui
-	-- enemy cap / object cap
-	-- level select screen
-
-
--- To Make:
-	-- one more gun: laser
-	-- enemy that shoots
-	-- choose level ups
-	-- SHOW the timer for end of the round - it's already made
-	-- end of timer death: reaper? kill the reaper with right setup? game state after reaper? vampires?
-
--- My next project:
-	-- enemy management
-	-- camera setoffset INSTEAD of draw offset
-	-- bullet management -- push image contexts?
-	-- calc stuff in frame chunks
-	-- playdate Itch.io page, updates to playdate discord with dev logs
-
--- Healthbar bug -- fix asap
