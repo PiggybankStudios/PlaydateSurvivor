@@ -63,6 +63,12 @@ function openPauseMenu()
 	blinking = true
 	addStats()
 	addDifficulty()
+	for i=1,4,1 do
+		if getEquippedGun(i) ~= 0 then 
+			local strSend = getGunName(getEquippedGun(i)) .. getTierStr(getTierForGun(i))
+			addPauseWeaponDetails(strSend, 15 + (45 * i), 346)
+		end
+	end
 	--print("paused")
 end
 
@@ -82,6 +88,20 @@ function closePauseMenu()
 		table.remove(writings,gIndex)
 	end
 	--print("unpaused")
+end
+
+function addPauseWeaponDetails(theString, trow, tcolumn)
+	local spacing = 4
+	local row = trow
+	local column = tcolumn
+	local lchars = {}
+	lchars = lstrtochar(theString)
+	column -= math.floor(#lchars * spacing / 2)
+	for lIndex,letter in pairs(lchars) do
+		newLetter = write((column + spacing * lIndex), row, letter, true)
+		newLetter:add()
+		writings[#writings + 1] = newLetter
+	end
 end
 
 function updatePauseManu()

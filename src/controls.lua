@@ -72,11 +72,11 @@ function playdate.downButtonUp()
 end
 
 function playdate.BButtonDown()
-	playerRunSpeed = 2
+	setRunSpeed(2)
 end
 
 function playdate.BButtonUp()
-	playerRunSpeed = 1
+	setRunSpeed(1)
 end
 
 function playdate.AButtonDown()
@@ -93,7 +93,7 @@ function playdate.AButtonDown()
 		setGameState(GAMESTATE.maingame)
 	elseif getGameState() == GAMESTATE.newweaponmenu then
 		if newWeaponSlot() ~= 5 then
-			newWeaponChosen(newWeaponGot(), newWeaponSlot())
+			newWeaponChosen(newWeaponGot(), newWeaponSlot(), getweaponTier())
 		else
 			recycleGun(5)
 		end

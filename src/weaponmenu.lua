@@ -8,6 +8,7 @@ local menuSpot = 1
 
 local blinking = false
 local lastBlink = 0
+local weaponTier
 
 local writings = {}
 local newWeapon = 1
@@ -33,7 +34,7 @@ gunNewSprite:setIgnoresDrawOffset(true)	-- forces sprite to be draw to screen, n
 gunNewSprite:setZIndex(ZINDEX.uidetails)
 gunNewSprite:moveTo(150, 110)
 
-function openWeaponMenu(newWeap)
+function openWeaponMenu(newWeap, tier)
 	pauseSprite:add()
 	selectSprite:add()
 	gun1Sprite:add()
@@ -41,10 +42,17 @@ function openWeaponMenu(newWeap)
 	gun3Sprite:add()
 	gun4Sprite:add()
 	gunNewSprite:setImage(selectWeaponImage(newWeap))
-	addWeaponDetails(getGunName(newWeap))
+	addWeaponDetails(getGunName(newWeap) .. getTierStr(tier), 132, 148)
 	newWeapon = newWeap
 	gunNewSprite:add()
 	blinking = true
+	weaponTier = tier
+	for i=1,4,1 do
+		if getEquippedGun(i) ~= 0 then 
+			local strSend = getGunName(getEquippedGun(i)) .. getTierStr(getTierForGun(i))
+			addWeaponDetails(strSend, 15 + (45 * i), 346)
+		end
+	end
 	--print("paused")
 end
 
@@ -156,10 +164,10 @@ function weaponMenuMoveU()
 	end
 end
 
-function addWeaponDetails(theString)
+function addWeaponDetails(theString, trow, tcolumn)
 	local spacing = 4
-	local row = 132
-	local column = 148
+	local row = trow
+	local column = tcolumn
 	local lchars = {}
 	lchars = lstrtochar(theString)
 	column -= math.floor(#lchars * spacing / 2)
@@ -167,6 +175,18 @@ function addWeaponDetails(theString)
 		newLetter = write((column + spacing * lIndex), row, letter, true)
 		newLetter:add()
 		writings[#writings + 1] = newLetter
+	end
+end
+
+function getTierStr(value)
+	if value == 1 then
+		return "*"
+	elseif value == 2 then
+		return "**"
+	elseif value == 3 then
+		return "***"
+	else
+		return " "
 	end
 end
 
@@ -180,4 +200,8 @@ end
 
 function getGunName(name)
 	return gunnames[name]
+end
+
+function getweaponTier()
+	return weaponTier
 end

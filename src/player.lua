@@ -76,9 +76,10 @@ itemAbsorber:setCollideRect(0, 0, playerMagnet, playerMagnet)
 
 -- Bullets
 bullets = {}
-theShotTimes = {0, 0, 0, 0}
-theGunSlots = {1, 0, 0, 0}
-theGunLogic = {0, 0, 0, 0}
+theShotTimes = {0, 0, 0, 0} --how long until next shot
+theGunSlots = {1, 0, 0, 0} --what gun in each slot
+theGunLogic = {0, 0, 0, 0} --what special logic that slotted gun needs
+theGunTier = {3, 0, 0, 0} -- what tier the gun is at
 
 -- Particles
 particles = {}
@@ -214,6 +215,29 @@ function updateExpfornextlevel(nextExp)
 	startingExpForLevel = nextExp
 end
 
+-- +--------------------------------------------------------------+
+-- |            Player get values section            |
+-- +--------------------------------------------------------------+
+function getPlayerx()
+	return player.x
+end
+
+function getPlayery()
+	return player.y
+end
+
+function getCurrTime()
+	return theCurrTime
+end
+
+function getEquippedGun(weapon)
+	return theGunSlots[weapon]
+end
+
+function getTierForGun(tier)
+	return theGunTier[tier]
+end
+
 function getPlayerGunDamage()
 	return playerGunDamage
 end
@@ -234,17 +258,17 @@ function getLuck()
 	return playerLuck
 end
 
+function setRunSpeed(value)
+	playerRunSpeed = value
+end
+
 function getStun()
 	return playerStunChance
 end
 
-function incLuck()
-	playerLuck += 5
-	print('luck increased by 5')
-	if playerLuck > playerLuckMax then 
-		playerLuck = playerLuckMax
-	end
-end
+-- +--------------------------------------------------------------+
+-- |            Player Stat Section            |
+-- +--------------------------------------------------------------+
 
 function upgradeStat(stat, bonus)
 	if stat == 1 then
@@ -300,6 +324,12 @@ function upgradeStat(stat, bonus)
 	else
 		print('error')
 	end
+	if math.random(0,99) < playerLuck then
+		maxHealth += 1
+		playerHealthbar:updateMaxHealth(maxHealth)
+		heal(1)
+		print('health increased by 1 bonus')
+	end
 end
 
 function clearStats()
@@ -336,6 +366,7 @@ function clearStats()
 	theShotTimes = {0, 0, 0, 0}
 	theGunSlots = {1, 0, 0, 0}
 	theGunLogic = {0, 0, 0, 0}
+	theGunTier = {1, 0, 0, 0}
 	theSpawnTime = 0
 	invincibleTime = 0
 	invincible = false
@@ -405,6 +436,13 @@ function addEXP(amount)
 	playerExpbar:gainExp(amount + playerExpBonus)
 end
 
+function incLuck()
+	playerLuck += 5
+	print('luck increased by 5')
+	if playerLuck > playerLuckMax then 
+		playerLuck = playerLuckMax
+	end
+end
 
 function shield(amount)
 	invincibleTime = theCurrTime + amount
@@ -412,15 +450,14 @@ function shield(amount)
 end
 
 
-function newWeaponGrabbed(weapon)
+function newWeaponGrabbed(weapon, tier)
 	setGameState(GAMESTATE.newweaponmenu)
-	openWeaponMenu(weapon)
-	--theGunSlots[slot] = 8 
-	--updateMenuWeapon(slot, theGunSlots[slot])
+	openWeaponMenu(weapon, tier)
 end
 
-function newWeaponChosen(weapon, slot)
-	theGunSlots[slot] = weapon 
+function newWeaponChosen(weapon, slot, tier)
+	theGunSlots[slot] = weapon
+	theGunTier[slot] = tier
 	updateMenuWeapon(slot, weapon)
 end
 
@@ -538,10 +575,12 @@ end
 -- +--------------------------------------------------------------+
 -- |                       Bullet Management                      |
 -- +--------------------------------------------------------------+
-function spawnGrenadePellets(grenadex, grenadey)
+function spawnGrenadePellets(grenadex, grenadey, tier)
 	local newLifeTime = theCurrTime + 1500
-	for i = 8,1,-1 do
-		local newRotation = math.random(45 * (i - 1),45 * i)
+	local amount = 4 + (4 * tier)
+	local degree = math.floor(360/amount)
+	for i = amount,1,-1 do
+		local newRotation = math.random(degree * (i - 1),degree * i)
 		newBullet = bullet(grenadex, grenadey, newRotation, newLifeTime, 99, 0)
 		newBullet:add()
 		bullets[#bullets + 1] = newBullet
@@ -558,58 +597,105 @@ function spawnBullets()
 				
 				if theGunSlots[sIndex] == 2 then --cannon
 					theShotTimes[sIndex] = theCurrTime + playerAttackRate * 5
-					newBullet = bullet(player.x, player.y, newRotation, newLifeTime, theGunSlots[sIndex], sIndex)
+					newBullet = bullet(player.x, player.y, newRotation, newLifeTime, theGunSlots[sIndex], sIndex, theGunTier[sIndex])
 					newBullet:add()
 					bullets[#bullets + 1] = newBullet 
 				elseif theGunSlots[sIndex] == 3 then -- minigun
 					theShotTimes[sIndex] = theCurrTime + playerAttackRate
-					newBullet = bullet(player.x, player.y, newRotation + math.random(-8, 8), newLifeTime, theGunSlots[sIndex], sIndex)
+					newBullet = bullet(player.x, player.y, newRotation + math.random(-8, 8), newLifeTime, theGunSlots[sIndex], sIndex, theGunTier[sIndex])
 					newBullet:add()
 					bullets[#bullets + 1] = newBullet
+					if theGunTier[sIndex] > 1 then
+						newBullet = bullet(player.x, player.y, newRotation + math.random(9, 16), newLifeTime, theGunSlots[sIndex], sIndex, theGunTier[sIndex])
+						newBullet:add()
+						bullets[#bullets + 1] = newBullet
+					end
+					if theGunTier[sIndex] > 2 then
+						newBullet = bullet(player.x, player.y, newRotation - math.random(9, 16), newLifeTime, theGunSlots[sIndex], sIndex, theGunTier[sIndex])
+						newBullet:add()
+						bullets[#bullets + 1] = newBullet
+					end
 				elseif theGunSlots[sIndex] == 4 then -- shotgun
 					theShotTimes[sIndex] = theCurrTime + playerAttackRate * 3
-					newBullet = bullet(player.x, player.y, newRotation+ math.random(-8, 8), newLifeTime, theGunSlots[sIndex], sIndex)
+					newBullet = bullet(player.x, player.y, newRotation+ math.random(-8, 8), newLifeTime, theGunSlots[sIndex], sIndex, theGunTier[sIndex])
 					newBullet:add()
 					bullets[#bullets + 1] = newBullet
-					newBullet = bullet(player.x, player.y, newRotation + math.random(10, 25), newLifeTime, theGunSlots[sIndex], sIndex)
+					newBullet = bullet(player.x, player.y, newRotation + math.random(16, 25), newLifeTime, theGunSlots[sIndex], sIndex, theGunTier[sIndex])
 					newBullet:add()
 					bullets[#bullets + 1] = newBullet
-					newBullet = bullet(player.x, player.y, newRotation - math.random(10, 25), newLifeTime, theGunSlots[sIndex], sIndex)
+					newBullet = bullet(player.x, player.y, newRotation - math.random(16, 25), newLifeTime, theGunSlots[sIndex], sIndex, theGunTier[sIndex])
 					newBullet:add()
 					bullets[#bullets + 1] = newBullet
+					if theGunTier[sIndex] > 1 then
+						newBullet = bullet(player.x, player.y, newRotation + math.random(26, 35), newLifeTime, theGunSlots[sIndex], sIndex, theGunTier[sIndex])
+						newBullet:add()
+						bullets[#bullets + 1] = newBullet
+						newBullet = bullet(player.x, player.y, newRotation - math.random(26, 35), newLifeTime, theGunSlots[sIndex], sIndex, theGunTier[sIndex])
+						newBullet:add()
+						bullets[#bullets + 1] = newBullet
+					end
+					if theGunTier[sIndex] > 2 then
+						newBullet = bullet(player.x, player.y, newRotation + math.random(9, 15), newLifeTime, theGunSlots[sIndex], sIndex, theGunTier[sIndex])
+						newBullet:add()
+						bullets[#bullets + 1] = newBullet
+						newBullet = bullet(player.x, player.y, newRotation - math.random(9, 15), newLifeTime, theGunSlots[sIndex], sIndex, theGunTier[sIndex])
+						newBullet:add()
+						bullets[#bullets + 1] = newBullet
+					end
 				elseif theGunSlots[sIndex] == 5 then -- rifle
 					if theGunLogic[sIndex] < 3 then
 						theShotTimes[sIndex] = theCurrTime + playerAttackRate
-						newBullet = bullet(player.x, player.y, newRotation, newLifeTime, theGunSlots[sIndex], sIndex)
+						newBullet = bullet(player.x, player.y, newRotation, newLifeTime, theGunSlots[sIndex], sIndex, theGunTier[sIndex])
 						newBullet:add()
 						bullets[#bullets + 1] = newBullet
 						theGunLogic[sIndex] += 1
+						if theGunTier[sIndex] > 1 then
+							newBullet = bullet(player.x, player.y, newRotation + 7, newLifeTime, theGunSlots[sIndex], sIndex, theGunTier[sIndex])
+							newBullet:add()
+							bullets[#bullets + 1] = newBullet
+						end
+						if theGunTier[sIndex] > 2 then
+							newBullet = bullet(player.x, player.y, newRotation - 7, newLifeTime, theGunSlots[sIndex], sIndex, theGunTier[sIndex])
+							newBullet:add()
+							bullets[#bullets + 1] = newBullet
+						end
 					else
 						theShotTimes[sIndex] = theCurrTime + playerAttackRate * 3
 						theGunLogic[sIndex] = 0
 					end
 				elseif theGunSlots[sIndex] == 6 then -- grenade
 					theShotTimes[sIndex] = theCurrTime + playerAttackRate * 7
-					newBullet = bullet(player.x, player.y, newRotation, newLifeTime, theGunSlots[sIndex], sIndex)
+					newBullet = bullet(player.x, player.y, newRotation, newLifeTime, theGunSlots[sIndex], sIndex, theGunTier[sIndex])
 					newBullet:add()
 					bullets[#bullets + 1] = newBullet
 				elseif theGunSlots[sIndex] == 7 then -- Rang
 					theShotTimes[sIndex] = theCurrTime + playerAttackRate * 6
-					newBullet = bullet(player.x, player.y, newRotation, (newLifeTime + 4500), theGunSlots[sIndex], sIndex)
+					newBullet = bullet(player.x, player.y, newRotation, (newLifeTime + 4500), theGunSlots[sIndex], sIndex, theGunTier[sIndex])
 					newBullet:add()
 					bullets[#bullets + 1] = newBullet
 				elseif theGunSlots[sIndex] == 8 then -- wave
 					theShotTimes[sIndex] = theCurrTime + playerAttackRate * 3
-					newBullet = bullet(player.x, player.y, newRotation, (newLifeTime), theGunSlots[sIndex], sIndex)
+					newBullet = bullet(player.x, player.y, newRotation, (newLifeTime), theGunSlots[sIndex], sIndex, theGunTier[sIndex])
 					newBullet:add()
 					bullets[#bullets + 1] = newBullet
 				else --peagun
 					theShotTimes[sIndex] = theCurrTime + playerAttackRate * 2
-					newBullet = bullet(player.x, player.y, newRotation, newLifeTime, theGunSlots[sIndex], sIndex)
+					newBullet = bullet(player.x, player.y, newRotation, newLifeTime, theGunSlots[sIndex], sIndex, theGunTier[sIndex])
 					newBullet:add()
 					bullets[#bullets + 1] = newBullet 
+					if theGunTier[sIndex] > 1 then
+						local tempVec = vec.new(math.sin(newRotation),-math.cos(newRotation)) * 10 + vec.new(player.x,player.y) --vec.new(math.cos(newRotation), math.sin(newRotation)) * player.y
+						newBullet = bullet(tempVec.x, tempVec.y, newRotation, newLifeTime, theGunSlots[sIndex], sIndex, theGunTier[sIndex])
+						newBullet:add()
+						bullets[#bullets + 1] = newBullet
+					end
+					if theGunTier[sIndex] > 2 then
+						local tempVec = vec.new(math.sin(newRotation),-math.cos(newRotation)) * -10 + vec.new(player.x,player.y)
+						newBullet = bullet(tempVec.x, tempVec.y, newRotation, newLifeTime, theGunSlots[sIndex], sIndex, theGunTier[sIndex])
+						newBullet:add()
+						bullets[#bullets + 1] = newBullet
+					end
 				end
-
 			end
 		end
 	end
@@ -624,7 +710,7 @@ function updateBullets()
 		
 		if Unpaused then bullets[bIndex].lifeTime += theLastTime end
 		if theCurrTime >= bullets[bIndex].lifeTime then
-			if bullets[bIndex].type == 6 then spawnGrenadePellets(bullets[bIndex].x, bullets[bIndex].y) end
+			if bullets[bIndex].type == 6 then spawnGrenadePellets(bullets[bIndex].x, bullets[bIndex].y, bullets[bIndex].tier) end
 			bullets[bIndex]:remove()
 			table.remove(bullets, bIndex)
 		end
@@ -726,6 +812,16 @@ function attractAllItems()
 	end
 end
 
+function decideWeaponTier()
+	local rndTier = math.random(1,100)
+	local newTier = 1
+	if rndTier > (95 - math.floor(playerLuck / 5)) then
+		newTier = 3
+	elseif rndTier > (50 - math.floor(playerLuck / 4)) then
+		newTier = 2
+	end
+	return newTier
+end
 
 function updateItems(dt)
 	for iIndex,item in pairs(items) do	
@@ -744,7 +840,7 @@ function updateItems(dt)
 				heal(3)
 				addItemsGrabbed()
 			elseif items[iIndex].type == ITEM_TYPE.weapon then
-				newWeaponGrabbed(math.random(1, 8))
+				newWeaponGrabbed(math.random(1, 8), decideWeaponTier())
 				addItemsGrabbed()
 			elseif items[iIndex].type == ITEM_TYPE.shield then
 				shield(10000)
@@ -789,18 +885,6 @@ end
 -- +--------------------------------------------------------------+
 -- |                            Update                            |
 -- +--------------------------------------------------------------+
-
-function getPlayerx()
-	return player.x
-end
-
-function getPlayery()
-	return player.y
-end
-
-function getCurrTime()
-	return theCurrTime
-end
 
 function setUnpaused(value)
 	Unpaused = value

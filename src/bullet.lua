@@ -4,12 +4,13 @@ local vec <const> = playdate.geometry.vector2D
 class('bullet').extends(gfx.sprite)
 
 
-function bullet:init(x, y, rotation, newLifeTime, type, index)
+function bullet:init(x, y, rotation, newLifeTime, type, index, tier)
 	bullet.super.init(self)
 	if type == 2 then
 		self:setImage(gfx.image.new('Resources/Sprites/BulletCannon'))
 		self.speed = getPayerBulletSpeed() * 8
-		self.damage = 3 + getPlayerGunDamage() * 2
+		self.damage = 3 + getPlayerGunDamage() * (1 + tier)
+		self:setScale(tier)
 	elseif type == 3 then
 		self:setImage(gfx.image.new('Resources/Sprites/BulletMinigun'))
 		self.speed = getPayerBulletSpeed() * 2
@@ -30,6 +31,7 @@ function bullet:init(x, y, rotation, newLifeTime, type, index)
 		self:setImage(gfx.image.new('Resources/Sprites/BulletRanggun'))
 		self.speed = getPayerBulletSpeed() * 2
 		self.damage = 1 + math.floor(getPlayerGunDamage() / 3)
+		self:setScale(tier)
 	elseif type == 8 then
 		self:setImage(gfx.image.new('Resources/Sprites/BulletWavegun'))
 		self.speed = getPayerBulletSpeed()
@@ -54,6 +56,7 @@ function bullet:init(x, y, rotation, newLifeTime, type, index)
 	self.index = index
 	self.lifeTime = newLifeTime
 	self.timer = 0
+	self.tier = tier
 	addShot()
 end
 
@@ -70,7 +73,14 @@ function bullet:collisionResponse(other)
 	elseif tag == TAGS.itemAbsorber then
 		return 'overlap'
 	elseif tag == TAGS.enemy then
-		if self.type == 7 or self.type == 8 then
+		if self.type == 7 then
+			if self.timer < getCurrTime() then
+				other:damage(self.damage)
+				other:potentialStun()
+				self.timer = getCurrTime() + 50
+			end
+			return 'overlap'
+		elseif self.type == 8 then
 			if self.timer < getCurrTime() then
 				other:damage(self.damage)
 				other:potentialStun()
@@ -115,7 +125,7 @@ function bullet:move()
 		if self.lifeTime - 1300 + (200 * self.mode) < getCurrTime() then 
 			self.mode += 1
 			if self.damage > 1 then self.damage = math.ceil(self.damage/2) end
-			self:setScale(1 + self.mode, 1)
+			self:setScale(1 + self.mode/2 * self.tier, 1)
 			self:setCollideRect(0, 0, self:getSize())
 		end
 		local rad = math.rad(self:getRotation() - 90)
