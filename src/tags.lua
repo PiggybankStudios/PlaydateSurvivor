@@ -32,6 +32,16 @@ GAMESTATE = {
 	deathscreen = 6
 }
 
+
+CAMERA_SHAKE_STRENGTH = {
+	tiny = 2,
+	small = 4, 
+	medium = 10,
+	large = 24,
+	massive = 48
+}
+
+
 ITEM_TYPE = {
 	health = 1,
 	weapon = 2, 

@@ -40,12 +40,13 @@ function clamp(value, min, max)
 	end
 end
 
-
+--[[
 function distance(vec1, vec2)
 	x = vec1.x - vec2.x
 	y = vec1.y - vec2.y
 	return math.sqrt((x * x) + (y * y))
 end
+]]--
 
 -- +--------------------------------------------------------------+
 -- |                        Interpolation                         |

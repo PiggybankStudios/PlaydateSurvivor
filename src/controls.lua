@@ -14,7 +14,7 @@ end
 
 function clearAllThings()
 	clearItems()
-	clearMonsters()
+	clearEnemies()
 	clearBullets()
 	clearPauseMenu()
 end

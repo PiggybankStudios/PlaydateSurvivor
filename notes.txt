@@ -1,0 +1,99 @@
+
+This is a file that you can put any notes or TODO lists in
+
+# TODO List
+	@ Anyone		
+		[!] Infinite map
+		[ ] Movement direction input bug
+				* holding left still doesn't work sometimes
+				* input gets stuck sometimes - don't know if only a simulator bug or not
+		[ ] Playdate Itch.io pages and Discord Updates
+				* Page for Survivors
+				* Page for CDoku
+				* Page for Floragram
+				* updates to playdate discord with dev logs
+		[ ] Show End-Of-Round Timer on screen (somewhere)
+		[!] Talk about End-Of-Timer End State
+				* vampire survivor reaper that kills player?
+				* endless modes?
+				* progression?
+				* what's the most interesting thing to us?
+		[ ] Character gun is too offset from bullet spawn point
+				* might adjust spawn point of bullets
+				* also need to make a better player sprite
+	@ Taylor
+		[ ] Add some guns
+			[ ] Potion gun
+				* Throwing a potion or vial
+				* leaves behind an AoE
+				* short life time so it doesn't travel far
+			[ ] Arrow gun
+				* Shoots arrow, pierces enemy, sticks in wall, does damage if someone is touching the arrow
+			[!] Shield
+				* Floats in front of the player slightly,
+				* Rotating to block damage in a direction,
+				* Knockback when enemy touches it
+				* Knockback damage scaled by retaliation stat, if none, it does no damage
+				* Does 1 damage at least so no soft-lock
+			[ ] Laser Sword
+				* Laser sword that sticks in front of you
+				* Maybe we should do a sword swipe effect instead of laser sword
+			[ ] Chaos Gun
+				* Shoots out random bullets, or maybe squiggle bullets
+				* Like worm wiggling back and forth
+				* Random speed, damage, size, angle, etc. for each bullet
+		[ ] Add some monsters
+			[!] Shooter
+				* Gets to a particular distance from player and tries to maintain it while shooting you
+			[ ] Splitter
+				* Comes within a certain distance and then creates a copy
+				* Copy is slightly different, it just flies directly at you
+				* Kill him to stop him spawning infinite enemies
+				* Copies don't drop anything
+			[ ] Mother
+				* Spawns a ton of tiny enemies
+				* Fly for a bit in a random direction, then fly at the player, then random again
+				* Kind of like a beehive
+			[ ] Pooper
+				* Roams randomly, not trying to hit the player
+				* Attempts to be within a certain distance of the player
+				* Leaves behind acid pools periodically, also when it dies
+				* Acid pools do damage when you stand on them
+			[ ] Rook/Statue
+				* 2 states
+				*  1: Move on a single axis only (x or y), for some distance
+				*  2: When he stops, he turns into a statue, eyes disappear, and is immune to all damage
+			[ ] Bubble
+				* Tries to spiral towards player
+				* First he's really slow
+				* has rings around the outside
+				* rings disappear as he takes damage
+				* gets faster as rings disappear
+				* smaller and smaller hit box as ring disappear
+			[ ] Bomb
+				* After it takes a certain amount of much damage, it lights on fire and attempts to explode
+			[ ] Vampire
+				* Doesn't move conventionally, teleports instead
+				* Teleports within a range of the player
+				* While near the player he sucks your life force, and regens his own health
+				* If you move away from him, it will take him a bit to teleport to you again
+			[?] On death of guy that runs away (looks like a plus sign) Maybe he could heal guys around him when he dies?
+		[ ] -
+	@ Devon
+		[ ] -
+	@ Sean
+		[ ] Knockback stat for weapons in general
+				* knockback for enemies already working 
+				* need to apply to bullets				
+		[ ] Bullet management
+				* destroy when off-screen
+				* destroy at end-of-life
+				* need to give bullets their own subclasses
+		[ ] Enemies spawn in radius rather than from screen size
+		[ ] Max enemy cap and recycling
+				* when enemies are off-screen for too long, teleport them closer to the player
+					* in player's move direction?
+		[Done] Fix HP bar bug
+		[ ] Camera fixes
+				* camera setoffset INSTEAD of draw offset for shake effects
+		[ ] Particle effect for when Chunky Arms starts to rage

@@ -28,6 +28,7 @@ local gfx <const> = playdate.graphics
 
 local reset = false
 local recycleValue = 0
+local currentFrame = 0
 
 gfx.setColor(gfx.kColorWhite)
 gfx.fillRect(0, 0, 400, 240)
@@ -42,13 +43,16 @@ lastState = GAMESTATE.nothing
 -- |                         Main Update                          |
 -- +--------------------------------------------------------------+
 
+
 function recycleGun(value)
 	recycleValue = value
 end
 
+
 function playdate.update()
 	dt = 1/20
 	elapsedTime = elapsedTime + dt
+	currentFrame = (currentFrame + 1) % 60
 
 	-- Start Screen
 	if currentState == GAMESTATE.startscreen then
@@ -82,6 +86,7 @@ function playdate.update()
 		end
 		updatePlayer(dt)
 		updateCamera(dt)
+		updateEnemies(dt, currentFrame)
 
 	-- Pause Menu
 	elseif currentState == GAMESTATE.pausemenu then
@@ -146,25 +151,3 @@ function restartGame()
 	reset = true
 end
 
-
-
--- TO DO:
-	-- bullets are slow
-	-- character gun is too offset from bullet spawn point - might adjust spawn point
-		-- remake sprite to make aiming feel better - less bulky
-	-- equipped items ui
-	-- enemy cap / object cap
-	-- level select screen
-
-
--- To Make:
-	-- one more gun: laser
-	-- enemy that shoots
-	-- choose level ups
-	-- SHOW the timer for end of the round - it's already made
-	-- end of timer death: reaper? kill the reaper with right setup? game state after reaper? vampires?
-
--- My next project:
-	-- enemy management
-	-- bullet management
-	-- calc stuff in frame chunks

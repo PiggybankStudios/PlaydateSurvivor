@@ -3,6 +3,7 @@ local gfx <const> = playdate.graphics
 
 class('item').extends(gfx.sprite)
 
+
 function item:init(x, y, type)
 	item.super.init(self)
 	

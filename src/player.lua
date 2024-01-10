@@ -2,11 +2,10 @@
 local gfx <const> = playdate.graphics
 local vec <const> = playdate.geometry.vector2D
 
+local mathFloor <const> = math.floor
 
 local healthbarOffsetY <const> = 30
 local setDamageTimer <const> = 200
-local halfScreenWidth <const> = playdate.display.getWidth() / 2
-local halfScreenHeight <const> = playdate.display.getHeight() / 2
 
 -- Sprite
 playerSheet = gfx.imagetable.new('Resources/Sheets/player')
@@ -33,13 +32,13 @@ local itemsGrabbed = 0
 -- difficulty
 local difficulty = 1
 local maxDifficulty = 15
-local spawnInc = 0
 
 -- Player
 local playerLevel = 0
 local maxHealth = 15
 local health = maxHealth
 local playerSpeed = 50
+local playerVelocity = vec.new(0, 0)
 local playerAttackRate = 100
 local playerAttackRateMin = 10 --limit
 local playerExp = 0
@@ -79,14 +78,10 @@ bullets = {}
 theShotTimes = {0, 0, 0, 0} --how long until next shot
 theGunSlots = {1, 0, 0, 0} --what gun in each slot
 theGunLogic = {0, 0, 0, 0} --what special logic that slotted gun needs
-theGunTier = {3, 0, 0, 0} -- what tier the gun is at
+theGunTier = {1, 0, 0, 0} -- what tier the gun is at
 
 -- Particles
 particles = {}
-
--- Enemies
-enemies = {}
-theSpawnTime = 0
 
 -- Items
 items = {}
@@ -95,6 +90,7 @@ invincible = false
 
 --Menu
 Unpaused = false
+local theCurrTime
 
 -- +--------------------------------------------------------------+
 -- |            Player Sprite and Collider Interaction            |
@@ -114,21 +110,14 @@ function addPlayerSpritesToList()
 end
 
 
--- Moves both player sprite and collider - flooring stops jittering b/c only integers
-function movePlayerWithCollider(x, y)
-	local floorX = math.floor(x)
-	local floorY = math.floor(y)
-	player:moveTo(floorX, floorY)
-	collider:moveTo(floorX, floorY)
-	itemAbsorber:moveTo(floorX, floorY)
-	playerHealthbar:moveTo(floorX, floorY - healthbarOffsetY)
-end
-
-
 function heal(amount)
-	playerHealthbar:heal(amount + playerHealBonus)
-	health = playerHealthbar:currentHP()
+	health += (amount + playerHealBonus)
+	if health > maxHealth then
+		health = maxHealth
+	end
+	playerHealthbar:updateHealth(health)
 end
+
 
 -- Damage player health - called via enemies
 function player:damage(amount, camShakeStrength, enemyX, enemyY)
@@ -146,8 +135,12 @@ function player:damage(amount, camShakeStrength, enemyX, enemyY)
 	-- Damaging
 	local amountLost = math.max(amount - playerArmor, 1)
 	damageTimer = theCurrTime + setDamageTimer
-	playerHealthbar:damage(amountLost)
-	health = playerHealthbar:currentHP()
+	health -= amountLost
+	if health < 0 then
+		amountLost += health
+		health = 0
+	end
+	playerHealthbar:updateHealth(health)
 	addDamageReceived(amountLost)
 
 	-- Camera Shake
@@ -274,59 +267,73 @@ function upgradeStat(stat, bonus)
 	if stat == 1 then
 		playerArmor += bonus
 		print('armor increased by ' .. tostring(bonus))
+
 	elseif stat == 2 then
 		playerAttackRate -= 5 * bonus
 		if playerAttackRate < playerAttackRateMin then playerAttackRate = playerAttackRateMin end
 		print('attack rate increased by ' .. tostring(5 * bonus))
+
 	elseif stat == 3 then
 		playerBulletSpeed += bonus
 		print('bullet speed increased by ' .. tostring(bonus))
+
 	elseif stat == 4 then
 		playerGunDamage += bonus
 		print('damage increased by ' .. tostring(bonus))
+
 	elseif stat == 5 then
 		playerDodge += 3 * bonus
 		print('dodge increased by ' .. tostring(3 * bonus))
+
 	elseif stat == 6 then
 		playerExpBonus += bonus
 		print('bonus exp increased by ' .. tostring(bonus))
+
 	elseif stat == 7 then
 		playerHealBonus += bonus
 		print('heal increased by ' .. tostring(bonus))
+
 	elseif stat == 8 then
 		maxHealth += 2 * bonus
-		playerHealthbar:updateMaxHealth(maxHealth)
+		playerHealthbar:updateMaxHealth(maxHealth, health)
 		heal(2 * bonus)
 		print('health increased by ' .. tostring(2 * bonus))
+
 	elseif stat == 9 then
 		playerLuck += 5 * bonus
 		print('luck increased by ' .. tostring(5 * bonus))
+
 	elseif stat == 10 then
 		playerMagnet += 20 * bonus
 		itemAbsorberRange = playerMagnet
 		itemAbsorber:setSize(playerMagnet, playerMagnet)
 		itemAbsorber:setCollideRect(0, 0, playerMagnet, playerMagnet)
 		print('magnet increased by ' .. tostring(20 * bonus))
+
 	elseif stat == 11 then
 		playerReflectDamage += bonus
 		print('reflect increased by ' .. tostring(bonus))
+
 	elseif stat == 12 then
 		playerSpeed += 5 * bonus
 		print('speed increased by ' .. tostring(5 * bonus))
+
 	elseif stat == 13 then
 		playerVampire += 5 * bonus
 		if playerVampire > playerVampireMax then playerVampire = playerVampireMax end
 		print('vampire increased by ' .. tostring(5 * bonus))
+
 	elseif stat == 14 then
 		playerStunChance += 5 * bonus
 		if playerStunChance > playerStunChanceMax then playerStunChance = playerStunChanceMax end
 		print('vampire increased by ' .. tostring(5 * bonus))
+
 	else
 		print('error')
 	end
 	if math.random(0,99) < playerLuck then
 		maxHealth += 1
-		playerHealthbar:updateMaxHealth(maxHealth)
+		playerHealthbar:updateMaxHealth(maxHealth, health)
 		heal(1)
 		print('health increased by 1 bonus')
 	end
@@ -525,6 +532,7 @@ end
 -- +--------------------------------------------------------------+
 -- |                            Input                             |
 -- +--------------------------------------------------------------+
+
 function movePlayer(dt)
 	if collider == nil then return end	-- If the collider doesn't exist, then don't look for collisions
 
@@ -532,14 +540,36 @@ function movePlayer(dt)
 	if playdate.getButtonState() == 0 then resetInputXY() end
 
 	local moveSpeed = playerSpeed * playerRunSpeed * dt
-	local goalX = player.x + getInputX() * moveSpeed
-	local goalY = player.y + getInputY() * moveSpeed
+	playerVelocity.x = getInputX() * moveSpeed
+	playerVelocity.y = getInputY() * moveSpeed
+	local goalX = player.x + playerVelocity.x
+	local goalY = player.y + playerVelocity.y
 
 	-- The actual position is determined via collision response above
 	local actualX, actualY, collisions = collider:checkCollisions(goalX, goalY)
 	movePlayerWithCollider(actualX, actualY)
 end
 
+
+-- Moves both player sprite and collider - flooring stops jittering b/c only integers
+function movePlayerWithCollider(x, y)
+	local floorX = mathFloor(x)
+	local floorY = mathFloor(y)
+	player:moveTo(floorX, floorY)
+	collider:moveTo(floorX, floorY)
+	itemAbsorber:moveTo(floorX, floorY)
+	playerHealthbar:moveTo(floorX, floorY - healthbarOffsetY)
+end
+
+
+function getPlayerVelocity()
+	return playerVelocity
+end
+
+
+function getPlayerPosition()
+	return vec.new(player.x, player.y)
+end
 
 -- Checking for collisions with items to move them towards the player
 function itemAbsorberCollisions()
@@ -706,7 +736,7 @@ end
 function updateBullets()
 	-- Movement
 	for bIndex,bullet in pairs(bullets) do
-		bullet:move()
+		bullet:move(theCurrTime)
 		
 		if Unpaused then bullets[bIndex].lifeTime += theLastTime end
 		if theCurrTime >= bullets[bIndex].lifeTime then
@@ -725,77 +755,6 @@ function clearBullets()
 	end
 	for bIndex,bullet in pairs(bullets) do
 		table.remove(bullets, bIndex)
-	end
-end
-
--- +--------------------------------------------------------------+
--- |                       Monster Management                     |
--- +--------------------------------------------------------------+
-
-
-function spawnMonsters()
-	-- Movement
-	if Unpaused then theSpawnTime += theLastTime end
-	if theCurrTime >= theSpawnTime then
-		rndLoc = math.random(1,8)
-		theSpawnTime = theCurrTime + 3200 - 200 * difficulty
-
-		direction = { 	x = math.random(-1,1), 
-						y = math.random(-1,1)}		        -- either -1, 0, 1
-		if (direction.x == 0 and direction.y == 0) then
-			direction.x = (math.random(0,1) * 2) - 1 
-			direction.y = (math.random(0,1) * 2) - 1		-- either -1 or 1
-		end
-		distance = { 	x = math.random(), 
-						y = math.random() }					-- between 0 to 1
-		enemyX = player.x + (halfScreenWidth + (halfScreenWidth * distance.x)) * direction.x
-		enemyY = player.y + (halfScreenHeight + (halfScreenHeight * distance.y)) * direction.y
-
-		local eType = math.random(1, 5)
-		local eAccel = 0.5
-		
-		--newEnemy = enemy(enemyX, enemyY, eType, theCurrTime)
-		newEnemy = createEnemy(enemyX, enemyY, eType, theCurrTime)
-		newEnemy:add()	
-		enemies[#enemies + 1] = newEnemy
-
-		spawnInc += math.random(1, difficulty)
-		if spawnInc > 5 then
-			spawnInc = 0
-			eType = math.random(1, 6)
-			--newEnemy = enemy(-enemyX, -enemyY, eType, theCurrTime)
-			newEnemy = createEnemy(-enemyX, -enemyY, eType, theCurrTime)
-			newEnemy:add()
-			
-			enemies[#enemies + 1] = newEnemy
-		end
-	end
-end
-
-
-function updateMonsters()
-	for eIndex,enemy in pairs(enemies) do		
-		if Unpaused then enemies[eIndex].time += theLastTime end
-		enemy:move(player.x, player.y, theCurrTime)
-		if enemies[eIndex].health <= 0 then
-			newItem = item(enemies[eIndex].x, enemies[eIndex].y, enemies[eIndex]:getDrop())
-			newItem:add()
-			items[#items + 1] = newItem
-			enemies[eIndex]:remove()
-			table.remove(enemies,eIndex)
-			addKill()
-		end
-	end
-
-	spawnMonsters()
-end
-
-function clearMonsters()
-	for eIndex,enemy in pairs(enemies) do		
-		enemies[eIndex]:remove()
-	end
-	for eIndex,enemy in pairs(enemies) do	
-		table.remove(enemies,eIndex)
 	end
 end
 
@@ -892,7 +851,8 @@ end
 
 function updatePlayer(dt)
 	theCurrTime = playdate.getCurrentTimeMilliseconds()
-	
+
+
 	if Unpaused then 
 		theLastTime = theCurrTime - theLastTime 
 		invincibleTime += theLastTime
@@ -917,7 +877,7 @@ function updatePlayer(dt)
 	itemAbsorberCollisions()
 
 	updateBullets()
-	updateMonsters()
+	--updateMonsters()
 	updateParticles()
 	updateItems(dt)
 	

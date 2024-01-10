@@ -6,19 +6,26 @@ class('healthbar').extends(gfx.sprite)
 function healthbar:init(x, y, maxHealth)
 	healthbar.super.init(self)
 	self.maxHealth = maxHealth
-	self.health = maxHealth
 	self:moveTo(x, y)
 	self:updateHealth(maxHealth)
 	self:add()
 end
 
-function healthbar:updateMaxHealth(amount)
-	self.maxHealth = amount
-	self:updateHealth(self.health)
+function healthbar:updateMaxHealth(newMax, currentHealth)
+	self.maxHealth = newMax
+	self:updateHealth(currentHealth)
 end
 
 
 function healthbar:updateHealth(newHealth)
+
+	-- all health lost
+	if newHealth == 0 then
+		self:remove()
+		do return end
+	end
+
+	-- update health bar
 	local maxWidth = 40
 	local height = 4
 	local radius = 3
@@ -43,6 +50,7 @@ function healthbar:updateHealth(newHealth)
 end
 
 
+--[[
 function healthbar:damage(amount)
 	self.health -= amount
 	if self.health <= 0 then
@@ -64,3 +72,4 @@ end
 function healthbar:currentHP()
 	return self.health
 end
+]]--
