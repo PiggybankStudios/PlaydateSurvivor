@@ -39,7 +39,8 @@ function gameScene:goToLevel(level_name)
 		end
 	end
 
-	-- add the player's sprite back to the list
+	-- add the player's sprite back to the list and start the scene
 	addPlayerSpritesToList()
 	addUIBanner()
+	snapCamera()
 end

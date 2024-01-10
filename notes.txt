@@ -89,11 +89,11 @@ This is a file that you can put any notes or TODO lists in
 				* destroy when off-screen
 				* destroy at end-of-life
 				* need to give bullets their own subclasses
-		[ ] Enemies spawn in radius rather than from screen size
+		[DONE] Enemies spawn in radius rather than from screen size
 		[ ] Max enemy cap and recycling
 				* when enemies are off-screen for too long, teleport them closer to the player
 					* in player's move direction?
 		[Done] Fix HP bar bug
-		[ ] Camera fixes
+		[Done] Camera fixes
 				* camera setoffset INSTEAD of draw offset for shake effects
 		[ ] Particle effect for when Chunky Arms starts to rage

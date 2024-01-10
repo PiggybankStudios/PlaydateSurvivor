@@ -877,7 +877,6 @@ function updatePlayer(dt)
 	itemAbsorberCollisions()
 
 	updateBullets()
-	--updateMonsters()
 	updateParticles()
 	updateItems(dt)
 	

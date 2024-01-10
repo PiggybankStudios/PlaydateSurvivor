@@ -10,40 +10,49 @@ function bullet:init(x, y, rotation, newLifeTime, type, index, tier)
 		self:setImage(gfx.image.new('Resources/Sprites/BulletCannon'))
 		self.speed = getPayerBulletSpeed() * 8
 		self.damage = 3 + getPlayerGunDamage() * (1 + tier)
+		self.knockback = 4
 		self:setScale(tier)
 	elseif type == 3 then
 		self:setImage(gfx.image.new('Resources/Sprites/BulletMinigun'))
 		self.speed = getPayerBulletSpeed() * 2
 		self.damage = 1 + math.ceil(getPlayerGunDamage() / 2) --round up
+		self.knockback = 0
 	elseif type == 4 then
 		self:setImage(gfx.image.new('Resources/Sprites/BulletShotgun'))
 		self.speed = getPayerBulletSpeed() * 3
 		self.damage = 1 + math.floor(getPlayerGunDamage() / 2) --round down
+		self.knockback = 2
 	elseif type == 5 then
 		self:setImage(gfx.image.new('Resources/Sprites/BulletBurstgun'))
 		self.speed = getPayerBulletSpeed() * 3
 		self.damage = 1 + getPlayerGunDamage()
+		self.knockback = 3
 	elseif type == 6 then
 		self:setImage(gfx.image.new('Resources/Sprites/BulletGrenade'))
 		self.speed = getPayerBulletSpeed() * 2
 		self.damage = 2 + getPlayerGunDamage()
+		self.knockback = 0
 	elseif type == 7 then
 		self:setImage(gfx.image.new('Resources/Sprites/BulletRanggun'))
 		self.speed = getPayerBulletSpeed() * 2
 		self.damage = 1 + math.floor(getPlayerGunDamage() / 3)
+		self.knockback = 1
 		self:setScale(tier)
 	elseif type == 8 then
 		self:setImage(gfx.image.new('Resources/Sprites/BulletWavegun'))
 		self.speed = getPayerBulletSpeed()
 		self.damage = 4 + getPlayerGunDamage()
+		self.knockback = 0
 	elseif type == 99 then
 		self:setImage(gfx.image.new('Resources/Sprites/BulletGrenadePellet'))
 		self.speed = getPayerBulletSpeed() * 2
 		self.damage = 1 + math.floor(getPlayerGunDamage() / 2)
+		self.knockback = 0
 	else
 		self:setImage(gfx.image.new('Resources/Sprites/BulletPeagun'))
 		self.speed = getPayerBulletSpeed() * 4
 		self.damage = 1 + getPlayerGunDamage()
+		self.knockback = 0
 	end
 	
 	self:moveTo(x, y)
@@ -91,7 +100,7 @@ function bullet:collisionResponse(other)
 			self.lifeTime = 0 
 			other:damage(self.damage)
 			other:potentialStun()
-			--other:applyKnockback(self.x, self.y, 2)
+			other:applyKnockback(self.x, self.y, self.knockback)
 			return 'freeze'
 		end
 	else --tag == walls

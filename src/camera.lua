@@ -3,6 +3,7 @@ import "tweening"
 local gfx <const> = playdate.graphics
 local dsp <const> = playdate.display
 local vec <const> = playdate.geometry.vector2D
+local mathp <const> = playdate.math
 local mathFloor <const> = math.floor
 
 local currentTime
@@ -35,7 +36,7 @@ local minCamDifference <const> = 0.02
 local springConstant <const> = 0.5
 local springDampen <const> = 0.85
 local shakeEndDelta = 0.1
-local setShakeTimer = 200
+local setShakeTimer = 2000
 local shakeTimer = 0
 
 -- screen flash
@@ -71,14 +72,19 @@ end
 -- +--------------------------------------------------------------+
 
 
-function setCameraPos(angle, posX, posY)
+function getCameraPosition()
+	return cameraPos
+end
+
+
+local function setCameraPos(angle, posX, posY)
 	rad = math.rad(angle)
 	cameraPos.x = camDistance.x * math.cos(rad) + posX
 	cameraPos.y = camDistance.y * math.sin(rad) + posY - getHalfUIBannerHeight()	
 end
 
 
--- Pass positions for shake direction
+-- Pass positions for shake direction - global function called to actually shake the camera
 function cameraShake(strength, direction)
 	if direction == nil then
 		local randX, randY
@@ -90,11 +96,10 @@ function cameraShake(strength, direction)
 	shakeVelocity = direction * strength
 	camBob = camAnchor + shakeVelocity
 
-	local timerLength = clamp(setShakeTimer * strength, 400, 1800)
-	shakeTimer = math.max(shakeTimer, currentTime + timerLength)
+	shakeTimer = currentTime + setShakeTimer
 end
 
-
+--[[
 local function calculateCameraShake()
 	-- If the shake velocity is slow enough, just pass the anchor
 	if shakeVelocity:magnitude() <= minCamDifference then 
@@ -120,6 +125,40 @@ local function calculateCameraShake()
 
 	return camBob + shakeVelocity
 end
+]]--
+
+
+local function calculateDisplayShake()
+	-- If the shake velocity is slow enough, then set velocity to 0
+	if shakeVelocity:magnitude() <= minCamDifference then 
+		shakeVelocity = vec.new(0, 0)
+		camBob = camAnchor
+		return shakeVelocity
+	end
+
+	-- Calculate spring force
+	local force = camBob - camAnchor
+	local x = force:magnitude()
+
+	-- Dampen force based on the shake timer
+	local diff = setShakeTimer - (shakeTimer - currentTime)
+	local t = clamp(diff / setShakeTimer, 0, 1)
+	x = mathp.lerp(x, 0, t)
+
+	force:normalize()
+	force *= (-1 * springConstant * x)
+	shakeVelocity += force
+	shakeVelocity *= springDampen
+	camBob += shakeVelocity
+
+	return shakeVelocity
+end
+
+
+local function shakeCameraUpdate()
+	vel = calculateDisplayShake()
+	dsp.setOffset(vel.x, vel.y)
+end
 
 
 local function moveCamera()
@@ -128,9 +167,20 @@ local function moveCamera()
 
 	camAnchor.x = mathFloor(halfScreenWidth - currentCameraPos.x)
 	camAnchor.y = mathFloor(halfScreenHeight - currentCameraPos.y)
-	camBob = calculateCameraShake()
+	--camBob = calculateCameraShake()
 
-	gfx.setDrawOffset(camBob.x, camBob.y)
+	--gfx.setDrawOffset(camBob.x, camBob.y)
+	gfx.setDrawOffset(camAnchor.x, camAnchor.y)
+end
+
+
+-- global function to snap the camera to its target position instead of trying to move there
+function snapCamera()
+	playerPos = getPlayerPosition()
+	setCameraPos(getCrankAngle(), playerPos.x, playerPos.y)
+
+	currentCameraPos.x = cameraPos.x
+	currentCameraPos.y = cameraPos.y
 end
 
 
@@ -144,6 +194,7 @@ function updateCamera(dt)
 
 	setCameraPos(getCrankAngle(), player.x, player.y)
 	moveCamera()
+	shakeCameraUpdate()
 
 	manageScreenFlash()
 end

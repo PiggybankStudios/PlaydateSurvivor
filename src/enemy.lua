@@ -33,9 +33,11 @@ ENEMY_TYPE = {
 enemyList1 = {}
 enemyList2 = {}
 enemyList3 = {}
-local theSpawnTime = 0
 local spawnInc = 0
-local currentTime
+local currentTime = 0
+local theSpawnTime = 0
+local timeFromPause = 0
+local pauseDiff = 0
 
 -- +--------------------------------------------------------------+
 -- |                          Creation                            |
@@ -73,15 +75,13 @@ function createEnemy(x, y, type)
 
 	if first <= second and first <= third then
 		enemyList1[#enemyList1 + 1] = newEnemy
-		print("added to list 1. Total: " .. #enemyList1)
 
 	elseif second < first and second < third then
 		enemyList2[#enemyList2 + 1] = newEnemy
-		print("added to list 2. Total: " .. #enemyList2)
 
 	else
 		enemyList3[#enemyList3 + 1] = newEnemy
-		print("added to list 3. Total: " .. #enemyList3)
+
 	end
 end
 
@@ -96,6 +96,7 @@ function enemy:init(x, y)
 	self.fullhealth = self.health
 
 	self.time = currentTime
+	self.dead = false
 	self.stunned = 0
 	self.wiggleDir = 1
 	self.wigglePos = vec.new(0, 0)
@@ -289,6 +290,10 @@ function bulletBill:init(x, y)
 end
 
 function bulletBill:calculateMove(targetX, targetY)
+	-- update potential pauses
+	self.rotateTimerSet += pauseDiff
+	self.moveTimerSet += pauseDiff
+
 	-- don't move; find player position and rotate towards it
 	if self.AIsmarts == 2 then
 		self.directionVec = vec.new(targetX - self.x, targetY - self.y)
@@ -370,6 +375,8 @@ end
 
 
 function enemy:applyKnockback(impactX, impactY, force)
+	if force == 0 then do return end end
+
 	local impactDir = (vec.new(self.x, self.y) - vec.new(impactX, impactY)):normalized()
 	self.velocity += impactDir * force
 end
@@ -386,9 +393,10 @@ end
 
 function enemy:damage(amount)
 	self.health -= amount
-	if self.health < 0 then 
+	if self.health <= 0 then 
 		amount += self.health 	-- adjusts damage dealt to only track the amount it took to bring health to 0
-		self.health = 0 
+		self.health = 0
+		self.dead = true
 	end
 	self.healthbar:updateHealth(self.health)
 	addDamageDealt(amount)
@@ -536,6 +544,7 @@ function enemy:move()
 end
 
 
+-- Enemy-run vfx that's requires per-frame updates
 function enemy:updateVFX()
 
 	-- Stun - wiggle sprite
@@ -556,23 +565,35 @@ end
 -- +--------------------------------------------------------------+
 
 function spawnMonsters()
-	-- Movement
-	--if Unpaused then theSpawnTime += theLastTime end
+	-- 
+	if Unpaused then theSpawnTime += (currentTime - timeFromPause) end
+
 	if currentTime >= theSpawnTime then
 		local difficulty = getDifficulty()
 		rndLoc = math.random(1,8)
 		theSpawnTime = currentTime + 3200 - 200 * difficulty
 
-		direction = { 	x = math.random(-1,1), 
-						y = math.random(-1,1)}		        -- either -1, 0, 1
-		if (direction.x == 0 and direction.y == 0) then
-			direction.x = (math.random(0,1) * 2) - 1 
-			direction.y = (math.random(0,1) * 2) - 1		-- either -1 or 1
-		end
-		distance = { 	x = math.random(), 
-						y = math.random() }					-- between 0 to 1
-		enemyX = player.x + (halfScreenWidth + (halfScreenWidth * distance.x)) * direction.x
-		enemyY = player.y + (halfScreenHeight + (halfScreenHeight * distance.y)) * direction.y
+		-- either -1 or 1
+		flip = {
+			x = (math.random(0,1) * 2) - 1,
+			y = (math.random(0,1) * 2) - 1
+		}
+
+		-- random on unit circle - protects against randomly getting 0
+		direction = vec.new(0, 0)
+		direction.x = math.max(0.01, math.random()) * flip.x
+		direction.y = math.max(0.01, math.random()) * flip.y
+		direction:normalize()
+
+		-- elliptical perimeter of spawn region
+		distance = { 	
+			x = halfScreenWidth * 1.5,
+			y = halfScreenHeight * 1.5
+		}		
+
+		local screenCenter = getCameraPosition()
+		enemyX = screenCenter.x + (direction.x * distance.x)
+		enemyY = screenCenter.y + (direction.y * distance.y)
 
 		local eType = math.random(1, 5)
 		createEnemy(enemyX, enemyY, eType)
@@ -590,8 +611,12 @@ end
 -- Move all enemies every frame
 local function moveEnemies(dt)
 	local function moveInList(list)
-		--if Unpaused then enemyList[i].time += theLastTime end
 		for i, enemy in pairs(list) do
+			-- update timers with potential pauses
+			enemy.time += pauseDiff 
+			enemy.stunned += pauseDiff
+
+			-- do per-frame updates
 			enemy:move()
 			enemy:updateVFX()
 		end
@@ -607,14 +632,14 @@ end
 local function updateEnemyLists(frame)
 	local function updateList(enemyList)
 		for i, enemy in pairs(enemyList) do
-			--if Unpaused then enemyList[i].time += theLastTime end
 			local playerPos = getPlayerPosition()
 			enemy:calculateMove(playerPos.x, playerPos.y)
-			if enemyList[i].health <= 0 then
+			if enemyList[i].dead == true then
 				newItem = item(enemyList[i].x, enemyList[i].y, enemyList[i]:getDrop())
 				newItem:add()
 				items[#items + 1] = newItem
 				enemyList[i]:remove()
+				print("removed enemy")
 				table.remove(enemyList, i)
 				addKill()
 			end
@@ -658,7 +683,22 @@ end
 function updateEnemies(dt, frame)
 	currentTime = playdate.getCurrentTimeMilliseconds()
 
+	-- PAUSED - need to save the time
+	if Unpaused == false then
+		if timeFromPause == 0 then timeFromPause = currentTime end
+
+	-- NOT PAUSED - save the time difference from how long we were paused
+	else 
+		if pauseDiff == 0 then pauseDiff = currentTime - timeFromPause end
+	end
+
 	spawnMonsters()
 	updateEnemyLists(frame)
 	moveEnemies(dt)
+
+	-- NOT paused and finished with reset
+	if Unpaused == true and pauseDiff ~= 0 then
+		pauseDiff = 0
+		timeFromPause = 0
+	end
 end
