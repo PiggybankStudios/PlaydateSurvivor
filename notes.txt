@@ -14,7 +14,7 @@ This is a file that you can put any notes or TODO lists in
 				* updates to playdate discord with dev logs
 		[ ] Show End-Of-Round Timer on screen (somewhere)
 		[!] Talk about End-Of-Timer End State
-				* vampire surivor reaper that kills player?
+				* vampire survivor reaper that kills player?
 				* endless modes?
 				* progression?
 				* what's the most interesting thing to us?
@@ -93,8 +93,7 @@ This is a file that you can put any notes or TODO lists in
 		[ ] Max enemy cap and recycling
 				* when enemies are off-screen for too long, teleport them closer to the player
 					* in player's move direction?
-		[ ] Fix HP bar bug
-				* disappears before enemy HP is actually gone
+		[Done] Fix HP bar bug
 		[ ] Camera fixes
 				* camera setoffset INSTEAD of draw offset for shake effects
 		[ ] Particle effect for when Chunky Arms starts to rage

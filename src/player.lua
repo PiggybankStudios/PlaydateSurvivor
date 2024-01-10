@@ -110,9 +110,13 @@ end
 
 
 function heal(amount)
-	playerHealthbar:heal(amount + playerHealBonus)
-	health = playerHealthbar:currentHP()
+	health += (amount + playerHealBonus)
+	if health > maxHealth then
+		health = maxHealth
+	end
+	playerHealthbar:updateHealth(health)
 end
+
 
 -- Damage player health - called via enemies
 function player:damage(amount, camShakeStrength, enemyX, enemyY)
@@ -130,8 +134,12 @@ function player:damage(amount, camShakeStrength, enemyX, enemyY)
 	-- Damaging
 	local amountLost = math.max(amount - playerArmor, 1)
 	damageTimer = theCurrTime + setDamageTimer
-	playerHealthbar:damage(amountLost)
-	health = playerHealthbar:currentHP()
+	health -= amountLost
+	if health < 0 then
+		amountLost += health
+		health = 0
+	end
+	playerHealthbar:updateHealth(health)
 	addDamageReceived(amountLost)
 
 	-- Camera Shake
@@ -235,53 +243,67 @@ function upgradeStat(stat, bonus)
 	if stat == 1 then
 		playerArmor += bonus
 		print('armor increased by ' .. tostring(bonus))
+
 	elseif stat == 2 then
 		playerAttackRate -= 5 * bonus
 		if playerAttackRate < playerAttackRateMin then playerAttackRate = playerAttackRateMin end
 		print('attack rate increased by ' .. tostring(5 * bonus))
+
 	elseif stat == 3 then
 		playerBulletSpeed += bonus
 		print('bullet speed increased by ' .. tostring(bonus))
+
 	elseif stat == 4 then
 		playerGunDamage += bonus
 		print('damage increased by ' .. tostring(bonus))
+
 	elseif stat == 5 then
 		playerDodge += 3 * bonus
 		print('dodge increased by ' .. tostring(3 * bonus))
+
 	elseif stat == 6 then
 		playerExpBonus += bonus
 		print('bonus exp increased by ' .. tostring(bonus))
+
 	elseif stat == 7 then
 		playerHealBonus += bonus
 		print('heal increased by ' .. tostring(bonus))
+
 	elseif stat == 8 then
 		maxHealth += 2 * bonus
-		playerHealthbar:updateMaxHealth(maxHealth)
+		playerHealthbar:updateMaxHealth(maxHealth, health)
 		heal(2 * bonus)
 		print('health increased by ' .. tostring(2 * bonus))
+
 	elseif stat == 9 then
 		playerLuck += 5 * bonus
 		print('luck increased by ' .. tostring(5 * bonus))
+
 	elseif stat == 10 then
 		playerMagnet += 20 * bonus
 		itemAbsorberRange = playerMagnet
 		itemAbsorber:setSize(playerMagnet, playerMagnet)
 		itemAbsorber:setCollideRect(0, 0, playerMagnet, playerMagnet)
 		print('magnet increased by ' .. tostring(20 * bonus))
+
 	elseif stat == 11 then
 		playerReflectDamage += bonus
 		print('reflect increased by ' .. tostring(bonus))
+
 	elseif stat == 12 then
 		playerSpeed += 5 * bonus
 		print('speed increased by ' .. tostring(5 * bonus))
+
 	elseif stat == 13 then
 		playerVampire += 5 * bonus
 		if playerVampire > playerVampireMax then playerVampire = playerVampireMax end
 		print('vampire increased by ' .. tostring(5 * bonus))
+
 	elseif stat == 14 then
 		playerStunChance += 5 * bonus
 		if playerStunChance > playerStunChanceMax then playerStunChance = playerStunChanceMax end
 		print('vampire increased by ' .. tostring(5 * bonus))
+
 	else
 		print('error')
 	end
@@ -627,7 +649,7 @@ end
 function updateBullets()
 	-- Movement
 	for bIndex,bullet in pairs(bullets) do
-		bullet:move()
+		bullet:move(theCurrTime)
 		
 		if Unpaused then bullets[bIndex].lifeTime += theLastTime end
 		if theCurrTime >= bullets[bIndex].lifeTime then

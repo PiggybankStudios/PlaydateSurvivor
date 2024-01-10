@@ -71,17 +71,17 @@ function bullet:collisionResponse(other)
 		return 'overlap'
 	elseif tag == TAGS.enemy then
 		if self.type == 7 or self.type == 8 then
-			if self.timer < getCurrTime() then
+			if self.timer < playdate.getCurrentTimeMilliseconds() then	-- will have a local current time when having bullet class manage itself
 				other:damage(self.damage)
 				other:potentialStun()
-				self.timer = getCurrTime() + 50
+				self.timer = playdate.getCurrentTimeMilliseconds() + 50
 			end
 			return 'overlap'
 		else
 			self.lifeTime = 0 
 			other:damage(self.damage)
 			other:potentialStun()
-			other:applyKnockback(self.x, self.y, 2)
+			--other:applyKnockback(self.x, self.y, 2)
 			return 'freeze'
 		end
 	else --tag == walls
@@ -90,21 +90,21 @@ function bullet:collisionResponse(other)
 	end
 end
 		
-function bullet:move()
+function bullet:move(currTime)
 	if self.type == 7 then
 		if self.mode == 0 then
 			local rad = math.rad(self:getRotation() - 90)
 			local x = self.x + math.cos(rad) * self.speed * dt
 			local y = self.y + math.sin(rad) * self.speed * dt
 			self:moveWithCollisions(x, y)
-			if self.lifeTime - 5000 < getCurrTime() then self.mode = 1 end
+			if self.lifeTime - 5000 < currTime then self.mode = 1 end
 		elseif self.mode == 1 then
 			self:setRotation(self:getRotation() - 25)
 			local rad = math.rad(self:getRotation() - 90)
 			local x = self.x + math.cos(rad) * self.speed * dt
 			local y = self.y + math.sin(rad) * self.speed * dt
 			self:moveWithCollisions(x, y)
-			if self.lifeTime - 3000 < getCurrTime() then self.mode = 2 end
+			if self.lifeTime - 3000 < currTime then self.mode = 2 end
 		elseif self.mode == 2 then
 			local directionVec = vec.new(getPlayerx() - self.x, getPlayery() - self.y)
 			local rad = math.rad(math.deg(math.atan2(directionVec.y, directionVec.x)))
@@ -113,7 +113,7 @@ function bullet:move()
 			self:moveWithCollisions(x, y)
 		end
 	elseif self.type == 8 then
-		if self.lifeTime - 1300 + (200 * self.mode) < getCurrTime() then 
+		if self.lifeTime - 1300 + (200 * self.mode) < currTime then 
 			self.mode += 1
 			if self.damage > 1 then self.damage = math.ceil(self.damage/2) end
 			self:setScale(1 + self.mode, 1)

@@ -43,9 +43,11 @@ lastState = GAMESTATE.nothing
 -- |                         Main Update                          |
 -- +--------------------------------------------------------------+
 
+
 function recycleGun(value)
 	recycleValue = value
 end
+
 
 function playdate.update()
 	dt = 1/20

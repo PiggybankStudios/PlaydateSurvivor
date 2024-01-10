@@ -111,7 +111,7 @@ function enemy:init(x, y)
 	self.previousPos = vec.new(0, 0)
 
 	-- draw healthbar
-	self.healthbar = healthbar(x, y - healthbarOffsetY, self.health)
+	self.healthbar = healthbar(x, y - healthbarOffsetY, self.fullhealth)
 end
 
 
@@ -248,15 +248,15 @@ function medic:calculateMove(targetX, targetY)
 		self.directionVec *= -1
 		if currentTime >= self.time then
 			self.time = currentTime + 1000
-			self.healthbar:heal(2 * (1 + math.floor(getDifficulty() / scaleHealth)))
-			self.health = self.healthbar:currentHP()
+			self:heal(2 * (1 + math.floor(getDifficulty() / scaleHealth)))
 		end
 		-- once finished healing, move normally again
 		if self.health == self.fullhealth then self.AIsmarts = 1 end
 	
-	-- if moving towards the playere AND when below health threshold, change move direction
+	-- if moving towards the player AND when below health threshold, change move direction
 	elseif self.health <= math.floor(self.fullhealth / 3) then
 		self.AIsmarts = 2 
+		self.velocity *= -1
 	end
 
 	medic.super.calculateMove(self)
@@ -347,8 +347,7 @@ function chunkyArms:calculateMove(targetX, targetY)
 		if self.health < (self.fullhealth / 2) then self.speed += 0.3 end
 		if self.speed > (3 + math.floor(getDifficulty() / scaleDamage)) then self.speed = 5 end
 		if self.health < self.fullhealth then 
-			self.healthbar:heal(1 + math.floor(getDifficulty() / scaleHealth))
-			self.health = self.healthbar:currentHP()
+			self:heal(1 + math.floor(getDifficulty() / scaleHealth))
 		end
 	end
 
@@ -376,11 +375,22 @@ function enemy:applyKnockback(impactX, impactY, force)
 end
 
 
+function enemy:heal(amount)
+	self.health += amount
+	if self.health > self.fullhealth then
+		self.health = self.fullhealth
+	end
+	self.healthbar:updateHealth(self.health)
+end
+
+
 function enemy:damage(amount)
-	--self.health -= amount
-	--if self.health <= 0 then self.health = 0 end
-	self.healthbar:damage(amount)
-	self.health = self.healthbar:currentHP()
+	self.health -= amount
+	if self.health < 0 then 
+		amount += self.health 	-- adjusts damage dealt to only track the amount it took to bring health to 0
+		self.health = 0 
+	end
+	self.healthbar:updateHealth(self.health)
 	addDamageDealt(amount)
 end
 
