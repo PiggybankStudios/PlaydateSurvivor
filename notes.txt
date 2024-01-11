@@ -42,6 +42,10 @@ This is a file that you can put any notes or TODO lists in
 				* Shoots out random bullets, or maybe squiggle bullets
 				* Like worm wiggling back and forth
 				* Random speed, damage, size, angle, etc. for each bullet
+			[ ] Punch Gun
+				* quick random hits at short range with high knockback
+			[ ] Spear Gun
+				* attack out quickly piercing in a thin straight line erratically
 		[ ] Add some monsters
 			[!] Shooter
 				* Gets to a particular distance from player and tries to maintain it while shooting you
@@ -80,7 +84,16 @@ This is a file that you can put any notes or TODO lists in
 			[?] On death of guy that runs away (looks like a plus sign) Maybe he could heal guys around him when he dies?
 		[ ] -
 	@ Devon
-		[ ] -
+		[ ] - Help Screen
+			* select various stats to have descriptions shown about them
+			* select various weapons to see what they are good for
+		[ ] - Combo Counter
+			* Special score and display for how many things killed since last damage taken
+		[ ] - weapon tiers
+			* randomly get weapons tier 1-3
+			* combine same weapons together to create a tier 1 higher (max 3)
+		[ ] - new stat Poison - % damage over time and % chance to happen
+		[ ] - new stat knockback - increase by % amount
 	@ Sean
 		[ ] Knockback stat for weapons in general
 				* knockback for enemies already working 
