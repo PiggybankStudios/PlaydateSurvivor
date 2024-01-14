@@ -132,7 +132,7 @@ function fastBall:init(x, y)
 	self.health = 2
 	self.speed = 5
 	self.accel = 3
-	self.damageAmount = 2
+	self.damageAmount = 1
 	self.shakeStrength = CAMERA_SHAKE_STRENGTH.tiny
 	self.drop = { ITEM_TYPE.exp1, ITEM_TYPE.health, ITEM_TYPE.luck}
 	self.dropPercent = { 94, 5, 1}
@@ -160,7 +160,7 @@ function normalSquare:init(x, y)
 	self.health = 5
 	self.speed = 3
 	self.accel = 1.5
-	self.damageAmount = 3
+	self.damageAmount = 5
 	self.shakeStrength = CAMERA_SHAKE_STRENGTH.medium
 	self.drop = { ITEM_TYPE.exp1, ITEM_TYPE.health, ITEM_TYPE.shield }
 	self.dropPercent = { 85, 10, 5}
@@ -187,7 +187,7 @@ function bat:init(x, y)
 	self.health = 3
 	self.speed = 4
 	self.accel = 2
-	self.damageAmount = 1
+	self.damageAmount = 3
 	self.shakeStrength = CAMERA_SHAKE_STRENGTH.tiny
 	self.drop = { ITEM_TYPE.exp1, ITEM_TYPE.weapon, ITEM_TYPE.luck }
 	self.dropPercent = { 54, 45, 1}
@@ -230,8 +230,8 @@ function medic:init(x, y)
 	self.type = ENEMY_TYPE.medic
 	self.health = 20
 	self.speed = 2
-	self.accel = 1
-	self.damageAmount = 1
+	self.accel = 4
+	self.damageAmount = 2
 	self.shakeStrength = CAMERA_SHAKE_STRENGTH.large
 	self.drop = { ITEM_TYPE.exp1, ITEM_TYPE.health, ITEM_TYPE.absorbAll }
 	self.dropPercent = { 60, 35, 5}
@@ -275,7 +275,7 @@ function bulletBill:init(x, y)
 	self.health = 6
 	self.speed = 7
 	self.accel = 3
-	self.damageAmount = 2
+	self.damageAmount = 4
 	self.shakeStrength = CAMERA_SHAKE_STRENGTH.large
 	self.drop = { ITEM_TYPE.exp1, ITEM_TYPE.health, ITEM_TYPE.luck }
 	self.dropPercent = { 80, 19, 1}
@@ -334,9 +334,9 @@ function chunkyArms:init(x, y)
 	self:setImage(gfx.image.new('Resources/Sprites/Enemy6'))
 	self.type = ENEMY_TYPE.chunkyArms
 	self.health = 66
-	self.speed = 4
+	self.speed = 1
 	self.accel = 2
-	self.damageAmount = 5
+	self.damageAmount = 10
 	self.shakeStrength = CAMERA_SHAKE_STRENGTH.large
 	self.drop = { ITEM_TYPE.exp16, ITEM_TYPE.luck }
 	self.dropPercent = { 95, 5}
@@ -350,7 +350,7 @@ function chunkyArms:calculateMove(targetX, targetY)
 	if currentTime >= self.time then
 		self.time = currentTime + 500
 		if self.health < (self.fullhealth / 2) then self.speed += 0.3 end
-		if self.speed > (3 + math.floor(getDifficulty() / scaleDamage)) then self.speed = 5 end
+		if self.speed > (3 + math.floor(getDifficulty() / scaleDamage)) then self.speed = (3 + math.floor(getDifficulty() / scaleDamage)) end
 		if self.health < self.fullhealth then 
 			self:heal(1 + math.floor(getDifficulty() / scaleHealth))
 		end
@@ -374,10 +374,10 @@ function enemy:potentialStun()
 end
 
 
-function enemy:applyKnockback(impactX, impactY, force)
+function enemy:applyKnockback(force)
 	if force == 0 then do return end end
 
-	local impactDir = (vec.new(self.x, self.y) - vec.new(impactX, impactY)):normalized()
+	local impactDir = (vec.new(self.x, self.y) - getPlayerPosition()):normalized()
 	self.velocity += impactDir * force
 end
 
@@ -639,7 +639,7 @@ local function updateEnemyLists(frame)
 				newItem:add()
 				items[#items + 1] = newItem
 				enemyList[i]:remove()
-				print("removed enemy")
+				--print("removed enemy")
 				table.remove(enemyList, i)
 				addKill()
 			end

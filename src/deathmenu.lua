@@ -112,21 +112,28 @@ function addFinalStats()
 		writings[#writings + 1] = newLetter
 	end
 	statrow += 1 --move on to the next line
-	lchars = lstrtochar("damage received: " .. tostring(pstats[7]))
+	lchars = lstrtochar("largest kill combo: " .. tostring(pstats[7]))
 	for lIndex,letter in pairs(lchars) do
 		newLetter = write((column + spacing * lIndex), (row + newline * statrow), letter, true)
 		newLetter:add()
 		writings[#writings + 1] = newLetter
 	end
 	statrow += 1 --move on to the next line
-	lchars = lstrtochar("items grabbed: " .. tostring(pstats[8]))
+	lchars = lstrtochar("damage received: " .. tostring(pstats[8]))
 	for lIndex,letter in pairs(lchars) do
 		newLetter = write((column + spacing * lIndex), (row + newline * statrow), letter, true)
 		newLetter:add()
 		writings[#writings + 1] = newLetter
 	end
 	statrow += 1 --move on to the next line
-	lchars = lstrtochar("time survived: " .. tostring(pstats[9]) .. " seconds")
+	lchars = lstrtochar("items grabbed: " .. tostring(pstats[9]))
+	for lIndex,letter in pairs(lchars) do
+		newLetter = write((column + spacing * lIndex), (row + newline * statrow), letter, true)
+		newLetter:add()
+		writings[#writings + 1] = newLetter
+	end
+	statrow += 1 --move on to the next line
+	lchars = lstrtochar("time survived: " .. tostring(pstats[10]) .. " seconds")
 	for lIndex,letter in pairs(lchars) do
 		newLetter = write((column + spacing * lIndex), (row + newline * statrow), letter, true)
 		newLetter:add()
@@ -140,7 +147,7 @@ function addFinalStats()
 		writings[#writings + 1] = newLetter
 	end
 	statrow += 1 --move on to the next line
-	lchars = lstrtochar("final score: " .. tostring(pstats[10]) .. " points")
+	lchars = lstrtochar("final score: " .. tostring(pstats[11]) .. " points")
 	for lIndex,letter in pairs(lchars) do
 		newLetter = write((column + spacing * lIndex), (row + newline * statrow), letter, true)
 		newLetter:add()

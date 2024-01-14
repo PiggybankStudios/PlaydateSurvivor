@@ -9,7 +9,7 @@ function bullet:init(x, y, rotation, newLifeTime, type, index, tier)
 	if type == 2 then
 		self:setImage(gfx.image.new('Resources/Sprites/BulletCannon'))
 		self.speed = getPayerBulletSpeed() * 8
-		self.damage = 3 + getPlayerGunDamage() * (1 + tier)
+		self.damage = 4 + getPlayerGunDamage() * (1 + tier)
 		self.knockback = 4
 		self:setScale(tier)
 	elseif type == 3 then
@@ -25,7 +25,7 @@ function bullet:init(x, y, rotation, newLifeTime, type, index, tier)
 	elseif type == 5 then
 		self:setImage(gfx.image.new('Resources/Sprites/BulletBurstgun'))
 		self.speed = getPayerBulletSpeed() * 3
-		self.damage = 1 + getPlayerGunDamage()
+		self.damage = 2 + getPlayerGunDamage()
 		self.knockback = 3
 	elseif type == 6 then
 		self:setImage(gfx.image.new('Resources/Sprites/BulletGrenade'))
@@ -51,8 +51,8 @@ function bullet:init(x, y, rotation, newLifeTime, type, index, tier)
 	else
 		self:setImage(gfx.image.new('Resources/Sprites/BulletPeagun'))
 		self.speed = getPayerBulletSpeed() * 4
-		self.damage = 1 + getPlayerGunDamage()
-		self.knockback = 0
+		self.damage = 2 + getPlayerGunDamage()
+		self.knockback = 1
 	end
 	
 	self:moveTo(x, y)
@@ -100,7 +100,7 @@ function bullet:collisionResponse(other)
 			self.lifeTime = 0 
 			other:damage(self.damage)
 			other:potentialStun()
-			other:applyKnockback(self.x, self.y, self.knockback)
+			other:applyKnockback(self.knockback)
 			return 'freeze'
 		end
 	else --tag == walls

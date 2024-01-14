@@ -128,9 +128,7 @@ This is a file that you can put any notes or TODO lists in
 		[ ] Particle effect for when Chunky Arms starts to rage
 
 
-***************************************************************************************************************************************
-the lists of things in game (planned)
-***************************************************************************************************************************************
+
 # weapons: used in 1 of 4 slots to attack enemies. each slot represents one of the 4 cardinal directions
 	[DONE] Pistol
 	[DONE] Cannon
@@ -215,18 +213,4 @@ the lists of things in game (planned)
 	[] bomb - explodes on death. tries to do it near player tries to get next to player
 	[] vampire - teleports to player and slowly drains health healing self
 	[] bee - spawned by hive and moves random occasionally while chasing player.
-
-
-# items:
-	[DONE] exp - in 1, 3, 6, 9, 16 sizes
-	[DONE] healthpack - heals 3 by default
-	[DONE] weaponcrate - gives a random weapon to equip or recycle
-	[DONE] shield - become invinible for a time (10 seconds)
-	[DONE] clover - gain 5 max luck permanent (max 100)
-	[DONE] absorb - pickup all items on the field by bringing them to you
-	[] overhaul - fire at 2x fire rate with max tier weapons for a bit (7 seconds)
-	[] shoes - movement speed 2x for a bit (5 seconds)
-	[] bomb - explodes dealing damage and pushing enemies away from you
-	[] timer - pause all enemy movement on screen for a bit (3 seconds)
-	[] porcupine - shoots bullets in 8 directions from player for a bit (4 seconds)
-	[] coin - gives you currency to spend outside of battle
+	

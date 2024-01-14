@@ -175,81 +175,81 @@ function addStatOptions()
 	local spacing = 4
 	local newline = 8
 	local statrow = 1
-	local row = 26
+	local row = 20
 	local column = 12
 	local pstats = getPlayerStats()
 	local lchars = {}
-	lchars = lstrtochar("level: " .. tostring(pstats[1]))
+	lchars = lstrtochar("level:      " .. tostring(pstats[1]))
 	for lIndex,letter in pairs(lchars) do
 		newLetter = write((column + spacing * lIndex), (row + newline * statrow), letter, true)
 		newLetter:add()
 		writings[#writings + 1] = newLetter
 	end
 	statrow += 1 --move on to the next line
-	lchars = lstrtochar("exp: " .. tostring(pstats[2]) .. "/" .. tostring(pstats[3]))
+	lchars = lstrtochar("exp:        " .. tostring(pstats[2]) .. "/" .. tostring(pstats[3]))
 	for lIndex,letter in pairs(lchars) do
 		newLetter = write((column + spacing * lIndex), (row + newline * statrow), letter, true)
 		newLetter:add()
 		writings[#writings + 1] = newLetter
 	end
 	statrow += 1 --move on to the next line
-	lchars = lstrtochar("health: " .. tostring(pstats[4]) .. "/" .. tostring(pstats[5]))
+	lchars = lstrtochar("health:     " .. tostring(pstats[4]) .. "/" .. tostring(pstats[5]))
 	for lIndex,letter in pairs(lchars) do
 		newLetter = write((column + spacing * lIndex), (row + newline * statrow), letter, true)
 		newLetter:add()
 		writings[#writings + 1] = newLetter
 	end
 	statrow += 1 --move on to the next line
-	lchars = lstrtochar("speed: " .. tostring(pstats[6]))
+	lchars = lstrtochar("speed:      " .. tostring(pstats[6]))
 	for lIndex,letter in pairs(lchars) do
 		newLetter = write((column + spacing * lIndex), (row + newline * statrow), letter, true)
 		newLetter:add()
 		writings[#writings + 1] = newLetter
 	end
 	statrow += 1 --move on to the next line
-	lchars = lstrtochar("att rate: " .. tostring(pstats[7]) .. " msec")
+	lchars = lstrtochar("att rate:   " .. tostring(pstats[7]))
 	for lIndex,letter in pairs(lchars) do
 		newLetter = write((column + spacing * lIndex), (row + newline * statrow), letter, true)
 		newLetter:add()
 		writings[#writings + 1] = newLetter
 	end
 	statrow += 1 --move on to the next line
-	lchars = lstrtochar("magnet: " .. tostring(pstats[8]))
+	lchars = lstrtochar("magnet:     " .. tostring(pstats[8]))
 	for lIndex,letter in pairs(lchars) do
 		newLetter = write((column + spacing * lIndex), (row + newline * statrow), letter, true)
 		newLetter:add()
 		writings[#writings + 1] = newLetter
 	end
 	statrow += 1 --move on to the next line
-	lchars = lstrtochar("slots: " .. tostring(pstats[9]) .. "/4")
+	lchars = lstrtochar("slots:      " .. tostring(pstats[9]) .. "/4")
 	for lIndex,letter in pairs(lchars) do
 		newLetter = write((column + spacing * lIndex), (row + newline * statrow), letter, true)
 		newLetter:add()
 		writings[#writings + 1] = newLetter
 	end
 	statrow += 1 --move on to the next line
-	lchars = lstrtochar("damage: " .. tostring(pstats[10]))
+	lchars = lstrtochar("damage:     " .. tostring(pstats[10]))
 	for lIndex,letter in pairs(lchars) do
 		newLetter = write((column + spacing * lIndex), (row + newline * statrow), letter, true)
 		newLetter:add()
 		writings[#writings + 1] = newLetter
 	end
 	statrow += 1 --move on to the next line
-	lchars = lstrtochar("reflect: " .. tostring(pstats[11]))
+	lchars = lstrtochar("reflect:    " .. tostring(pstats[11]))
 	for lIndex,letter in pairs(lchars) do
 		newLetter = write((column + spacing * lIndex), (row + newline * statrow), letter, true)
 		newLetter:add()
 		writings[#writings + 1] = newLetter
 	end
 	statrow += 1 --move on to the next line
-	lchars = lstrtochar("bonus exp: " .. tostring(pstats[12]))
+	lchars = lstrtochar("bonus exp:  " .. tostring(pstats[12]))
 	for lIndex,letter in pairs(lchars) do
 		newLetter = write((column + spacing * lIndex), (row + newline * statrow), letter, true)
 		newLetter:add()
 		writings[#writings + 1] = newLetter
 	end
 	statrow += 1 --move on to the next line
-	lchars = lstrtochar("luck: " .. tostring(pstats[13]) .. "%")
+	lchars = lstrtochar("luck:       " .. tostring(pstats[13]) .. "%")
 	for lIndex,letter in pairs(lchars) do
 		newLetter = write((column + spacing * lIndex), (row + newline * statrow), letter, true)
 		newLetter:add()
@@ -263,14 +263,14 @@ function addStatOptions()
 		writings[#writings + 1] = newLetter
 	end
 	statrow += 1 --move on to the next line
-	lchars = lstrtochar("armor: " .. tostring(pstats[15]))
+	lchars = lstrtochar("armor:      " .. tostring(pstats[15]))
 	for lIndex,letter in pairs(lchars) do
 		newLetter = write((column + spacing * lIndex), (row + newline * statrow), letter, true)
 		newLetter:add()
 		writings[#writings + 1] = newLetter
 	end
 	statrow += 1 --move on to the next line
-	lchars = lstrtochar("dodge: " .. tostring(pstats[16]) .. "%")
+	lchars = lstrtochar("dodge:      " .. tostring(pstats[16]) .. "%")
 	for lIndex,letter in pairs(lchars) do
 		newLetter = write((column + spacing * lIndex), (row + newline * statrow), letter, true)
 		newLetter:add()
@@ -284,14 +284,14 @@ function addStatOptions()
 		writings[#writings + 1] = newLetter
 	end
 	statrow += 1 --move on to the next line
-	lchars = lstrtochar("vampire: " .. tostring(pstats[18]) .. "%")
+	lchars = lstrtochar("vampire:    " .. tostring(pstats[18]) .. "%")
 	for lIndex,letter in pairs(lchars) do
 		newLetter = write((column + spacing * lIndex), (row + newline * statrow), letter, true)
 		newLetter:add()
 		writings[#writings + 1] = newLetter
 	end
 	statrow += 1 --move on to the next line
-	lchars = lstrtochar("stun: " .. tostring(pstats[19]) .. "%")
+	lchars = lstrtochar("stun:       " .. tostring(pstats[19]) .. "%")
 	for lIndex,letter in pairs(lchars) do
 		newLetter = write((column + spacing * lIndex), (row + newline * statrow), letter, true)
 		newLetter:add()
@@ -344,7 +344,7 @@ function whatStatSprite(sel,slot)
 	elseif sel == "attrate" then
 		theStat = 2
 		theImage = stat2Image
-		addStatDetails("att. rate -" .. tostring(5 * levelBonus), slot)
+		addStatDetails("att. rate +" .. tostring((5 * levelBonus)/25), slot)
 	elseif sel == "bullspeed" then
 		theStat = 3
 		theImage = stat3Image

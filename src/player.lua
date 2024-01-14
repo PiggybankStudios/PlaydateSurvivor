@@ -26,6 +26,8 @@ local damageDealt = 0
 local damageReceived = 0
 local experienceGained = 0
 local enemiesKilled = 0
+local currentCombo = 0
+local maxCombo = 0
 local shotsFired = 0
 local itemsGrabbed = 0
 
@@ -40,12 +42,12 @@ local health = maxHealth
 local playerSpeed = 50
 local playerVelocity = vec.new(0, 0)
 local playerAttackRate = 100
-local playerAttackRateMin = 10 --limit
+local playerAttackRateMin = 25 --limit
 local playerExp = 0
 local startingExpForLevel = 5
 local playerMagnet = 50
 local playerSlots = 1
-local playerGunDamage = 1
+local playerGunDamage = 0
 local playerReflectDamage = 0
 local playerExpBonus = 0
 local playerLuck = 0
@@ -53,13 +55,13 @@ local playerLuckMax = 100 --limit
 local playerBulletSpeed = 50
 local playerArmor = 0
 local playerDodge = 0
-local playerDodgeMax = 90 --limit
+local playerDodgeMax = 75 --limit
 local playerRunSpeed = 1
 local playerVampire = 0
 local playerVampireMax = 100 --limit
 local playerHealBonus = 0
 local playerStunChance = 0
-local playerStunChanceMax = 100
+local playerStunChanceMax = 75 --limit
 local damageTimer = 0
 local playerHealthbar
 local playerExpbar
@@ -79,6 +81,10 @@ theShotTimes = {0, 0, 0, 0} --how long until next shot
 theGunSlots = {1, 0, 0, 0} --what gun in each slot
 theGunLogic = {0, 0, 0, 0} --what special logic that slotted gun needs
 theGunTier = {1, 0, 0, 0} -- what tier the gun is at
+theCharmSlot1 = {0, 0, 0, 0} -- what charm is in column 1 for each gun slot
+theCharmSlot2 = {0, 0, 0, 0} -- what charm is in column 2 for each gun slot
+theCharmSlot3 = {0, 0, 0, 0} -- what charm is in column 3 for each gun slot
+theCharmSlot4 = {0, 0, 0, 0} -- what charm is in column 4 for each gun slot
 
 -- Particles
 particles = {}
@@ -170,8 +176,9 @@ function updateLevel()
 	if math.floor(playerLevel / 5) == playerSlots then
 		updateSlots()
 	end
-	if math.floor(playerLevel / 3) == difficulty then
-		if difficulty < maxDifficulty then difficulty += 1 end
+	if math.min(math.floor(playerLevel / 3) + 1,maxDifficulty) > difficulty then
+		difficulty = math.floor(playerLevel / 3)
+		if difficulty > maxDifficulty then difficulty = maxDifficulty end
 	end
 end
 
@@ -185,10 +192,13 @@ end
 
 function addDamageReceived(amount)
 	damageReceived += amount
+	currentCombo = 0
 end
 
 function addKill()
 	enemiesKilled += 1
+	currentCombo += 1
+	if currentCombo > maxCombo then maxCombo = currentCombo end
 	if math.random(0,99) < playerVampire then heal(1) end
 end
 
@@ -217,6 +227,10 @@ end
 
 function getPlayery()
 	return player.y
+end
+
+function getPlayerLevel()
+	return playerLevel
 end
 
 function getCurrTime()
@@ -344,6 +358,8 @@ function clearStats()
 	damageReceived = 0
 	experienceGained = 0
 	enemiesKilled = 0
+	currentCombo = 0
+	maxCombo = 0
 	shotsFired = 0
 	itemsGrabbed = 0
 	difficulty = 1
@@ -358,7 +374,7 @@ function clearStats()
 	startingExpForLevel = 5
 	playerMagnet = 50
 	playerSlots = 1
-	playerGunDamage = 1
+	playerGunDamage = 0
 	playerReflectDamage = 0
 	playerExpBonus = 0
 	playerLuck = 0
@@ -389,10 +405,11 @@ function getFinalStats()
 	stats[#stats + 1] = damageDealt
 	stats[#stats + 1] = shotsFired
 	stats[#stats + 1] = enemiesKilled
+	stats[#stats + 1] = maxCombo
 	stats[#stats + 1] = damageReceived
 	stats[#stats + 1] = itemsGrabbed
 	stats[#stats + 1] = survivedTime
-	stats[#stats + 1] = (difficulty + playerLevel) * (experienceGained + itemsGrabbed + survivedTime)
+	stats[#stats + 1] = (difficulty + playerLevel) * (experienceGained + itemsGrabbed + survivedTime + maxCombo)
 	return stats
 end
 
@@ -404,7 +421,7 @@ function getPlayerStats()
 	stats[#stats + 1] = health
 	stats[#stats + 1] = maxHealth
 	stats[#stats + 1] = playerSpeed
-	stats[#stats + 1] = playerAttackRate
+	stats[#stats + 1] = (4 - ((playerAttackRate - 25) / 25))
 	stats[#stats + 1] = playerMagnet
 	stats[#stats + 1] = playerSlots
 	stats[#stats + 1] = playerGunDamage
@@ -456,18 +473,20 @@ function shield(amount)
 	invincible = true
 end
 
-
 function newWeaponGrabbed(weapon, tier)
 	setGameState(GAMESTATE.newweaponmenu)
 	openWeaponMenu(weapon, tier)
 end
 
 function newWeaponChosen(weapon, slot, tier)
+	local extraTier = 0
+	if theGunSlots[slot] == weapon then
+		if theGunTier[slot] == tier then extraTier = 1 end
+	end
 	theGunSlots[slot] = weapon
-	theGunTier[slot] = tier
+	theGunTier[slot] = tier + extraTier
 	updateMenuWeapon(slot, weapon)
 end
-
 
 function changeItemAbsorbRangeBy(value)
 	itemAbsorberRange += value
@@ -475,13 +494,11 @@ function changeItemAbsorbRangeBy(value)
 	itemAbsorber:setCollideRect(0, 0, itemAbsorberRange, itemAbsorberRange)
 end
 
-
 function setItemAbsorbRange(value)
 	itemAbsorberRange = value
 	itemAbsorber:setSize(itemAbsorberRange, itemAbsorberRange)
 	itemAbsorber:setCollideRect(0, 0, itemAbsorberRange, itemAbsorberRange)
 end
-
 
 -- Collision response based on tags
 -- Player Collider
@@ -500,7 +517,6 @@ function collider:collisionResponse(other)
 		return "slide"
 	end
 end
-
 
 -- Item Absorber Collider
 function itemAbsorber:collisionResponse(other)
@@ -532,7 +548,6 @@ end
 -- +--------------------------------------------------------------+
 -- |                            Input                             |
 -- +--------------------------------------------------------------+
-
 function movePlayer(dt)
 	if collider == nil then return end	-- If the collider doesn't exist, then don't look for collisions
 
@@ -700,7 +715,7 @@ function spawnBullets()
 					bullets[#bullets + 1] = newBullet
 				elseif theGunSlots[sIndex] == 7 then -- Rang
 					theShotTimes[sIndex] = theCurrTime + playerAttackRate * 6
-					newBullet = bullet(player.x, player.y, newRotation, (newLifeTime + 4500), theGunSlots[sIndex], sIndex, theGunTier[sIndex])
+					newBullet = bullet(player.x, player.y, newRotation + math.random(-10, 10), (newLifeTime + 4500), theGunSlots[sIndex], sIndex, theGunTier[sIndex])
 					newBullet:add()
 					bullets[#bullets + 1] = newBullet
 				elseif theGunSlots[sIndex] == 8 then -- wave
@@ -714,13 +729,15 @@ function spawnBullets()
 					newBullet:add()
 					bullets[#bullets + 1] = newBullet 
 					if theGunTier[sIndex] > 1 then
-						local tempVec = vec.new(math.sin(newRotation),-math.cos(newRotation)) * 10 + vec.new(player.x,player.y) --vec.new(math.cos(newRotation), math.sin(newRotation)) * player.y
+						local tempVec = vec.newPolar(1,newRotation) --vec.new(math.cos(newRotation), math.sin(newRotation)) * player.y
+						tempVec = (tempVec:leftNormal() * 10) + vec.new(player.x, player.y)
 						newBullet = bullet(tempVec.x, tempVec.y, newRotation, newLifeTime, theGunSlots[sIndex], sIndex, theGunTier[sIndex])
 						newBullet:add()
 						bullets[#bullets + 1] = newBullet
 					end
 					if theGunTier[sIndex] > 2 then
-						local tempVec = vec.new(math.sin(newRotation),-math.cos(newRotation)) * -10 + vec.new(player.x,player.y)
+						local tempVec = vec.newPolar(1,newRotation)
+						tempVec += (tempVec:rightNormal() * 10) + vec.new(player.x, player.y)
 						newBullet = bullet(tempVec.x, tempVec.y, newRotation, newLifeTime, theGunSlots[sIndex], sIndex, theGunTier[sIndex])
 						newBullet:add()
 						bullets[#bullets + 1] = newBullet
