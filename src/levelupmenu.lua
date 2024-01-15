@@ -10,7 +10,6 @@ local bonusStat = 0
 local blinking = false
 local lastBlink = 0
 local statOptions = {0,0,0,0}
-local writings = {}
 
 --setup main menu
 local levelUpImage = gfx.image.new('Resources/Sprites/levelUpMenu')
@@ -82,12 +81,7 @@ function closeLevelUpMenu()
 	level4Sprite:remove()
 	selectSprite:moveTo(114, 132)
 	menuSpot = 1
-	for gIndex,gchar in pairs(writings) do --need all graphics removed first
-		writings[gIndex]:remove()
-	end
-	for gIndex,gchar in pairs(writings) do --need to clear the table now
-		table.remove(writings,gIndex)
-	end
+	cleanLetters()
 	--print("unpaused")
 end
 
@@ -158,145 +152,83 @@ function levelUpBonus()
 end
 
 function addStatDetails(theString, slot)
-	local spacing = 4
 	local row = 154
 	local column = 53 + (60 * slot)
-	local lchars = {}
-	lchars = lstrtochar(theString)
-	column -= math.floor(#lchars * spacing / 2)
-	for lIndex,letter in pairs(lchars) do
-		newLetter = write((column + spacing * lIndex), (row), letter, true)
-		newLetter:add()
-		writings[#writings + 1] = newLetter
-	end
+	writeTextToScreen(column, row, theString, true, true)
 end
 
 function addStatOptions()
-	local spacing = 4
 	local newline = 8
 	local statrow = 1
 	local row = 20
 	local column = 12
 	local pstats = getPlayerStats()
-	local lchars = {}
-	lchars = lstrtochar("level:      " .. tostring(pstats[1]))
-	for lIndex,letter in pairs(lchars) do
-		newLetter = write((column + spacing * lIndex), (row + newline * statrow), letter, true)
-		newLetter:add()
-		writings[#writings + 1] = newLetter
-	end
+	local sentence = ("level:      " .. tostring(pstats[1]))
+	writeTextToScreen(column, (row + newline * statrow), sentence, false, true)
+	
 	statrow += 1 --move on to the next line
-	lchars = lstrtochar("exp:        " .. tostring(pstats[2]) .. "/" .. tostring(pstats[3]))
-	for lIndex,letter in pairs(lchars) do
-		newLetter = write((column + spacing * lIndex), (row + newline * statrow), letter, true)
-		newLetter:add()
-		writings[#writings + 1] = newLetter
-	end
+	sentence = ("exp:        " .. tostring(pstats[2]) .. "/" .. tostring(pstats[3]))
+	writeTextToScreen(column, (row + newline * statrow), sentence, false, true)
+	
 	statrow += 1 --move on to the next line
-	lchars = lstrtochar("health:     " .. tostring(pstats[4]) .. "/" .. tostring(pstats[5]))
-	for lIndex,letter in pairs(lchars) do
-		newLetter = write((column + spacing * lIndex), (row + newline * statrow), letter, true)
-		newLetter:add()
-		writings[#writings + 1] = newLetter
-	end
+	sentence = ("health:     " .. tostring(pstats[4]) .. "/" .. tostring(pstats[5]))
+	writeTextToScreen(column, (row + newline * statrow), sentence, false, true)
+	
 	statrow += 1 --move on to the next line
-	lchars = lstrtochar("speed:      " .. tostring(pstats[6]))
-	for lIndex,letter in pairs(lchars) do
-		newLetter = write((column + spacing * lIndex), (row + newline * statrow), letter, true)
-		newLetter:add()
-		writings[#writings + 1] = newLetter
-	end
+	sentence = ("speed:      " .. tostring(pstats[6]))
+	writeTextToScreen(column, (row + newline * statrow), sentence, false, true)
+	
 	statrow += 1 --move on to the next line
-	lchars = lstrtochar("att rate:   " .. tostring(pstats[7]))
-	for lIndex,letter in pairs(lchars) do
-		newLetter = write((column + spacing * lIndex), (row + newline * statrow), letter, true)
-		newLetter:add()
-		writings[#writings + 1] = newLetter
-	end
+	sentence = ("att rate:   " .. tostring(pstats[7]))
+	writeTextToScreen(column, (row + newline * statrow), sentence, false, true)
+	
 	statrow += 1 --move on to the next line
-	lchars = lstrtochar("magnet:     " .. tostring(pstats[8]))
-	for lIndex,letter in pairs(lchars) do
-		newLetter = write((column + spacing * lIndex), (row + newline * statrow), letter, true)
-		newLetter:add()
-		writings[#writings + 1] = newLetter
-	end
+	sentence = ("magnet:     " .. tostring(pstats[8]))
+	writeTextToScreen(column, (row + newline * statrow), sentence, false, true)
+	
 	statrow += 1 --move on to the next line
-	lchars = lstrtochar("slots:      " .. tostring(pstats[9]) .. "/4")
-	for lIndex,letter in pairs(lchars) do
-		newLetter = write((column + spacing * lIndex), (row + newline * statrow), letter, true)
-		newLetter:add()
-		writings[#writings + 1] = newLetter
-	end
+	sentence = ("slots:      " .. tostring(pstats[9]) .. "/4")
+	writeTextToScreen(column, (row + newline * statrow), sentence, false, true)
+	
 	statrow += 1 --move on to the next line
-	lchars = lstrtochar("damage:     " .. tostring(pstats[10]))
-	for lIndex,letter in pairs(lchars) do
-		newLetter = write((column + spacing * lIndex), (row + newline * statrow), letter, true)
-		newLetter:add()
-		writings[#writings + 1] = newLetter
-	end
+	sentence = ("damage:     " .. tostring(pstats[10]))
+	writeTextToScreen(column, (row + newline * statrow), sentence, false, true)
+	
 	statrow += 1 --move on to the next line
-	lchars = lstrtochar("reflect:    " .. tostring(pstats[11]))
-	for lIndex,letter in pairs(lchars) do
-		newLetter = write((column + spacing * lIndex), (row + newline * statrow), letter, true)
-		newLetter:add()
-		writings[#writings + 1] = newLetter
-	end
+	sentence = ("reflect:    " .. tostring(pstats[11]))
+	writeTextToScreen(column, (row + newline * statrow), sentence, false, true)
+	
 	statrow += 1 --move on to the next line
-	lchars = lstrtochar("bonus exp:  " .. tostring(pstats[12]))
-	for lIndex,letter in pairs(lchars) do
-		newLetter = write((column + spacing * lIndex), (row + newline * statrow), letter, true)
-		newLetter:add()
-		writings[#writings + 1] = newLetter
-	end
+	sentence = ("bonus exp:  " .. tostring(pstats[12]))
+	writeTextToScreen(column, (row + newline * statrow), sentence, false, true)
+	
 	statrow += 1 --move on to the next line
-	lchars = lstrtochar("luck:       " .. tostring(pstats[13]) .. "%")
-	for lIndex,letter in pairs(lchars) do
-		newLetter = write((column + spacing * lIndex), (row + newline * statrow), letter, true)
-		newLetter:add()
-		writings[#writings + 1] = newLetter
-	end
+	sentence = ("luck:       " .. tostring(pstats[13]) .. "%")
+	writeTextToScreen(column, (row + newline * statrow), sentence, false, true)
+	
 	statrow += 1 --move on to the next line
-	lchars = lstrtochar("bullet spd: " .. tostring(pstats[14]))
-	for lIndex,letter in pairs(lchars) do
-		newLetter = write((column + spacing * lIndex), (row + newline * statrow), letter, true)
-		newLetter:add()
-		writings[#writings + 1] = newLetter
-	end
+	sentence = ("bullet spd: " .. tostring(pstats[14]))
+	writeTextToScreen(column, (row + newline * statrow), sentence, false, true)
+	
 	statrow += 1 --move on to the next line
-	lchars = lstrtochar("armor:      " .. tostring(pstats[15]))
-	for lIndex,letter in pairs(lchars) do
-		newLetter = write((column + spacing * lIndex), (row + newline * statrow), letter, true)
-		newLetter:add()
-		writings[#writings + 1] = newLetter
-	end
+	sentence = ("armor:      " .. tostring(pstats[15]))
+	writeTextToScreen(column, (row + newline * statrow), sentence, false, true)
+	
 	statrow += 1 --move on to the next line
-	lchars = lstrtochar("dodge:      " .. tostring(pstats[16]) .. "%")
-	for lIndex,letter in pairs(lchars) do
-		newLetter = write((column + spacing * lIndex), (row + newline * statrow), letter, true)
-		newLetter:add()
-		writings[#writings + 1] = newLetter
-	end
+	sentence = ("dodge:      " .. tostring(pstats[16]) .. "%")
+	writeTextToScreen(column, (row + newline * statrow), sentence, false, true)
+	
 	statrow += 1 --move on to the next line
-	lchars = lstrtochar("heal bonus: " .. tostring(pstats[17]))
-	for lIndex,letter in pairs(lchars) do
-		newLetter = write((column + spacing * lIndex), (row + newline * statrow), letter, true)
-		newLetter:add()
-		writings[#writings + 1] = newLetter
-	end
+	sentence = ("heal bonus: " .. tostring(pstats[17]))
+	writeTextToScreen(column, (row + newline * statrow), sentence, false, true)
+	
 	statrow += 1 --move on to the next line
-	lchars = lstrtochar("vampire:    " .. tostring(pstats[18]) .. "%")
-	for lIndex,letter in pairs(lchars) do
-		newLetter = write((column + spacing * lIndex), (row + newline * statrow), letter, true)
-		newLetter:add()
-		writings[#writings + 1] = newLetter
-	end
+	sentence = ("vampire:    " .. tostring(pstats[18]) .. "%")
+	writeTextToScreen(column, (row + newline * statrow), sentence, false, true)
+	
 	statrow += 1 --move on to the next line
-	lchars = lstrtochar("stun:       " .. tostring(pstats[19]) .. "%")
-	for lIndex,letter in pairs(lchars) do
-		newLetter = write((column + spacing * lIndex), (row + newline * statrow), letter, true)
-		newLetter:add()
-		writings[#writings + 1] = newLetter
-	end
+	sentence = ("stun:       " .. tostring(pstats[19]) .. "%")
+	writeTextToScreen(column, (row + newline * statrow), sentence, false, true)
 end
 
 function addLevelOptions()

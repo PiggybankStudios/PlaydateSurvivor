@@ -42,37 +42,43 @@ end
 
 function playdate.leftButtonDown()
 	inputX = -1
-	if getGameState() == GAMESTATE.pausemenu then pauseMenuMoveL() end
-	if getGameState() == GAMESTATE.levelupmenu then pauseLevelUpMoveL() end
+	if getGameState() == GAMESTATE.pausemenu then pauseMenuMoveL()
+	elseif getGameState() == GAMESTATE.levelupmenu then pauseLevelUpMoveL() end
 end
 function playdate.leftButtonUp()
 	inputX = 0
 end
 function playdate.rightButtonDown()
 	inputX = 1
-	if getGameState() == GAMESTATE.pausemenu then pauseMenuMoveR() end
-	if getGameState() == GAMESTATE.levelupmenu then pauseLevelUpMoveR() end
+	if getGameState() == GAMESTATE.pausemenu then pauseMenuMoveR()
+	elseif getGameState() == GAMESTATE.levelupmenu then pauseLevelUpMoveR() end
 end
 function playdate.rightButtonUp()
 	inputX = 0
 end
 function playdate.upButtonDown()
 	inputY = -1
-	if getGameState() == GAMESTATE.newweaponmenu then weaponMenuMoveU() end
+	if getGameState() == GAMESTATE.newweaponmenu then weaponMenuMoveU()
+	elseif getGameState() == GAMESTATE.mainmenu then mainMenuMoveU() end
 end
 function playdate.upButtonUp()
 	inputY = 0
 end
 function playdate.downButtonDown()
 	inputY = 1
-	if getGameState() == GAMESTATE.newweaponmenu then weaponMenuMoveD() end
+	if getGameState() == GAMESTATE.newweaponmenu then weaponMenuMoveD()
+	elseif getGameState() == GAMESTATE.mainmenu then mainMenuMoveD() end
 end
 function playdate.downButtonUp()
 	inputY = 0
 end
 
 function playdate.BButtonDown()
-	setRunSpeed(2)
+	if getGameState() == GAMESTATE.startscreen then
+		setGameState(GAMESTATE.mainmenu)
+	else
+		setRunSpeed(2)
+	end
 end
 
 function playdate.BButtonUp()
@@ -81,6 +87,8 @@ end
 
 function playdate.AButtonDown()
 	if getGameState() == GAMESTATE.startscreen then
+		setGameState(GAMESTATE.mainmenu)
+	elseif getGameState() == GAMESTATE.mainmenu then
 		setGameState(GAMESTATE.maingame)
 		gameStartTime = playdate.getCurrentTimeMilliseconds()
 	elseif getGameState() == GAMESTATE.maingame then

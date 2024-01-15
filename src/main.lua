@@ -12,6 +12,7 @@ import "healthbar"
 import "uibanner"
 import "pausemenu"
 import "write"
+import "writefunctions"
 import "expbar"
 import "enemy"
 import "controls"
@@ -19,6 +20,7 @@ import "player"
 import "camera"
 import "gameScene"
 import "item"
+import "startmenu"
 import "mainmenu"
 import "deathmenu"
 import "levelupmenu"
@@ -43,7 +45,6 @@ lastState = GAMESTATE.nothing
 -- |                         Main Update                          |
 -- +--------------------------------------------------------------+
 
-
 function recycleGun(value)
 	recycleValue = value
 end
@@ -58,9 +59,19 @@ function playdate.update()
 	if currentState == GAMESTATE.startscreen then
 		if lastState == GAMESTATE.deathscreen then
 			closeDeadMenu()
-			openMainMenu()
+			openStartMenu()
 			lastState = currentState
 		elseif lastState ~= currentState then
+			openStartMenu()
+			lastState = currentState
+		else
+			updateStartManu()
+		end
+		
+	-- Main Menu
+	elseif currentState == GAMESTATE.mainmenu then
+		if lastState ~= currentState then
+			closeStartMenu()
 			openMainMenu()
 			lastState = currentState
 		else
@@ -69,9 +80,9 @@ function playdate.update()
 
 	-- Main Game
 	elseif currentState == GAMESTATE.maingame then
-		if lastState == GAMESTATE.startscreen then
-			gameScene()
+		if lastState == GAMESTATE.mainmenu then
 			closeMainMenu()
+			gameScene()
 			lastState = currentState
 		elseif reset == true then
 			gameScene()
@@ -103,7 +114,6 @@ function playdate.update()
 		end
 		updateLevelUpManu()
 		updateCamera(dt)
-
 
 	-- Level Up Menu
 	elseif currentState == GAMESTATE.newweaponmenu then
