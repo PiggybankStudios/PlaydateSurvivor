@@ -127,7 +127,7 @@ end
 class('fastBall').extends(enemy)
 
 function fastBall:init(x, y)	
-	self:setImage(gfx.image.new('Resources/Sprites/Enemy1'))
+	self:setImage(gfx.image.new('Resources/Sprites/enemy/Enemy1'))
 	self.type = ENEMY_TYPE.fastBall
 	self.health = 2
 	self.speed = 5
@@ -155,7 +155,7 @@ end
 class('normalSquare').extends(enemy)
 
 function normalSquare:init(x, y)	
-	self:setImage(gfx.image.new('Resources/Sprites/Enemy2'))
+	self:setImage(gfx.image.new('Resources/Sprites/enemy/Enemy2'))
 	self.type = ENEMY_TYPE.normalSquare
 	self.health = 5
 	self.speed = 3
@@ -182,7 +182,7 @@ end
 class('bat').extends(enemy)
 
 function bat:init(x, y)
-	self:setImage(gfx.image.new('Resources/Sprites/Enemy3'))
+	self:setImage(gfx.image.new('Resources/Sprites/enemy/Enemy3'))
 	self.type = ENEMY_TYPE.bat
 	self.health = 3
 	self.speed = 4
@@ -226,7 +226,7 @@ end
 class('medic').extends(enemy)
 
 function medic:init(x, y)
-	self:setImage(gfx.image.new('Resources/Sprites/Enemy4'))
+	self:setImage(gfx.image.new('Resources/Sprites/enemy/Enemy4'))
 	self.type = ENEMY_TYPE.medic
 	self.health = 20
 	self.speed = 2
@@ -270,7 +270,7 @@ end
 class('bulletBill').extends(enemy)
 
 function bulletBill:init(x, y)	
-	self:setImage(gfx.image.new('Resources/Sprites/Enemy5')) --the Bullet Bill
+	self:setImage(gfx.image.new('Resources/Sprites/enemy/Enemy5')) --the Bullet Bill
 	self.type = ENEMY_TYPE.bulletBill
 	self.health = 6
 	self.speed = 7
@@ -331,7 +331,7 @@ end
 class('chunkyArms').extends(enemy)
 
 function chunkyArms:init(x, y)	
-	self:setImage(gfx.image.new('Resources/Sprites/Enemy6'))
+	self:setImage(gfx.image.new('Resources/Sprites/enemy/Enemy6'))
 	self.type = ENEMY_TYPE.chunkyArms
 	self.health = 66
 	self.speed = 1

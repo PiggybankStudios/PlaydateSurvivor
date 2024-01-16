@@ -9,42 +9,42 @@ function item:init(x, y, type)
 	
 	self.type = type
 	if (self.type == ITEM_TYPE.health) then
-		self:setImage(gfx.image.new('Resources/Sprites/iHealth'))
+		self:setImage(gfx.image.new('Resources/Sprites/item/iHealth'))
 
 	elseif (self.type == ITEM_TYPE.weapon) then
-		self:setImage(gfx.image.new('Resources/Sprites/iWeapon'))
+		self:setImage(gfx.image.new('Resources/Sprites/item/iWeapon'))
 
 	elseif (self.type == ITEM_TYPE.shield) then
-		self:setImage(gfx.image.new('Resources/Sprites/iShield'))
+		self:setImage(gfx.image.new('Resources/Sprites/item/iShield'))
 
 	elseif (self.type == ITEM_TYPE.absorbAll) then
-		self:setImage(gfx.image.new('Resources/Sprites/iAbsorbAll'))
+		self:setImage(gfx.image.new('Resources/Sprites/item/iAbsorbAll'))
 
 	elseif (self.type == ITEM_TYPE.luck) then
-		self:setImage(gfx.image.new('Resources/Sprites/iLuck'))
+		self:setImage(gfx.image.new('Resources/Sprites/item/iLuck'))
 
 	elseif (self.type == ITEM_TYPE.exp1) then
-		self:setImage(gfx.image.new('Resources/Sprites/iEXP1'))
+		self:setImage(gfx.image.new('Resources/Sprites/item/iEXP1'))
 
 	elseif (self.type == ITEM_TYPE.exp2) then
-		self:setImage(gfx.image.new('Resources/Sprites/iEXP2'))
+		self:setImage(gfx.image.new('Resources/Sprites/item/iEXP2'))
 
 	elseif (self.type == ITEM_TYPE.exp3) then
-		self:setImage(gfx.image.new('Resources/Sprites/iEXP3'))
+		self:setImage(gfx.image.new('Resources/Sprites/item/iEXP3'))
 
 	elseif (self.type == ITEM_TYPE.exp6) then
-		self:setImage(gfx.image.new('Resources/Sprites/iEXP6'))
+		self:setImage(gfx.image.new('Resources/Sprites/item/iEXP6'))
 
 	elseif (self.type == ITEM_TYPE.exp9) then
-		self:setImage(gfx.image.new('Resources/Sprites/iEXP9'))
+		self:setImage(gfx.image.new('Resources/Sprites/item/iEXP9'))
 
 	elseif (self.type == ITEM_TYPE.exp16) then
-		self:setImage(gfx.image.new('Resources/Sprites/iEXP16'))
+		self:setImage(gfx.image.new('Resources/Sprites/item/iEXP16'))
 
 	else
 		-- default to exp1
 		self.type = ITEM_TYPE.exp1
-		self:setImage(gfx.image.new('Resources/Sprites/iEXP1'))
+		self:setImage(gfx.image.new('Resources/Sprites/item/iEXP1'))
 	end
 	
 	self.pickedUp = 0

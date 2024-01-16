@@ -9,14 +9,14 @@ local blinking = false
 local lastBlink = 0
 
 --setup main menu
-local deadImage = gfx.image.new('Resources/Sprites/deadMenu')
+local deadImage = gfx.image.new('Resources/Sprites/menu/deadMenu')
 local deadSprite = gfx.sprite.new(deadImage)
 deadSprite:setIgnoresDrawOffset(true)	-- forces sprite to be draw to screen, not world
 deadSprite:setZIndex(ZINDEX.ui)
 deadSprite:moveTo(halfScreenWidth, halfScreenHeight)
 
 --setup prompt
-local promptImage = gfx.image.new('Resources/Sprites/deadSelect')
+local promptImage = gfx.image.new('Resources/Sprites/menu/deadSelect')
 local promptSprite = gfx.sprite.new(promptImage)
 promptSprite:setIgnoresDrawOffset(true)	-- forces sprite to be draw to screen, not world
 promptSprite:setZIndex(ZINDEX.uidetails)

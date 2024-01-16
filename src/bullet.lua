@@ -7,49 +7,49 @@ class('bullet').extends(gfx.sprite)
 function bullet:init(x, y, rotation, newLifeTime, type, index, tier)
 	bullet.super.init(self)
 	if type == 2 then
-		self:setImage(gfx.image.new('Resources/Sprites/BulletCannon'))
+		self:setImage(gfx.image.new('Resources/Sprites/bullet/BulletCannon'))
 		self.speed = getPayerBulletSpeed() * 8
 		self.damage = 4 + getPlayerGunDamage() * (1 + tier)
 		self.knockback = 4
 		self:setScale(tier)
 	elseif type == 3 then
-		self:setImage(gfx.image.new('Resources/Sprites/BulletMinigun'))
+		self:setImage(gfx.image.new('Resources/Sprites/bullet/BulletMinigun'))
 		self.speed = getPayerBulletSpeed() * 2
 		self.damage = 1 + math.ceil(getPlayerGunDamage() / 2) --round up
 		self.knockback = 0
 	elseif type == 4 then
-		self:setImage(gfx.image.new('Resources/Sprites/BulletShotgun'))
+		self:setImage(gfx.image.new('Resources/Sprites/bullet/BulletShotgun'))
 		self.speed = getPayerBulletSpeed() * 3
 		self.damage = 1 + math.floor(getPlayerGunDamage() / 2) --round down
 		self.knockback = 2
 	elseif type == 5 then
-		self:setImage(gfx.image.new('Resources/Sprites/BulletBurstgun'))
+		self:setImage(gfx.image.new('Resources/Sprites/bullet/BulletBurstgun'))
 		self.speed = getPayerBulletSpeed() * 3
 		self.damage = 2 + getPlayerGunDamage()
 		self.knockback = 3
 	elseif type == 6 then
-		self:setImage(gfx.image.new('Resources/Sprites/BulletGrenade'))
+		self:setImage(gfx.image.new('Resources/Sprites/bullet/BulletGrenade'))
 		self.speed = getPayerBulletSpeed() * 2
 		self.damage = 2 + getPlayerGunDamage()
 		self.knockback = 0
 	elseif type == 7 then
-		self:setImage(gfx.image.new('Resources/Sprites/BulletRanggun'))
+		self:setImage(gfx.image.new('Resources/Sprites/bullet/BulletRanggun'))
 		self.speed = getPayerBulletSpeed() * 2
 		self.damage = 1 + math.floor(getPlayerGunDamage() / 3)
 		self.knockback = 1
 		self:setScale(tier)
 	elseif type == 8 then
-		self:setImage(gfx.image.new('Resources/Sprites/BulletWavegun'))
+		self:setImage(gfx.image.new('Resources/Sprites/bullet/BulletWavegun'))
 		self.speed = getPayerBulletSpeed()
 		self.damage = 4 + getPlayerGunDamage()
 		self.knockback = 0
 	elseif type == 99 then
-		self:setImage(gfx.image.new('Resources/Sprites/BulletGrenadePellet'))
+		self:setImage(gfx.image.new('Resources/Sprites/bullet/BulletGrenadePellet'))
 		self.speed = getPayerBulletSpeed() * 2
 		self.damage = 1 + math.floor(getPlayerGunDamage() / 2)
 		self.knockback = 0
 	else
-		self:setImage(gfx.image.new('Resources/Sprites/BulletPeagun'))
+		self:setImage(gfx.image.new('Resources/Sprites/bullet/BulletPeagun'))
 		self.speed = getPayerBulletSpeed() * 4
 		self.damage = 2 + getPlayerGunDamage()
 		self.knockback = 1

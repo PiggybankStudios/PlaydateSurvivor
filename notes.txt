@@ -231,3 +231,9 @@ the lists of things in game (planned)
 	[] porcupine - shoots bullets in 8 directions from player for a bit (4 seconds)
 	[] coin - gives you currency to spend outside of battle
 	[] upgrade kit - increase tier of weapon by 1
+
+	
+# relics:
+	[] (blessing) twice the enemies, half the health - (curse) items drop only 50% of the time next round
+	[] (blessing) half the enemies with double health - (curse) enemies move at double speed next round
+	[] (blessing) explode pushing enemies away if hurt - (curse) more shooter enemies next round

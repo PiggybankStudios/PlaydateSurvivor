@@ -14,14 +14,14 @@ local newWeapon = 1
 local gunnames = {"pistol", "cannon", "minigun", "shotgun", "burst rifle", "grenade launcher", "boomerang", "wave gun"}
 
 --setup main menu
-local pauseImage = gfx.image.new('Resources/Sprites/weaponMenu')
+local pauseImage = gfx.image.new('Resources/Sprites/menu/weaponMenu')
 local pauseSprite = gfx.sprite.new(pauseImage)
 pauseSprite:setIgnoresDrawOffset(true)	-- forces sprite to be draw to screen, not world
 pauseSprite:setZIndex(ZINDEX.ui)
 pauseSprite:moveTo(halfScreenWidth, halfScreenHeight)
 
 --setup selector
-local selectImage = gfx.image.new('Resources/Sprites/levelUpselect')
+local selectImage = gfx.image.new('Resources/Sprites/menu/levelUpselect')
 local selectSprite = gfx.sprite.new(selectImage)
 selectSprite:setIgnoresDrawOffset(true)	-- forces sprite to be draw to screen, not world
 selectSprite:setZIndex(ZINDEX.uidetails)

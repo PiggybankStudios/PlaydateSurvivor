@@ -196,6 +196,7 @@ the lists of things in game (planned)
 	[DONE] attack rate
 	[] regen health
 	[] invincibility window
+	[] autopickup - get items you missed in the wave
 	
 
 # enemies:
@@ -230,3 +231,4 @@ the lists of things in game (planned)
 	[] timer - pause all enemy movement on screen for a bit (3 seconds)
 	[] porcupine - shoots bullets in 8 directions from player for a bit (4 seconds)
 	[] coin - gives you currency to spend outside of battle
+	[] upgrade kit - increase tier of weapon by 1

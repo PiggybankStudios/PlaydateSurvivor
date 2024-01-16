@@ -10,30 +10,30 @@ local blinking = false
 local lastBlink = 0
 
 --setup main menu
-local pauseImage = gfx.image.new('Resources/Sprites/pauseMenu')
+local pauseImage = gfx.image.new('Resources/Sprites/menu/pauseMenu')
 local pauseSprite = gfx.sprite.new(pauseImage)
 pauseSprite:setIgnoresDrawOffset(true)	-- forces sprite to be draw to screen, not world
 pauseSprite:setZIndex(ZINDEX.ui)
 pauseSprite:moveTo(halfScreenWidth, halfScreenHeight)
 
 --setup selector
-local selectImage = gfx.image.new('Resources/Sprites/menuselect')
+local selectImage = gfx.image.new('Resources/Sprites/menu/menuselect')
 local selectSprite = gfx.sprite.new(selectImage)
 selectSprite:setIgnoresDrawOffset(true)	-- forces sprite to be draw to screen, not world
 selectSprite:setZIndex(ZINDEX.uidetails)
 selectSprite:moveTo(55, 212)
 
 --setup guns
-local gunxImage = gfx.image.new('Resources/Sprites/gLocked')
-local gun0Image = gfx.image.new('Resources/Sprites/gEmpty')
-local gun1Image = gfx.image.new('Resources/Sprites/gPea')
-local gun2Image = gfx.image.new('Resources/Sprites/gCannon')
-local gun3Image = gfx.image.new('Resources/Sprites/gMini')
-local gun4Image = gfx.image.new('Resources/Sprites/gShot')
-local gun5Image = gfx.image.new('Resources/Sprites/gBurst')
-local gun6Image = gfx.image.new('Resources/Sprites/gGrenade')
-local gun7Image = gfx.image.new('Resources/Sprites/gRang')
-local gun8Image = gfx.image.new('Resources/Sprites/gWave')
+local gunxImage = gfx.image.new('Resources/Sprites/icon/gLocked')
+local gun0Image = gfx.image.new('Resources/Sprites/icon/gEmpty')
+local gun1Image = gfx.image.new('Resources/Sprites/icon/gPea')
+local gun2Image = gfx.image.new('Resources/Sprites/icon/gCannon')
+local gun3Image = gfx.image.new('Resources/Sprites/icon/gMini')
+local gun4Image = gfx.image.new('Resources/Sprites/icon/gShot')
+local gun5Image = gfx.image.new('Resources/Sprites/icon/gBurst')
+local gun6Image = gfx.image.new('Resources/Sprites/icon/gGrenade')
+local gun7Image = gfx.image.new('Resources/Sprites/icon/gRang')
+local gun8Image = gfx.image.new('Resources/Sprites/icon/gWave')
 gun1Sprite = gfx.sprite.new(gun1Image)
 gun2Sprite = gfx.sprite.new(gunxImage)
 gun3Sprite = gfx.sprite.new(gunxImage)
