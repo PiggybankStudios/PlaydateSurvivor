@@ -5,6 +5,7 @@ import "CoreLibs/math"
 
 import "LDtk"
 
+import "savefile"
 import "tags"
 import "bullet"
 import "particle"
@@ -71,9 +72,11 @@ function playdate.update()
 	-- Main Menu
 	elseif currentState == GAMESTATE.mainmenu then
 		if lastState ~= currentState then
+			writeSaveFile()
 			closeStartMenu()
 			openMainMenu()
 			lastState = currentState
+			readSaveFile()
 		else
 			updateMainManu()
 		end

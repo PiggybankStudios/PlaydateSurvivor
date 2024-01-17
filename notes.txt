@@ -231,6 +231,8 @@ the lists of things in game (planned)
 	[] porcupine - shoots bullets in 8 directions from player for a bit (4 seconds)
 	[] coin - gives you currency to spend outside of battle
 	[] upgrade kit - increase tier of weapon by 1
+	[] enchant powder - increase tier of charm by 1
+	[] clock - extend current wave time
 
 	
 # relics:
