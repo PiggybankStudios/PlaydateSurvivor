@@ -98,7 +98,7 @@ local maxTimer = 0
 local minFPS = 100
 
 -- Bullets
-local maxBullets <const> = 1000 -- max that can exist in the world at one time
+local maxBullets <const> = 500 -- max that can exist in the world at one time
 local activeBullets = 0
 --local calculateInterval <const> = 3 -- number of frames to skip for each movement calc
 --local calculateOffset = 0 -- 0, 1, or 2. Determines which bullets from the interval that will be updated
