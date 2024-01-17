@@ -6,7 +6,8 @@ import "CoreLibs/math"
 import "LDtk"
 
 import "tags"
-import "bullet"
+--import "bullet"
+import "bullet_v2"
 import "particle"
 import "healthbar"
 import "uibanner"
@@ -86,6 +87,7 @@ function playdate.update()
 		end
 		updatePlayer(dt)
 		updateCamera(dt)
+		updateBullets(dt, currentFrame)
 		updateEnemies(dt, currentFrame)
 
 	-- Pause Menu
@@ -104,8 +106,7 @@ function playdate.update()
 		updateLevelUpManu()
 		updateCamera(dt)
 
-
-	-- Level Up Menu
+	-- Weapon Menu
 	elseif currentState == GAMESTATE.newweaponmenu then
 		if lastState ~= currentState then
 			lastState = currentState
@@ -150,4 +151,3 @@ end
 function restartGame()
 	reset = true
 end
-

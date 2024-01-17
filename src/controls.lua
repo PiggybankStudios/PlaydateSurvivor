@@ -73,6 +73,7 @@ end
 
 function playdate.BButtonDown()
 	setRunSpeed(2)
+	--equipNextGun()
 end
 
 function playdate.BButtonUp()

@@ -20,6 +20,8 @@ collider = gfx.sprite:new()
 collider:setTag(TAGS.player)
 collider:setSize(colliderSize, colliderSize)
 collider:setCollideRect(0, 0, colliderSize, colliderSize)
+collider:setGroups(GROUPS.player)
+collider:setCollidesWithGroups( {GROUPS.walls, GROUPS.enemy})
 
 -- stattrack
 local damageDealt = 0
@@ -39,7 +41,7 @@ local maxHealth = 15
 local health = maxHealth
 local playerSpeed = 50
 local playerVelocity = vec.new(0, 0)
-local playerAttackRate = 100
+local playerAttackRate = 10 --100
 local playerAttackRateMin = 10 --limit
 local playerExp = 0
 local startingExpForLevel = 5
@@ -73,18 +75,16 @@ itemAbsorber:setTag(TAGS.itemAbsorber)
 itemAbsorber:setSize(playerMagnet, playerMagnet)
 itemAbsorber:setCollideRect(0, 0, playerMagnet, playerMagnet)
 
--- Bullets
-bullets = {}
-theShotTimes = {0, 0, 0, 0} --how long until next shot
-theGunSlots = {1, 0, 0, 0} --what gun in each slot
-theGunLogic = {0, 0, 0, 0} --what special logic that slotted gun needs
-theGunTier = {1, 0, 0, 0} -- what tier the gun is at
 
 -- Particles
-particles = {}
+particleList = {}
+setmetatable(particleList, {__mode = "k"})	-- Sets a weak link to values, indicating a "weak table." 
+											-- Once these objects lose their connections, then they'll be collected for garbage.
 
 -- Items
 items = {}
+setmetatable(items, {__mode = "k"})
+
 invincibleTime = 0
 invincible = false
 
@@ -211,31 +211,25 @@ end
 -- +--------------------------------------------------------------+
 -- |            Player get values section            |
 -- +--------------------------------------------------------------+
-function getPlayerx()
-	return player.x
+
+
+function getPlayerVelocity()
+	return playerVelocity
 end
 
-function getPlayery()
-	return player.y
+function getPlayerPosition()
+	return vec.new(player.x, player.y)
 end
 
 function getCurrTime()
 	return theCurrTime
 end
 
-function getEquippedGun(weapon)
-	return theGunSlots[weapon]
-end
-
-function getTierForGun(tier)
-	return theGunTier[tier]
-end
-
 function getPlayerGunDamage()
 	return playerGunDamage
 end
 
-function getPayerBulletSpeed()
+function getPlayerBulletSpeed()
 	return playerBulletSpeed
 end
 
@@ -262,6 +256,7 @@ end
 -- +--------------------------------------------------------------+
 -- |            Player Stat Section            |
 -- +--------------------------------------------------------------+
+
 
 function upgradeStat(stat, bonus)
 	if stat == 1 then
@@ -370,10 +365,11 @@ function clearStats()
 	playerHealBonus = 0
 	playerStunChance = 0
 	damageTimer = 0
-	theShotTimes = {0, 0, 0, 0}
-	theGunSlots = {1, 0, 0, 0}
-	theGunLogic = {0, 0, 0, 0}
-	theGunTier = {1, 0, 0, 0}
+	--theShotTimes = {0, 0, 0, 0}
+	--theGunSlots = {1, 0, 0, 0}
+	--theGunLogic = {0, 0, 0, 0}
+	--theGunTier = {1, 0, 0, 0}
+	clearGunStats()
 	theSpawnTime = 0
 	invincibleTime = 0
 	invincible = false
@@ -462,12 +458,6 @@ function newWeaponGrabbed(weapon, tier)
 	openWeaponMenu(weapon, tier)
 end
 
-function newWeaponChosen(weapon, slot, tier)
-	theGunSlots[slot] = weapon
-	theGunTier[slot] = tier
-	updateMenuWeapon(slot, weapon)
-end
-
 
 function changeItemAbsorbRangeBy(value)
 	itemAbsorberRange += value
@@ -480,6 +470,52 @@ function setItemAbsorbRange(value)
 	itemAbsorberRange = value
 	itemAbsorber:setSize(itemAbsorberRange, itemAbsorberRange)
 	itemAbsorber:setCollideRect(0, 0, itemAbsorberRange, itemAbsorberRange)
+end
+
+
+function getPlayerAttackRate()
+	return playerAttackRate
+end
+
+
+-- +--------------------------------------------------------------+
+-- |                          Movement                            |
+-- +--------------------------------------------------------------+
+
+
+function movePlayer(dt)
+	if collider == nil then return end	-- If the collider doesn't exist, then don't look for collisions
+
+	-- Reset input to 0 if nothing is held
+	if playdate.getButtonState() == 0 then resetInputXY() end
+
+	local moveSpeed = playerSpeed * playerRunSpeed * dt
+	playerVelocity.x = getInputX() * moveSpeed
+	playerVelocity.y = getInputY() * moveSpeed
+	local goalX = player.x + playerVelocity.x
+	local goalY = player.y + playerVelocity.y
+
+	-- The actual position is determined via collision response above
+	local actualX, actualY, collisions = collider:checkCollisions(goalX, goalY)
+	movePlayerWithCollider(actualX, actualY)
+end
+
+
+-- Moves both player sprite and collider - flooring stops jittering b/c only integers
+function movePlayerWithCollider(x, y)
+	local floorX = mathFloor(x)
+	local floorY = mathFloor(y)
+	player:moveTo(floorX, floorY)
+	collider:moveTo(floorX, floorY)
+	itemAbsorber:moveTo(floorX, floorY)
+	playerHealthbar:moveTo(floorX, floorY - healthbarOffsetY)
+end
+
+
+-- Checking for collisions with items to move them towards the player
+function itemAbsorberCollisions()
+	if itemAbsorber == nil then return end
+	itemAbsorber:checkCollisions(player.x, player.y)
 end
 
 
@@ -529,54 +565,6 @@ function itemAbsorber:collisionResponse(other)
 	end
 end
 
--- +--------------------------------------------------------------+
--- |                            Input                             |
--- +--------------------------------------------------------------+
-
-function movePlayer(dt)
-	if collider == nil then return end	-- If the collider doesn't exist, then don't look for collisions
-
-	-- Reset input to 0 if nothing is held
-	if playdate.getButtonState() == 0 then resetInputXY() end
-
-	local moveSpeed = playerSpeed * playerRunSpeed * dt
-	playerVelocity.x = getInputX() * moveSpeed
-	playerVelocity.y = getInputY() * moveSpeed
-	local goalX = player.x + playerVelocity.x
-	local goalY = player.y + playerVelocity.y
-
-	-- The actual position is determined via collision response above
-	local actualX, actualY, collisions = collider:checkCollisions(goalX, goalY)
-	movePlayerWithCollider(actualX, actualY)
-end
-
-
--- Moves both player sprite and collider - flooring stops jittering b/c only integers
-function movePlayerWithCollider(x, y)
-	local floorX = mathFloor(x)
-	local floorY = mathFloor(y)
-	player:moveTo(floorX, floorY)
-	collider:moveTo(floorX, floorY)
-	itemAbsorber:moveTo(floorX, floorY)
-	playerHealthbar:moveTo(floorX, floorY - healthbarOffsetY)
-end
-
-
-function getPlayerVelocity()
-	return playerVelocity
-end
-
-
-function getPlayerPosition()
-	return vec.new(player.x, player.y)
-end
-
--- Checking for collisions with items to move them towards the player
-function itemAbsorberCollisions()
-	if itemAbsorber == nil then return end
-	itemAbsorber:checkCollisions(player.x, player.y)
-end
-
 
 -- +--------------------------------------------------------------+
 -- |                     Paraticle Management                     |
@@ -586,177 +574,23 @@ end
 function spawnParticles(type, amount, direction)
 	for i = 1, amount do
 		newParticle = particle(player.x, player.y, type, theCurrTime, direction)
-		particles[#particles + 1] = newParticle
+		particleList[#particleList + 1] = newParticle
 	end
 end
 
 
 -- update function for moving particles and removing from particle list
 local function updateParticles()
-	for index, particle in pairs(particles) do
+	for i, particle in pairs(particleList) do
 		particle:move(theCurrTime)
-		if theCurrTime >= particle.lifeTime then
-			particle:remove()
-			table.remove(particles, index)
-		end
-	end
-end
-
--- +--------------------------------------------------------------+
--- |                       Bullet Management                      |
--- +--------------------------------------------------------------+
-function spawnGrenadePellets(grenadex, grenadey, tier)
-	local newLifeTime = theCurrTime + 1500
-	local amount = 4 + (4 * tier)
-	local degree = math.floor(360/amount)
-	for i = amount,1,-1 do
-		local newRotation = math.random(degree * (i - 1),degree * i)
-		newBullet = bullet(grenadex, grenadey, newRotation, newLifeTime, 99, 0)
-		newBullet:add()
-		bullets[#bullets + 1] = newBullet
-	end
-end
-
-function spawnBullets()
-	for sIndex,theShotTime in pairs(theShotTimes) do
-		if theGunSlots[sIndex] > 0 then
-			if Unpaused then theShotTimes[sIndex] += theLastTime end
-			if theCurrTime >= theShotTime then
-				local newRotation = player:getRotation() + (90 * sIndex)
-				local newLifeTime = theCurrTime + 1500
-				
-				if theGunSlots[sIndex] == 2 then --cannon
-					theShotTimes[sIndex] = theCurrTime + playerAttackRate * 5
-					newBullet = bullet(player.x, player.y, newRotation, newLifeTime, theGunSlots[sIndex], sIndex, theGunTier[sIndex])
-					newBullet:add()
-					bullets[#bullets + 1] = newBullet 
-				elseif theGunSlots[sIndex] == 3 then -- minigun
-					theShotTimes[sIndex] = theCurrTime + playerAttackRate
-					newBullet = bullet(player.x, player.y, newRotation + math.random(-8, 8), newLifeTime, theGunSlots[sIndex], sIndex, theGunTier[sIndex])
-					newBullet:add()
-					bullets[#bullets + 1] = newBullet
-					if theGunTier[sIndex] > 1 then
-						newBullet = bullet(player.x, player.y, newRotation + math.random(9, 16), newLifeTime, theGunSlots[sIndex], sIndex, theGunTier[sIndex])
-						newBullet:add()
-						bullets[#bullets + 1] = newBullet
-					end
-					if theGunTier[sIndex] > 2 then
-						newBullet = bullet(player.x, player.y, newRotation - math.random(9, 16), newLifeTime, theGunSlots[sIndex], sIndex, theGunTier[sIndex])
-						newBullet:add()
-						bullets[#bullets + 1] = newBullet
-					end
-				elseif theGunSlots[sIndex] == 4 then -- shotgun
-					theShotTimes[sIndex] = theCurrTime + playerAttackRate * 3
-					newBullet = bullet(player.x, player.y, newRotation+ math.random(-8, 8), newLifeTime, theGunSlots[sIndex], sIndex, theGunTier[sIndex])
-					newBullet:add()
-					bullets[#bullets + 1] = newBullet
-					newBullet = bullet(player.x, player.y, newRotation + math.random(16, 25), newLifeTime, theGunSlots[sIndex], sIndex, theGunTier[sIndex])
-					newBullet:add()
-					bullets[#bullets + 1] = newBullet
-					newBullet = bullet(player.x, player.y, newRotation - math.random(16, 25), newLifeTime, theGunSlots[sIndex], sIndex, theGunTier[sIndex])
-					newBullet:add()
-					bullets[#bullets + 1] = newBullet
-					if theGunTier[sIndex] > 1 then
-						newBullet = bullet(player.x, player.y, newRotation + math.random(26, 35), newLifeTime, theGunSlots[sIndex], sIndex, theGunTier[sIndex])
-						newBullet:add()
-						bullets[#bullets + 1] = newBullet
-						newBullet = bullet(player.x, player.y, newRotation - math.random(26, 35), newLifeTime, theGunSlots[sIndex], sIndex, theGunTier[sIndex])
-						newBullet:add()
-						bullets[#bullets + 1] = newBullet
-					end
-					if theGunTier[sIndex] > 2 then
-						newBullet = bullet(player.x, player.y, newRotation + math.random(9, 15), newLifeTime, theGunSlots[sIndex], sIndex, theGunTier[sIndex])
-						newBullet:add()
-						bullets[#bullets + 1] = newBullet
-						newBullet = bullet(player.x, player.y, newRotation - math.random(9, 15), newLifeTime, theGunSlots[sIndex], sIndex, theGunTier[sIndex])
-						newBullet:add()
-						bullets[#bullets + 1] = newBullet
-					end
-				elseif theGunSlots[sIndex] == 5 then -- rifle
-					if theGunLogic[sIndex] < 3 then
-						theShotTimes[sIndex] = theCurrTime + playerAttackRate
-						newBullet = bullet(player.x, player.y, newRotation, newLifeTime, theGunSlots[sIndex], sIndex, theGunTier[sIndex])
-						newBullet:add()
-						bullets[#bullets + 1] = newBullet
-						theGunLogic[sIndex] += 1
-						if theGunTier[sIndex] > 1 then
-							newBullet = bullet(player.x, player.y, newRotation + 7, newLifeTime, theGunSlots[sIndex], sIndex, theGunTier[sIndex])
-							newBullet:add()
-							bullets[#bullets + 1] = newBullet
-						end
-						if theGunTier[sIndex] > 2 then
-							newBullet = bullet(player.x, player.y, newRotation - 7, newLifeTime, theGunSlots[sIndex], sIndex, theGunTier[sIndex])
-							newBullet:add()
-							bullets[#bullets + 1] = newBullet
-						end
-					else
-						theShotTimes[sIndex] = theCurrTime + playerAttackRate * 3
-						theGunLogic[sIndex] = 0
-					end
-				elseif theGunSlots[sIndex] == 6 then -- grenade
-					theShotTimes[sIndex] = theCurrTime + playerAttackRate * 7
-					newBullet = bullet(player.x, player.y, newRotation, newLifeTime, theGunSlots[sIndex], sIndex, theGunTier[sIndex])
-					newBullet:add()
-					bullets[#bullets + 1] = newBullet
-				elseif theGunSlots[sIndex] == 7 then -- Rang
-					theShotTimes[sIndex] = theCurrTime + playerAttackRate * 6
-					newBullet = bullet(player.x, player.y, newRotation, (newLifeTime + 4500), theGunSlots[sIndex], sIndex, theGunTier[sIndex])
-					newBullet:add()
-					bullets[#bullets + 1] = newBullet
-				elseif theGunSlots[sIndex] == 8 then -- wave
-					theShotTimes[sIndex] = theCurrTime + playerAttackRate * 3
-					newBullet = bullet(player.x, player.y, newRotation, (newLifeTime), theGunSlots[sIndex], sIndex, theGunTier[sIndex])
-					newBullet:add()
-					bullets[#bullets + 1] = newBullet
-				else --peagun
-					theShotTimes[sIndex] = theCurrTime + playerAttackRate * 2
-					newBullet = bullet(player.x, player.y, newRotation, newLifeTime, theGunSlots[sIndex], sIndex, theGunTier[sIndex])
-					newBullet:add()
-					bullets[#bullets + 1] = newBullet 
-					if theGunTier[sIndex] > 1 then
-						local tempVec = vec.new(math.sin(newRotation),-math.cos(newRotation)) * 10 + vec.new(player.x,player.y) --vec.new(math.cos(newRotation), math.sin(newRotation)) * player.y
-						newBullet = bullet(tempVec.x, tempVec.y, newRotation, newLifeTime, theGunSlots[sIndex], sIndex, theGunTier[sIndex])
-						newBullet:add()
-						bullets[#bullets + 1] = newBullet
-					end
-					if theGunTier[sIndex] > 2 then
-						local tempVec = vec.new(math.sin(newRotation),-math.cos(newRotation)) * -10 + vec.new(player.x,player.y)
-						newBullet = bullet(tempVec.x, tempVec.y, newRotation, newLifeTime, theGunSlots[sIndex], sIndex, theGunTier[sIndex])
-						newBullet:add()
-						bullets[#bullets + 1] = newBullet
-					end
-				end
-			end
+		if theCurrTime >= particleList[i].lifeTime then						
+			particleList[i]:remove()
+			tableSwapRemove(particleList, i)
 		end
 	end
 end
 
 
--- Bullet movement and spawning
-function updateBullets()
-	-- Movement
-	for bIndex,bullet in pairs(bullets) do
-		bullet:move(theCurrTime)
-		
-		if Unpaused then bullets[bIndex].lifeTime += theLastTime end
-		if theCurrTime >= bullets[bIndex].lifeTime then
-			if bullets[bIndex].type == 6 then spawnGrenadePellets(bullets[bIndex].x, bullets[bIndex].y, bullets[bIndex].tier) end
-			bullets[bIndex]:remove()
-			table.remove(bullets, bIndex)
-		end
-	end
-	-- Spawning
-	spawnBullets()
-end
-
-function clearBullets()
-	for bIndex,bullet in pairs(bullets) do
-		bullets[bIndex]:remove()
-	end
-	for bIndex,bullet in pairs(bullets) do
-		table.remove(bullets, bIndex)
-	end
-end
 
 
 -- +--------------------------------------------------------------+
@@ -826,7 +660,7 @@ function updateItems(dt)
 			end
 			
 			items[iIndex]:remove()
-			table.remove(items,iIndex)
+			tableSwapRemove(items, iIndex)
 		end
 	end
 end
@@ -876,7 +710,7 @@ function updatePlayer(dt)
 	player:setRotation(getCrankAngle())
 	itemAbsorberCollisions()
 
-	updateBullets()
+
 	updateParticles()
 	updateItems(dt)
 	

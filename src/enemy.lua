@@ -30,9 +30,13 @@ ENEMY_TYPE = {
 	chunkyArms = 6
 }
 
-enemyList1 = {}
-enemyList2 = {}
-enemyList3 = {}
+local enemyList1 = {}
+local enemyList2 = {}
+local enemyList3 = {}
+setmetatable(enemyList1, {__mode = "k"})
+setmetatable(enemyList2, {__mode = "k"})
+setmetatable(enemyList3, {__mode = "k"})
+
 local spawnInc = 0
 local currentTime = 0
 local theSpawnTime = 0
@@ -67,7 +71,6 @@ function createEnemy(x, y, type)
 
 	end
 
-	newEnemy:add()
 	-- add the enemy to the shortest list
 	local first = #enemyList1
 	local second = #enemyList2
@@ -89,6 +92,7 @@ end
 -- Init shared by all enemies
 function enemy:init(x, y)
 	enemy.super.init(self)
+	self:add()
 	
 	self.health *= (1 + math.floor(getDifficulty() / scaleHealth))
 	self.damageAmount *= (1 + math.floor(getDifficulty() / scaleDamage))
@@ -374,10 +378,11 @@ function enemy:potentialStun()
 end
 
 
-function enemy:applyKnockback(impactX, impactY, force)
+function enemy:applyKnockback(force)
 	if force == 0 then do return end end
 
-	local impactDir = (vec.new(self.x, self.y) - vec.new(impactX, impactY)):normalized()
+	local playerPos = getPlayerPosition()
+	local impactDir = (vec.new(self.x, self.y) - playerPos):normalized()
 	self.velocity += impactDir * force
 end
 
@@ -564,7 +569,7 @@ end
 -- |                          Management                          |
 -- +--------------------------------------------------------------+
 
-function spawnMonsters()
+local function spawnMonsters()
 	-- 
 	if Unpaused then theSpawnTime += (currentTime - timeFromPause) end
 
@@ -634,13 +639,15 @@ local function updateEnemyLists(frame)
 		for i, enemy in pairs(enemyList) do
 			local playerPos = getPlayerPosition()
 			enemy:calculateMove(playerPos.x, playerPos.y)
+
+			-- destroying
 			if enemyList[i].dead == true then
 				newItem = item(enemyList[i].x, enemyList[i].y, enemyList[i]:getDrop())
 				newItem:add()
 				items[#items + 1] = newItem
 				enemyList[i]:remove()
-				print("removed enemy")
-				table.remove(enemyList, i)
+				--table.remove(enemyList, i)
+				tableSwapRemove(enemyList, i)
 				addKill()
 			end
 		end
@@ -672,6 +679,16 @@ function clearEnemies()
 
 	theSpawnTime = 0
 	spawnInc = 0
+end
+
+
+function printEnemyLists()
+	local total = #enemyList1 + #enemyList2 + #enemyList3
+
+	print(	"total enemies: " .. total ..
+			" - list 1: " .. #enemyList1 .. 
+			" - list 2: " .. #enemyList2 ..
+			" - list 3: " .. #enemyList3)
 end
 
 

@@ -40,13 +40,22 @@ function clamp(value, min, max)
 	end
 end
 
---[[
-function distance(vec1, vec2)
-	x = vec1.x - vec2.x
-	y = vec1.y - vec2.y
-	return math.sqrt((x * x) + (y * y))
+
+-- should be faster since we're not doing unnessary shifts in lists
+function tableSwapRemove(list, i)
+	-- save last item in list
+	local lastItem = list[#list]
+
+	-- swap the last item with the item being removed
+	list[#list] = list[i]
+	list[i] = lastItem
+
+	-- removed the item, which is now at the end
+	list[#list]:remove()
+	table.remove(list, #list)
 end
-]]--
+
+
 
 -- +--------------------------------------------------------------+
 -- |                        Interpolation                         |

@@ -9,6 +9,16 @@ TAGS = {
 }
 
 
+GROUPS = {
+	walls = 1,
+	player = 2,
+	weapon = 3,
+	enemy = 4,
+	item = 5,
+	itemAbsorber = 6
+}
+
+
 ZINDEX = {	
 	uidetails = 510,
 	ui = 500,
@@ -39,6 +49,24 @@ CAMERA_SHAKE_STRENGTH = {
 	medium = 10,
 	large = 24,
 	massive = 48
+}
+
+
+PLAYER_STATS = {
+	armor = 1,
+	attackRate = 2,
+	bulletSpeed = 3,
+	gunDamage = 4,
+	dodge = 5,
+	expBonus = 6,
+	healBonus = 7,
+	maxHealth = 8,
+	luck = 9,
+	itemMagnet = 10,
+	reflectDamage = 11,
+	moveSpeed = 12,
+	vampire = 13,
+	stunChance = 14
 }
 
 

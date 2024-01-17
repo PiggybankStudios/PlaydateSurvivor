@@ -5,9 +5,10 @@ class('item').extends(gfx.sprite)
 
 
 function item:init(x, y, type)
-	item.super.init(self)
 	
+	item.super.init(self)
 	self.type = type
+
 	if (self.type == ITEM_TYPE.health) then
 		self:setImage(gfx.image.new('Resources/Sprites/iHealth'))
 
