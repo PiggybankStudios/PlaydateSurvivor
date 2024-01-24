@@ -41,13 +41,13 @@ local maxHealth = 15
 local health = maxHealth
 local playerSpeed = 50
 local playerVelocity = vec.new(0, 0)
-local playerAttackRate = 10 --100
+local playerAttackRate = 100
 local playerAttackRateMin = 10 --limit
 local playerExp = 0
 local startingExpForLevel = 5
 local playerMagnet = 50
 local playerSlots = 1
-local playerGunDamage = 1
+local playerGunDamage = 0
 local playerReflectDamage = 0
 local playerExpBonus = 0
 local playerLuck = 0
@@ -67,24 +67,6 @@ local playerHealthbar
 local playerExpbar
 local gameStartTime = 0
 
--- ItemAbsorber
-local absorbSpeed <const> = 30
-local itemAbsorberRange = playerMagnet
-itemAbsorber = gfx.sprite:new()
-itemAbsorber:setTag(TAGS.itemAbsorber)
-itemAbsorber:setSize(playerMagnet, playerMagnet)
-itemAbsorber:setCollideRect(0, 0, playerMagnet, playerMagnet)
-
-
--- Particles
-particleList = {}
-setmetatable(particleList, {__mode = "k"})	-- Sets a weak link to values, indicating a "weak table." 
-											-- Once these objects lose their connections, then they'll be collected for garbage.
-
--- Items
-items = {}
-setmetatable(items, {__mode = "k"})
-
 invincibleTime = 0
 invincible = false
 
@@ -102,7 +84,7 @@ function addPlayerSpritesToList()
 
 	player:add()
 	collider:add()
-	itemAbsorber:add()
+	--itemAbsorber:add()
 	health = maxHealth
 	playerHealthbar = healthbar(player.x, player.y - healthbarOffsetY, health)
 	playerExpbar = expbar(startingExpForLevel)
@@ -148,7 +130,7 @@ function player:damage(amount, camShakeStrength, enemyX, enemyY)
 	local enemyPos = vec.new(enemyX, enemyY)
 	local direction = (enemyPos - playerPos):normalized()
 	cameraShake(camShakeStrength, direction)
-	spawnParticles(PARTICLE_TYPE.impact, 5, direction)
+	spawnParticleEffect(PARTICLE_TYPE.playerImpact, player.x, player.y, direction)
 	screenFlash()
 end
 
@@ -253,6 +235,10 @@ function getStun()
 	return playerStunChance
 end
 
+function getPlayerMagnetStat()
+	return playerMagnet
+end
+
 -- +--------------------------------------------------------------+
 -- |            Player Stat Section            |
 -- +--------------------------------------------------------------+
@@ -300,9 +286,7 @@ function upgradeStat(stat, bonus)
 
 	elseif stat == 10 then
 		playerMagnet += 20 * bonus
-		itemAbsorberRange = playerMagnet
-		itemAbsorber:setSize(playerMagnet, playerMagnet)
-		itemAbsorber:setCollideRect(0, 0, playerMagnet, playerMagnet)
+		setDistanceCheckToPlayerMagnetStat(playerMagnet)
 		print('magnet increased by ' .. tostring(20 * bonus))
 
 	elseif stat == 11 then
@@ -352,6 +336,7 @@ function clearStats()
 	playerExp = 0
 	startingExpForLevel = 5
 	playerMagnet = 50
+	setDistanceCheckToPlayerMagnetStat(playerMagnet)
 	playerSlots = 1
 	playerGunDamage = 1
 	playerReflectDamage = 0
@@ -365,12 +350,7 @@ function clearStats()
 	playerHealBonus = 0
 	playerStunChance = 0
 	damageTimer = 0
-	--theShotTimes = {0, 0, 0, 0}
-	--theGunSlots = {1, 0, 0, 0}
-	--theGunLogic = {0, 0, 0, 0}
-	--theGunTier = {1, 0, 0, 0}
 	clearGunStats()
-	theSpawnTime = 0
 	invincibleTime = 0
 	invincible = false
 	Unpaused = false
@@ -460,16 +440,16 @@ end
 
 
 function changeItemAbsorbRangeBy(value)
-	itemAbsorberRange += value
-	itemAbsorber:setSize(itemAbsorberRange, itemAbsorberRange)
-	itemAbsorber:setCollideRect(0, 0, itemAbsorberRange, itemAbsorberRange)
+	--itemAbsorberRange += value
+	--itemAbsorber:setSize(itemAbsorberRange, itemAbsorberRange)
+	--itemAbsorber:setCollideRect(0, 0, itemAbsorberRange, itemAbsorberRange)
 end
 
 
 function setItemAbsorbRange(value)
-	itemAbsorberRange = value
-	itemAbsorber:setSize(itemAbsorberRange, itemAbsorberRange)
-	itemAbsorber:setCollideRect(0, 0, itemAbsorberRange, itemAbsorberRange)
+	--itemAbsorberRange = value
+	--itemAbsorber:setSize(itemAbsorberRange, itemAbsorberRange)
+	--itemAbsorber:setCollideRect(0, 0, itemAbsorberRange, itemAbsorberRange)
 end
 
 
@@ -507,15 +487,7 @@ function movePlayerWithCollider(x, y)
 	local floorY = mathFloor(y)
 	player:moveTo(floorX, floorY)
 	collider:moveTo(floorX, floorY)
-	itemAbsorber:moveTo(floorX, floorY)
 	playerHealthbar:moveTo(floorX, floorY - healthbarOffsetY)
-end
-
-
--- Checking for collisions with items to move them towards the player
-function itemAbsorberCollisions()
-	if itemAbsorber == nil then return end
-	itemAbsorber:checkCollisions(player.x, player.y)
 end
 
 
@@ -525,11 +497,9 @@ function collider:collisionResponse(other)
 	local tag = other:getTag()
 	if tag == TAGS.weapon then
 		return "overlap"
-	elseif tag == TAGS.item then
-		other:itemGrab()
-		return "overlap"
-	elseif tag == TAGS.itemAbsorber then
-		return "overlap"
+	--elseif tag == TAGS.item then
+	--	other:itemGrab()
+	--	return "overlap"
 	elseif tag == TAGS.enemy then
 		return "overlap"
 	else -- Any collision that's not set is defaulted to Wall Collision
@@ -538,72 +508,10 @@ function collider:collisionResponse(other)
 end
 
 
--- Item Absorber Collider
-function itemAbsorber:collisionResponse(other)
-	local tag = other:getTag()
-	if tag == TAGS.item then
-		-- if already being mass attracted, skip this absorb movement
-		if other:getMassAttraction() == true then
-			return "overlap"
-		end
-
-		-- if not within a circular range of the player, skip
-		local distance = vec.new(player.x, player.y) - vec.new(other.x, other.y)
-		if distance:magnitude() > (itemAbsorberRange / 2) then
-			return "overlap"
-		end
-
-		-- okay to apply absorb movement
-		local dt = 1/20
-		local dir = distance:normalized()
-		local x = other.x + dir.x * absorbSpeed * dt
-		local y = other.y + dir.y * absorbSpeed * dt
-		other:moveTo(x, y)
-		return "overlap"
-	else 
-		return "overlap"	-- only looking for item collisions, all others don't matter.
-	end
-end
-
-
--- +--------------------------------------------------------------+
--- |                     Paraticle Management                     |
--- +--------------------------------------------------------------+
-
-
-function spawnParticles(type, amount, direction)
-	for i = 1, amount do
-		newParticle = particle(player.x, player.y, type, theCurrTime, direction)
-		particleList[#particleList + 1] = newParticle
-	end
-end
-
-
--- update function for moving particles and removing from particle list
-local function updateParticles()
-	for i, particle in pairs(particleList) do
-		particle:move(theCurrTime)
-		if theCurrTime >= particleList[i].lifeTime then						
-			particleList[i]:remove()
-			tableSwapRemove(particleList, i)
-		end
-	end
-end
-
-
-
-
 -- +--------------------------------------------------------------+
 -- |                       Item Management                        |
 -- +--------------------------------------------------------------+
 
-
-function attractAllItems()
-	print("attracting items")
-	for iIndex,item in pairs(items) do	
-		item:startMassAttraction()
-	end
-end
 
 function decideWeaponTier()
 	local rndTier = math.random(1,100)
@@ -614,64 +522,6 @@ function decideWeaponTier()
 		newTier = 2
 	end
 	return newTier
-end
-
-function updateItems(dt)
-	for iIndex,item in pairs(items) do	
-
-		-- Moving all items if being attracted
-		if item:getMassAttraction() == true then
-			local dir = (vec.new(player.x, player.y) - vec.new(item.x, item.y)):normalized()
-			local x = item.x + dir.x * absorbSpeed * dt * 3
-			local y = item.y + dir.y * absorbSpeed * dt * 3
-			item:moveTo(x, y)
-		end
-
-		-- Item effect when picked up	
-		if items[iIndex].pickedUp == 1 then
-			if items[iIndex].type == ITEM_TYPE.health then
-				heal(3)
-				addItemsGrabbed()
-			elseif items[iIndex].type == ITEM_TYPE.weapon then
-				newWeaponGrabbed(math.random(1, 8), decideWeaponTier())
-				addItemsGrabbed()
-			elseif items[iIndex].type == ITEM_TYPE.shield then
-				shield(10000)
-				addItemsGrabbed()
-			elseif items[iIndex].type == ITEM_TYPE.absorbAll then 
-				attractAllItems()
-				addItemsGrabbed()
-			elseif items[iIndex].type == ITEM_TYPE.luck then
-				incLuck()
-			elseif items[iIndex].type == ITEM_TYPE.exp1 then
-				addEXP(1)
-			elseif items[iIndex].type == ITEM_TYPE.exp2 then
-				addEXP(2)
-			elseif items[iIndex].type == ITEM_TYPE.exp3 then
-				addEXP(3)
-			elseif items[iIndex].type == ITEM_TYPE.exp6 then
-				addEXP(6)
-			elseif items[iIndex].type == ITEM_TYPE.exp9 then
-				addEXP(9)
-			elseif items[iIndex].type == ITEM_TYPE.exp16 then
-				addEXP(16)
-			else
-				addEXP(1)	-- default is exp1
-			end
-			
-			items[iIndex]:remove()
-			tableSwapRemove(items, iIndex)
-		end
-	end
-end
-
-function clearItems()
-	for iIndex,item in pairs(items) do	
-		items[iIndex]:remove()
-	end
-	for iIndex,item in pairs(items) do	
-		table.remove(items,iIndex)
-	end
 end
 
 
@@ -708,11 +558,6 @@ function updatePlayer(dt)
 	
 	movePlayer(dt)
 	player:setRotation(getCrankAngle())
-	itemAbsorberCollisions()
-
-
-	updateParticles()
-	updateItems(dt)
 	
 	theLastTime = theCurrTime
 	Unpaused = false

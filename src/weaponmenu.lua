@@ -12,7 +12,6 @@ local weaponTier
 
 local writings = {}
 local newWeapon = 1
-local gunnames = {"pistol", "cannon", "minigun", "shotgun", "burst rifle", "grenade launcher", "boomerang", "wave gun"}
 
 --setup main menu
 local pauseImage = gfx.image.new('Resources/Sprites/weaponMenu')
@@ -42,14 +41,14 @@ function openWeaponMenu(newWeap, tier)
 	gun3Sprite:add()
 	gun4Sprite:add()
 	gunNewSprite:setImage(selectWeaponImage(newWeap))
-	addWeaponDetails(getGunName(newWeap) .. getTierStr(tier), 132, 148)
+	addWeaponDetails(GUN_NAMES[newWeap] .. getTierStr(tier), 132, 148)
 	newWeapon = newWeap
 	gunNewSprite:add()
 	blinking = true
 	weaponTier = tier
 	for i=1,4,1 do
 		if getEquippedGun(i) ~= 0 then 
-			local strSend = getGunName(getEquippedGun(i)) .. getTierStr(getTierForGun(i))
+			local strSend = GUN_NAMES[getEquippedGun(i)] .. getTierStr(getTierForGun(i))
 			addWeaponDetails(strSend, 15 + (45 * i), 346)
 		end
 	end
@@ -199,7 +198,7 @@ function newWeaponGot()
 end
 
 function getGunName(name)
-	return gunnames[name]
+	return GUN_NAMES[name]
 end
 
 function getweaponTier()

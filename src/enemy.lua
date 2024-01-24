@@ -20,6 +20,7 @@ local scaleHealth = 3
 local scaleSpeed = 4
 local scaleDamage = 5
 local stunWiggleAmount = 3
+local movementParticleSpawnRate = 50
 
 ENEMY_TYPE = {
 	fastBall = 1,
@@ -104,10 +105,13 @@ function enemy:init(x, y)
 	self.stunned = 0
 	self.wiggleDir = 1
 	self.wigglePos = vec.new(0, 0)
+	self.spawnMoveParticle = 0
 	
 	self.AIsmarts = 1
 	self:moveTo(x, y)
 	self:setTag(TAGS.enemy)
+	self:setGroups(GROUPS.enemy)
+	self:setCollidesWithGroups( GROUPS.player )
 	self:setZIndex(ZINDEX.enemy)
 	self:setCollideRect(0, 0, self:getSize())
 
@@ -563,6 +567,11 @@ function enemy:updateVFX()
 		self:moveTo(self.previousPos.x, self.previousPos.y)	-- return sprite to original position
 	end
 
+	-- Spawn movement particle
+	if self.spawnMoveParticle <= currentTime then
+		self.spawnMoveParticle = currentTime + movementParticleSpawnRate
+		spawnParticleEffect(PARTICLE_TYPE.enemyTrail, self.x, self.y)
+	end
 end
 
 -- +--------------------------------------------------------------+
@@ -642,11 +651,8 @@ local function updateEnemyLists(frame)
 
 			-- destroying
 			if enemyList[i].dead == true then
-				newItem = item(enemyList[i].x, enemyList[i].y, enemyList[i]:getDrop())
-				newItem:add()
-				items[#items + 1] = newItem
+				spawnItem(enemyList[i]:getDrop(), enemyList[i].x, enemyList[i].y)
 				enemyList[i]:remove()
-				--table.remove(enemyList, i)
 				tableSwapRemove(enemyList, i)
 				addKill()
 			end

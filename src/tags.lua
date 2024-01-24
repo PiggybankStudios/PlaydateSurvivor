@@ -4,8 +4,6 @@ TAGS = {
 	player = 2,
 	weapon = 3,
 	enemy = 4,
-	item = 5,
-	itemAbsorber = 6
 }
 
 
@@ -24,10 +22,11 @@ ZINDEX = {
 	ui = 500,
 	uibanner = 490,	
 	healthbar = 480,
-	impactparticle = 470,
 	player = 200,
 	weapon = 150,
 	enemy = 140,
+	item = 135,
+	particle = 130,
 	default = 100
 }
 
@@ -70,16 +69,51 @@ PLAYER_STATS = {
 }
 
 
+GUN_NAMES = {
+	"NONE",					-- 1
+	"pistol", 				-- 2
+	"cannon", 				-- 3
+	"minigun", 				-- 4
+	"shotgun", 				-- 5
+	"burst rifle", 			-- 6
+	"grenade launcher",		-- 7
+	"boomerang",			-- 8
+	"wave gun"				-- 9
+}
+
+
+BULLET_TYPE = {
+	none = 1,
+	peagun = 2,
+	cannon = 3,
+	minigun = 4,
+	shotgun = 5,
+	burstgun = 6,
+	grenade = 7,
+	ranggun = 8, -- NOT DONE YET
+	wavegun = 9, -- NOT DONE YET
+	grenadePellet = 10
+}
+
+
 ITEM_TYPE = {
-	health = 1,
-	weapon = 2, 
-	shield = 3, 
-	absorbAll = 4,
-	exp1 = 5, 
-	exp2 = 6, 
-	exp3 = 7, 
-	exp6 = 8, 
-	exp9 = 9, 
-	exp16 = 10, 
-	luck = 11 
+	none = 1,
+	health = 2,
+	weapon = 3, 
+	shield = 4, 
+	absorbAll = 5,
+	exp1 = 6, 
+	exp2 = 7, 
+	exp3 = 8, 
+	exp6 = 9, 
+	exp9 = 10, 
+	exp16 = 11, 
+	luck = 12 
+}
+
+
+PARTICLE_TYPE = {
+	none = 1,
+	playerImpact = 2,
+	enemyTrail = 3
 }

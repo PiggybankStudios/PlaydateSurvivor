@@ -16,6 +16,7 @@ function clearAllThings()
 	clearItems()
 	clearEnemies()
 	clearBullets()
+	clearParticles()
 	clearPauseMenu()
 end
 
@@ -73,7 +74,7 @@ end
 
 function playdate.BButtonDown()
 	setRunSpeed(2)
-	--equipNextGun()
+	--toggleBulletCollisions()
 end
 
 function playdate.BButtonUp()

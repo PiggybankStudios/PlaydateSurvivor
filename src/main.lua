@@ -19,7 +19,8 @@ import "controls"
 import "player"
 import "camera"
 import "gameScene"
-import "item"
+--import "item"
+import "item_v2"
 import "mainmenu"
 import "deathmenu"
 import "levelupmenu"
@@ -54,6 +55,7 @@ function playdate.update()
 	dt = 1/20
 	elapsedTime = elapsedTime + dt
 	currentFrame = (currentFrame + 1) % 60
+	gfx.sprite.setAlwaysRedraw(true)	-- causes all sprites to always redraw. Should help performance since there are so many moving images on the screen
 
 	-- Start Screen
 	if currentState == GAMESTATE.startscreen then
@@ -87,8 +89,10 @@ function playdate.update()
 		end
 		updatePlayer(dt)
 		updateCamera(dt)
-		updateBullets(dt, currentFrame)
+		updateBullets(dt)
 		updateEnemies(dt, currentFrame)
+		updateItems(dt)
+		updateParticles(dt)
 
 	-- Pause Menu
 	elseif currentState == GAMESTATE.pausemenu then

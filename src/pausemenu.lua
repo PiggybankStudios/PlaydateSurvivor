@@ -36,6 +36,7 @@ local gun5Image = gfx.image.new('Resources/Sprites/gBurst')
 local gun6Image = gfx.image.new('Resources/Sprites/gGrenade')
 local gun7Image = gfx.image.new('Resources/Sprites/gRang')
 local gun8Image = gfx.image.new('Resources/Sprites/gWave')
+
 gun1Sprite = gfx.sprite.new(gun1Image)
 gun2Sprite = gfx.sprite.new(gunxImage)
 gun3Sprite = gfx.sprite.new(gunxImage)

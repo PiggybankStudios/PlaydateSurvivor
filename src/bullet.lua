@@ -1,3 +1,4 @@
+--[[
 local gfx <const> = playdate.graphics
 local vec <const> = playdate.geometry.vector2D
 
@@ -184,7 +185,7 @@ end
 function bullet:collisionResponse(other)
 	self.lifeTime = 0
 	return 'overlap'
-	--[[
+	--
 	local tag = other:getTag()
 	if tag == TAGS.player then
 		return 'overlap'
@@ -220,7 +221,7 @@ function bullet:collisionResponse(other)
 		self.lifeTime = 0
 		return 'overlap'
 	end
-	]]--
+	--
 end
 	
 
@@ -564,3 +565,5 @@ function updateBullets(dt, frame)
 	debugSprite:add()
 	
 end
+
+]]--
