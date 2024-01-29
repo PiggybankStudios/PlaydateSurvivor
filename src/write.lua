@@ -3,8 +3,8 @@ local gfx <const> = playdate.graphics
 class('write').extends(gfx.sprite)
 
 -- sheet
-smallSheet = gfx.imagetable.new('Resources/Sheets/lettersS')
-largeSheet = gfx.imagetable.new('Resources/Sheets/lettersL')
+local smallSheet = gfx.imagetable.new('Resources/Sheets/lettersS')
+local largeSheet = gfx.imagetable.new('Resources/Sheets/lettersL')
 --numberList = gfx.animation.loop.new(10, numberSheet)
 --numbers = gfx.sprite:new()
 --numbers:setZIndex(ZINDEX.uidetails)

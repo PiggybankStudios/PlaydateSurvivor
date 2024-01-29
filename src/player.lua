@@ -8,11 +8,12 @@ local healthbarOffsetY <const> = 30
 local setDamageTimer <const> = 200
 
 -- Sprite
-playerSheet = gfx.imagetable.new('Resources/Sheets/player')
-animationLoop = gfx.animation.loop.new(16, playerSheet)
+--playerSheet = gfx.imagetable.new('Resources/Sheets/player')
+--animationLoop = gfx.animation.loop.new(16, playerSheet)
+local playerImage = gfx.image.new('Resources/Sprites/player')
 player = gfx.sprite:new()
 player:setZIndex(ZINDEX.player)
-player:setImage(animationLoop:image())
+player:setImage(playerImage)
 
 -- Collider
 local colliderSize <const> = 24

@@ -1,3 +1,33 @@
+-- configFile
+local configData = {
+	0, --toggle run mode
+	0, --no screen shake
+	0, --no screen flash
+	0, --invincible
+	0, --infinite money
+	0, --one hit kill
+	0, --all chars unlocked
+	0, --ironman mode
+}
+
+function writeConfigFile(saveNum)
+	playdate.datastore.write(configData, "config")
+	print("config data stored")
+end
+
+function readConfigFile(saveNum)
+	configData = playdate.datastore.read("config")
+	print("config data read")
+end
+
+function saveConfig(itemNum, value)
+	configData[itemNum] = value
+end
+
+function getConfigValue(itemNum)
+	return configData[itemNum]
+end
+
 -- savefile
 local saveData = {
 	0, --coins
@@ -118,17 +148,29 @@ local saveData = {
 	0, --current queued weapons
 	0, --current queued charms
 	0, --current queued relics
+	0, --save file number
+	0  --save file gameInProgress (120)
 }
 
-function writeSaveFile()
+function writeSaveFile(saveNum)
 	playdate.datastore.write(saveData, "save")
 	print("save data stored")
 end
 
-function readSaveFile()
+function readSaveFile(saveNum)
 	saveData = playdate.datastore.read("save")
 	print("save data read")
-	--for ind, data in pairs(saveData) do
-	--	print(tostring(data))
-	--end
+end
+
+function saveValue(itemNum, value)
+	saveData[itemNum] = value
+end
+
+function getSaveValue(itemNum)
+	return saveData[itemNum]
+end
+
+function file_exists(name)
+   local f=io.open(name,"r")
+   if f~=nil then io.close(f) return true else return false end
 end

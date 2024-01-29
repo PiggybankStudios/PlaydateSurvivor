@@ -239,3 +239,5 @@ the lists of things in game (planned)
 	[] (blessing) twice the enemies, half the health - (curse) items drop only 50% of the time next round
 	[] (blessing) half the enemies with double health - (curse) enemies move at double speed next round
 	[] (blessing) explode pushing enemies away if hurt - (curse) more shooter enemies next round
+	[] (blessing) all enemy bullets speed half - (curse) all your bullets move at half speed next round
+	[] (blessing) all enemy move at speed half for 3 seconds after hurt - (curse) no health items drop next round

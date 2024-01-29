@@ -26,6 +26,7 @@ import "mainmenu"
 import "deathmenu"
 import "levelupmenu"
 import "weaponmenu"
+import "bulletGraphic"
 
 local gfx <const> = playdate.graphics
 

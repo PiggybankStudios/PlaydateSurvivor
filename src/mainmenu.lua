@@ -27,9 +27,9 @@ function openMainMenu()
 	mainSprite:add()
 	promptSprite:add()
 	writeTextToScreen(halfScreenWidth - 5, 50, "play", true, false)
-	writeTextToScreen(halfScreenWidth - 5, 100, "newgame", true, false)
+	writeTextToScreen(halfScreenWidth - 5, 100, "upgrade", true, false)
 	writeTextToScreen(halfScreenWidth - 5, 150, "options", true, false)
-	writeTextToScreen(halfScreenWidth - 5, 200, "exit", true, false)
+	writeTextToScreen(halfScreenWidth - 5, 200, "savefile", true, false)
 	blinking = true
 	menuSpot = 0
 	--print("paused")

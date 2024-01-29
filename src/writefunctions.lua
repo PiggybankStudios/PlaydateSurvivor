@@ -3,8 +3,6 @@ local gfx <const> = playdate.graphics
 class('writefunctions').extends(gfx.sprite)
 
 -- sheet
-smallSheet = gfx.imagetable.new('Resources/Sheets/lettersS')
-largeSheet = gfx.imagetable.new('Resources/Sheets/lettersL')
 local writings = {}
 local sheetRow = 1
 --numberList = gfx.animation.loop.new(10, numberSheet)
