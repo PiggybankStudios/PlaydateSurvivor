@@ -715,7 +715,7 @@ function updateEnemies(dt, frame)
 		if pauseDiff == 0 then pauseDiff = currentTime - timeFromPause end
 	end
 
-	spawnMonsters()
+	--spawnMonsters()
 	updateEnemyLists(frame)
 	moveEnemies(dt)
 

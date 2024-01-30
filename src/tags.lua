@@ -82,20 +82,6 @@ GUN_NAMES = {
 }
 
 
-BULLET_TYPE = {
-	none = 1,
-	peagun = 2,
-	cannon = 3,
-	minigun = 4,
-	shotgun = 5,
-	burstgun = 6,
-	grenade = 7,
-	ranggun = 8, -- NOT DONE YET
-	wavegun = 9, -- NOT DONE YET
-	grenadePellet = 10
-}
-
-
 ITEM_TYPE = {
 	none = 1,
 	health = 2,

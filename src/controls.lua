@@ -75,6 +75,8 @@ end
 function playdate.BButtonDown()
 	setRunSpeed(2)
 	--toggleBulletCollisions()
+	--equipNextGun()
+	nextBulletMax()
 end
 
 function playdate.BButtonUp()

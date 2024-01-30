@@ -20,6 +20,7 @@ function gameScene:goToLevel(level_name)
 		return
 	end
 
+	
 	-- load in the level's tileset and (hopefully) collision
 	for layer_name, layer in pairs(ldtk.get_layers(level_name)) do
 		if layer.tiles then
@@ -42,6 +43,7 @@ function gameScene:goToLevel(level_name)
 			end
 		end
 	end
+	
 
 	-- add the player's sprite back to the list and start the scene
 	addPlayerSpritesToList()

@@ -31,6 +31,8 @@ local gfx <const> = playdate.graphics
 local reset = false
 local recycleValue = 0
 local currentFrame = 0
+local mainLoopTime = 0
+local mainTimePassed = 0
 
 gfx.setColor(gfx.kColorWhite)
 gfx.fillRect(0, 0, 400, 240)
@@ -52,6 +54,8 @@ end
 
 
 function playdate.update()
+	mainLoopTime = playdate.getCurrentTimeMilliseconds()
+
 	dt = 1/20
 	elapsedTime = elapsedTime + dt
 	currentFrame = (currentFrame + 1) % 60
@@ -89,7 +93,7 @@ function playdate.update()
 		end
 		updatePlayer(dt)
 		updateCamera(dt)
-		updateBullets(dt)
+		updateBullets(dt, mainTimePassed)
 		updateEnemies(dt, currentFrame)
 		updateItems(dt)
 		updateParticles(dt)
@@ -129,6 +133,9 @@ function playdate.update()
 	end
 
 	gfx.sprite.update()
+
+	mainTimePassed = playdate.getCurrentTimeMilliseconds() - mainLoopTime
+	playdate.drawFPS()
 end
 
 
