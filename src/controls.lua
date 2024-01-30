@@ -19,6 +19,33 @@ function clearAllThings()
 	clearPauseMenu()
 end
 
+function returnToMenuCall()
+	if getGameState() == GAMESTATE.startscreen then
+		print("Why reset the start screen?")
+	elseif getGameState() == GAMESTATE.mainmenu then
+			closeMainMenu()
+	elseif getGameState() == GAMESTATE.levelupmenu then
+			closeLevelUpMenu()
+			clearAllThings()
+			clearStats()
+	elseif getGameState() == GAMESTATE.newweaponmenu then
+			closeWeaponMenu()
+			clearAllThings()
+			clearStats()
+	elseif getGameState() == GAMESTATE.pausemenu then
+			closePauseMenu()
+			clearAllThings()
+			clearStats()
+	elseif getGameState() == GAMESTATE.maingame then
+			clearAllThings()
+			clearStats()
+	elseif getGameState() == GAMESTATE.deathscreen then
+			closeDeadMenu()
+			clearStats()
+	else print("reset from unhandled state") end
+	setGameState(GAMESTATE.startscreen)
+end
+
 -- +--------------------------------------------------------------+
 -- |                            Input                             |
 -- +--------------------------------------------------------------+
@@ -42,7 +69,7 @@ end
 
 function playdate.leftButtonDown()
 	inputX = -1
-	if getGameState() == GAMESTATE.pausemenu then pauseMenuMoveL()
+	if getGameState() == GAMESTATE.pausemenu then print("no move L")--pauseMenuMoveL()
 	elseif getGameState() == GAMESTATE.levelupmenu then pauseLevelUpMoveL() end
 end
 function playdate.leftButtonUp()
@@ -50,7 +77,7 @@ function playdate.leftButtonUp()
 end
 function playdate.rightButtonDown()
 	inputX = 1
-	if getGameState() == GAMESTATE.pausemenu then pauseMenuMoveR()
+	if getGameState() == GAMESTATE.pausemenu then print("no move R")--pauseMenuMoveR()
 	elseif getGameState() == GAMESTATE.levelupmenu then pauseLevelUpMoveR() end
 end
 function playdate.rightButtonUp()

@@ -38,6 +38,9 @@ gfx.setColor(gfx.kColorWhite)
 gfx.fillRect(0, 0, 400, 240)
 gfx.setBackgroundColor(gfx.kColorBlack)
 
+local menuCopy = playdate.getSystemMenu()
+--local menuItem, error = menuCopy:addMenuItem("Main Menu", returnToMenuCall())
+
 elapsedTime = 0
 currentState = GAMESTATE.startscreen
 lastState = GAMESTATE.nothing
@@ -51,7 +54,6 @@ function recycleGun(value)
 	recycleValue = value
 end
 
-
 function playdate.update()
 	dt = 1/20
 	elapsedTime = elapsedTime + dt
@@ -61,9 +63,17 @@ function playdate.update()
 	if currentState == GAMESTATE.startscreen then
 		if lastState == GAMESTATE.deathscreen then
 			closeDeadMenu()
+			--snapCamera() somehow need to handle offset on death
+			gfx.sprite.removeAll()
+			openStartMenu()
+			lastState = currentState
+		elseif lastState == GAMESTATE.nothing then
+			menuCopy:addMenuItem("Main Menu", returnToMenuCall)
 			openStartMenu()
 			lastState = currentState
 		elseif lastState ~= currentState then
+			--snapCamera() somehow need to handle offset on death
+			gfx.sprite.removeAll()
 			openStartMenu()
 			lastState = currentState
 		else

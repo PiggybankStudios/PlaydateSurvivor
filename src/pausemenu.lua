@@ -17,11 +17,12 @@ pauseSprite:setZIndex(ZINDEX.ui)
 pauseSprite:moveTo(halfScreenWidth, halfScreenHeight)
 
 --setup selector
-local selectImage = gfx.image.new('Resources/Sprites/menu/menuselect')
+--local selectImage = gfx.image.new('Resources/Sprites/menu/menuselect')
+local selectImage = gfx.image.new('Resources/Sprites/menu/mainselect')
 local selectSprite = gfx.sprite.new(selectImage)
 selectSprite:setIgnoresDrawOffset(true)	-- forces sprite to be draw to screen, not world
 selectSprite:setZIndex(ZINDEX.uidetails)
-selectSprite:moveTo(55, 212)
+selectSprite:moveTo(204, 212)
 
 --setup guns
 local gunxImage = gfx.image.new('Resources/Sprites/icon/gLocked')
@@ -59,9 +60,10 @@ function openPauseMenu()
 	gun3Sprite:add()
 	gun4Sprite:add()
 	blinking = true
-	writeTextToScreen(50, 212, "play", true, false)
-	writeTextToScreen(199, 212, "reset", true, false)
-	writeTextToScreen(339, 212, "quit", true, false)
+	--writeTextToScreen(50, 212, "play", true, false)
+	writeTextToScreen(199, 212, "resume", true, false)
+	--writeTextToScreen(199, 212, "reset", true, false)
+	--writeTextToScreen(339, 212, "quit", true, false)
 	addStats()
 	addDifficulty()
 	for i=1,4,1 do
@@ -80,7 +82,7 @@ function closePauseMenu()
 	gun2Sprite:remove()
 	gun3Sprite:remove()
 	gun4Sprite:remove()
-	selectSprite:moveTo(55, 212)
+	--selectSprite:moveTo(55, 212)
 	menuSpot = 0
 	cleanLetters()
 	--print("unpaused")
