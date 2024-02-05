@@ -22,7 +22,7 @@ local scaleDamage = 5
 local stunWiggleAmount = 3
 local movementParticleSpawnRate = 50
 
-ENEMY_TYPE = {
+local ENEMY_TYPE = {
 	fastBall = 1,
 	normalSquare = 2,
 	bat = 3,
@@ -30,6 +30,29 @@ ENEMY_TYPE = {
 	bulletBill = 5,
 	chunkyArms = 6
 }
+
+local ITEM_TYPE = {
+	health = 	1,
+	weapon = 	2, 
+	shield = 	3,  
+	absorbAll = 4, 
+	exp1 = 		5, 
+	exp2 = 		6,  
+	exp3 = 		7,  
+	exp6 = 		8,  
+	exp9 = 		9,
+	exp16 = 	10,
+	luck = 		11
+}
+
+local CAMERA_SHAKE_STRENGTH = {
+	tiny = 2,
+	small = 4, 
+	medium = 10,
+	large = 24,
+	massive = 48
+}
+
 
 local enemyList1 = {}
 local enemyList2 = {}
@@ -702,9 +725,11 @@ end
 -- |                            Update                            |
 -- +--------------------------------------------------------------+
 
+local frame = 1
 
-function updateEnemies(dt, frame)
+function updateEnemies(dt)
 	currentTime = playdate.getCurrentTimeMilliseconds()
+	frame = (frame + 1) % 3
 
 	-- PAUSED - need to save the time
 	if Unpaused == false then
@@ -715,7 +740,7 @@ function updateEnemies(dt, frame)
 		if pauseDiff == 0 then pauseDiff = currentTime - timeFromPause end
 	end
 
-	--spawnMonsters()
+	spawnMonsters()
 	updateEnemyLists(frame)
 	moveEnemies(dt)
 

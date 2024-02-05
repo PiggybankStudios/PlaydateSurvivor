@@ -41,7 +41,7 @@ local maxHealth = 15
 local health = maxHealth
 local playerSpeed = 50
 local playerVelocity = vec.new(0, 0)
-local playerAttackRate = 10 --100
+local playerAttackRate = 100
 local playerAttackRateMin = 10 --limit
 local playerExp = 0
 local startingExpForLevel = 5
@@ -71,7 +71,7 @@ invincibleTime = 0
 invincible = false
 
 --Menu
-Unpaused = false
+--Unpaused = false
 local theCurrTime
 
 -- +--------------------------------------------------------------+
@@ -495,12 +495,7 @@ end
 -- Player Collider
 function collider:collisionResponse(other)
 	local tag = other:getTag()
-	if tag == TAGS.weapon then
-		return "overlap"
-	--elseif tag == TAGS.item then
-	--	other:itemGrab()
-	--	return "overlap"
-	elseif tag == TAGS.enemy then
+	if tag == TAGS.enemy then
 		return "overlap"
 	else -- Any collision that's not set is defaulted to Wall Collision
 		return "slide"
@@ -533,6 +528,7 @@ function setUnpaused(value)
 	Unpaused = value
 end
 
+
 function updatePlayer(dt)
 	theCurrTime = playdate.getCurrentTimeMilliseconds()
 
@@ -557,7 +553,8 @@ function updatePlayer(dt)
 	end
 	
 	movePlayer(dt)
-	player:setRotation(getCrankAngle())
+	local crankAngle = getCrankAngle()
+	player:setRotation(crankAngle)
 	
 	theLastTime = theCurrTime
 	Unpaused = false
@@ -565,4 +562,5 @@ function updatePlayer(dt)
 	if health == 0 then
 		handleDeath()
 	end
+
 end

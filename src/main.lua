@@ -30,9 +30,10 @@ local gfx <const> = playdate.graphics
 
 local reset = false
 local recycleValue = 0
-local currentFrame = 0
 local mainLoopTime = 0
 local mainTimePassed = 0
+local elapsedPauseTime = 0
+local startPauseTime = 0
 
 gfx.setColor(gfx.kColorWhite)
 gfx.fillRect(0, 0, 400, 240)
@@ -58,7 +59,6 @@ function playdate.update()
 
 	dt = 1/20
 	elapsedTime = elapsedTime + dt
-	currentFrame = (currentFrame + 1) % 60
 	gfx.sprite.setAlwaysRedraw(true)	-- causes all sprites to always redraw. Should help performance since there are so many moving images on the screen
 
 	-- Start Screen
@@ -86,21 +86,27 @@ function playdate.update()
 			reset = false
 		elseif lastState ~= currentState then
 			lastState = currentState
+			elapsedPauseTime = mainLoopTime - startPauseTime
 			if recycleValue ~= 0 then
 				addEXP(recycleValue)
 				recycleValue = 0
 			end
 		end
+
 		updatePlayer(dt)
 		updateCamera(dt)
-		updateBullets(dt, mainTimePassed)
-		updateEnemies(dt, currentFrame)
-		updateItems(dt)
-		updateParticles(dt)
+		updateBullets(dt, mainTimePassed, mainLoopTime, elapsedPauseTime)
+		updateEnemies(dt)
+		updateItems(dt, mainTimePassed, mainLoopTime)
+		updateParticles(dt, mainTimePassed, mainLoopTime, elapsedPauseTime)
+
+		-- clear possible pause time
+		elapsedPauseTime = 0
 
 	-- Pause Menu
 	elseif currentState == GAMESTATE.pausemenu then
 		if lastState ~= currentState then
+			startPauseTime = mainLoopTime
 			lastState = currentState
 		end
 		updatePauseManu()
@@ -109,6 +115,7 @@ function playdate.update()
 	-- Level Up Menu
 	elseif currentState == GAMESTATE.levelupmenu then
 		if lastState ~= currentState then
+			startPauseTime = mainLoopTime
 			lastState = currentState
 		end
 		updateLevelUpManu()
@@ -117,6 +124,7 @@ function playdate.update()
 	-- Weapon Menu
 	elseif currentState == GAMESTATE.newweaponmenu then
 		if lastState ~= currentState then
+			startPauseTime = mainLoopTime
 			lastState = currentState
 		end
 		updateWeaponMenu()
@@ -126,6 +134,7 @@ function playdate.update()
 	elseif currentState == GAMESTATE.deathscreen then
 		if lastState ~= currentState then
 			openDeadMenu()
+			startPauseTime = mainLoopTime
 			lastState = currentState
 		else
 			updateDeadManu()

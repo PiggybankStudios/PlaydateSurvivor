@@ -42,15 +42,6 @@ GAMESTATE = {
 }
 
 
-CAMERA_SHAKE_STRENGTH = {
-	tiny = 2,
-	small = 4, 
-	medium = 10,
-	large = 24,
-	massive = 48
-}
-
-
 PLAYER_STATS = {
 	armor = 1,
 	attackRate = 2,
@@ -70,36 +61,18 @@ PLAYER_STATS = {
 
 
 GUN_NAMES = {
-	"NONE",					-- 1
-	"pistol", 				-- 2
-	"cannon", 				-- 3
-	"minigun", 				-- 4
-	"shotgun", 				-- 5
-	"burst rifle", 			-- 6
-	"grenade launcher",		-- 7
-	"boomerang",			-- 8
-	"wave gun"				-- 9
-}
-
-
-ITEM_TYPE = {
-	none = 1,
-	health = 2,
-	weapon = 3, 
-	shield = 4, 
-	absorbAll = 5,
-	exp1 = 6, 
-	exp2 = 7, 
-	exp3 = 8, 
-	exp6 = 9, 
-	exp9 = 10, 
-	exp16 = 11, 
-	luck = 12 
+	"pistol", 				-- 1
+	"cannon", 				-- 2
+	"minigun", 				-- 3
+	"shotgun", 				-- 4
+	"burst rifle", 			-- 5
+	"grenade launcher",		-- 6
+	"boomerang",			-- 7
+	"wave gun"				-- 8
 }
 
 
 PARTICLE_TYPE = {
-	none = 1,
-	playerImpact = 2,
-	enemyTrail = 3
+	playerImpact = 1,
+	enemyTrail = 2
 }
