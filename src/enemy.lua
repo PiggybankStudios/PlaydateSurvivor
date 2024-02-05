@@ -27,7 +27,8 @@ ENEMY_TYPE = {
 	bat = 3,
 	medic = 4,
 	bulletBill = 5,
-	chunkyArms = 6
+	chunkyArms = 6,
+	munBag = 7
 }
 
 enemyList1 = {}
@@ -61,6 +62,9 @@ function createEnemy(x, y, type)
 
 	elseif type == ENEMY_TYPE.chunkyArms then
 		newEnemy = chunkyArms(x, y)
+
+	elseif type == ENEMY_TYPE.munBag then
+		newEnemy = munBag(x, y)
 
 	else --type == ENEMY_TYPE.normalSquare	-- default
 		newEnemy = normalSquare(x, y)
@@ -359,6 +363,42 @@ function chunkyArms:calculateMove(targetX, targetY)
 	chunkyArms.super.calculateMove(self)
 end
 
+------------------------------------------------
+				-- Mun Bag --
+
+class('munBag').extends(enemy)
+
+function munBag:init(x, y)	
+	self:setImage(gfx.image.new('Resources/Sprites/enemy/Enemy16'))
+	self.type = ENEMY_TYPE.munBag
+	self.health = 1 + math.floor(getMun() / 10)
+	self.speed = 1
+	self.accel = 1
+	self.damageAmount = 1
+	self.shakeStrength = CAMERA_SHAKE_STRENGTH.tiny
+	self.drop = { ITEM_TYPE.mun2, ITEM_TYPE.mun10, ITEM_TYPE.mun50 }
+	local tLuck1 = math.floor(getLuck()/4)
+	local tLuck2 = math.floor(getLuck()/20)
+	self.dropPercent = { (90 - tLuck1 - tLuck2), (10 + tLuck1), tLuck2}
+	self.rating = 1
+
+	munBag.super.init(self, x, y)
+end
+
+function munBag:calculateMove(targetX, targetY)
+	self.directionVec = vec.new(targetX - self.x, targetY - self.y)
+	if currentTime >= self.time then
+		self.time = currentTime + 500
+		if self.health < (self.fullhealth / 2) then self.speed += 0.3 end
+		if self.speed > (3 + math.floor(getDifficulty() / scaleDamage)) then self.speed = (3 + math.floor(getDifficulty() / scaleDamage)) end
+		if self.health < self.fullhealth then 
+			self:heal(1 + math.floor(getDifficulty() / scaleHealth))
+		end
+	end
+
+	munBag.super.calculateMove(self)
+end
+
 
 -- +--------------------------------------------------------------+
 -- |                         Interaction                          |
@@ -601,7 +641,7 @@ function spawnMonsters()
 		spawnInc += math.random(1, difficulty)
 		if spawnInc > 5 then
 			spawnInc = 0
-			eType = math.random(1, 6)
+			eType = math.random(1, 7)
 			createEnemy(-enemyX, -enemyY, eType)
 		end
 	end

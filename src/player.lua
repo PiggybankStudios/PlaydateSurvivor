@@ -24,7 +24,7 @@ collider:setCollideRect(0, 0, colliderSize, colliderSize)
 
 -- stattrack
 local damageDealt = 0
-local damageReceived = 0
+local damageTaken = 0
 local experienceGained = 0
 local enemiesKilled = 0
 local currentCombo = 0
@@ -63,6 +63,7 @@ local playerVampireMax = 100 --limit
 local playerHealBonus = 0
 local playerStunChance = 0
 local playerStunChanceMax = 75 --limit
+local playerMun = 0
 local damageTimer = 0
 local playerHealthbar
 local playerExpbar
@@ -192,7 +193,7 @@ function addDamageDealt(amount)
 end
 
 function addDamageReceived(amount)
-	damageReceived += amount
+	damageTaken += amount
 	currentCombo = 0
 end
 
@@ -272,6 +273,14 @@ end
 
 function getStun()
 	return playerStunChance
+end
+
+function getMun()
+	return playerMun
+end
+
+function addMun(amount)
+	playerMun += amount
 end
 
 -- +--------------------------------------------------------------+
@@ -354,9 +363,42 @@ function upgradeStat(stat, bonus)
 	end
 end
 
+function setStats()
+	damageDealt = getSaveValue(SAVE_REF.run_damage_dealt)
+	damageTaken = getSaveValue(SAVE_REF.run_damage_taken)
+	experienceGained = getSaveValue(SAVE_REF.run_exp_total)
+	enemiesKilled = getSaveValue(SAVE_REF.run_enemies_killed)
+	maxCombo = getSaveValue(SAVE_REF.run_max_combo)
+	shotsFired = getSaveValue(SAVE_REF.run_shots_fired)
+	itemsGrabbed = getSaveValue(SAVE_REF.run_items_grabbed)
+	difficulty = getSaveValue(SAVE_REF.run_difficulty)
+	playerLevel = getSaveValue(SAVE_REF.run_level)
+	maxHealth = getSaveValue(SAVE_REF.run_health_max)
+	health = getSaveValue(SAVE_REF.run_health)
+	playerSpeed = getSaveValue(SAVE_REF.run_speed)
+	playerAttackRate = getSaveValue(SAVE_REF.run_att_rate)
+	playerExp = getSaveValue(SAVE_REF.run_exp)
+	playerMagnet = getSaveValue(SAVE_REF.run_magnet)
+	playerSlots = getSaveValue(SAVE_REF.run_slots)
+	playerGunDamage = getSaveValue(SAVE_REF.run_damage)
+	playerReflectDamage = getSaveValue(SAVE_REF.run_reflect)
+	playerExpBonus = getSaveValue(SAVE_REF.run_exp_bonus)
+	playerLuck = getSaveValue(SAVE_REF.run_luck)
+	playerBulletSpeed = getSaveValue(SAVE_REF.run_bullet_speed)
+	playerArmor = getSaveValue(SAVE_REF.run_armor)
+	playerDodge = getSaveValue(SAVE_REF.run_dodge)
+	playerRunSpeed = getSaveValue(SAVE_REF.run_speed)
+	playerVampire = getSaveValue(SAVE_REF.run_vampire)
+	playerHealBonus = getSaveValue(SAVE_REF.run_heal_bonus)
+	playerStunChance = getSaveValue(SAVE_REF.run_stun)
+	playerMun = getSaveValue(SAVE_REF.mun)
+	theGunSlots = {getSaveValue(SAVE_REF.run_gun_1), getSaveValue(SAVE_REF.run_gun_2), getSaveValue(SAVE_REF.run_gun_3), getSaveValue(SAVE_REF.run_gun_4)}
+	theGunTier = {getSaveValue(SAVE_REF.run_gun_t1), getSaveValue(SAVE_REF.run_gun_t2), getSaveValue(SAVE_REF.run_gun_t3), getSaveValue(SAVE_REF.run_gun_t4)}
+end
+
 function clearStats()
 	damageDealt = 0
-	damageReceived = 0
+	damageTaken = 0
 	experienceGained = 0
 	enemiesKilled = 0
 	currentCombo = 0
@@ -386,6 +428,7 @@ function clearStats()
 	playerVampire = 0
 	playerHealBonus = 0
 	playerStunChance = 0
+	playerMun = 0
 	damageTimer = 0
 	theShotTimes = {0, 0, 0, 0}
 	theGunSlots = {1, 0, 0, 0}
@@ -407,7 +450,7 @@ function getFinalStats()
 	stats[#stats + 1] = shotsFired
 	stats[#stats + 1] = enemiesKilled
 	stats[#stats + 1] = maxCombo
-	stats[#stats + 1] = damageReceived
+	stats[#stats + 1] = damageTaken
 	stats[#stats + 1] = itemsGrabbed
 	stats[#stats + 1] = survivedTime
 	stats[#stats + 1] = (difficulty + playerLevel) * (experienceGained + itemsGrabbed + survivedTime + maxCombo)
@@ -639,6 +682,8 @@ function spawnBullets()
 			if Unpaused then theShotTimes[sIndex] += theLastTime end
 			if theCurrTime >= theShotTime then
 				local newRotation = player:getRotation() + (90 * sIndex)
+				if newRotation > 360 then newRotation -= 360 
+				elseif newRotation < -360 then newRotation += 360 end
 				local newLifeTime = theCurrTime + 1500
 				
 				if theGunSlots[sIndex] == 2 then --cannon
@@ -663,7 +708,7 @@ function spawnBullets()
 					end
 				elseif theGunSlots[sIndex] == 4 then -- shotgun
 					theShotTimes[sIndex] = theCurrTime + playerAttackRate * 3
-					newBullet = bullet(player.x, player.y, newRotation+ math.random(-8, 8), newLifeTime, theGunSlots[sIndex], sIndex, theGunTier[sIndex])
+					newBullet = bullet(player.x, player.y, newRotation + math.random(-8, 8), newLifeTime, theGunSlots[sIndex], sIndex, theGunTier[sIndex])
 					newBullet:add()
 					bullets[#bullets + 1] = newBullet
 					newBullet = bullet(player.x, player.y, newRotation + math.random(16, 25), newLifeTime, theGunSlots[sIndex], sIndex, theGunTier[sIndex])
@@ -839,6 +884,12 @@ function updateItems(dt)
 				addEXP(9)
 			elseif items[iIndex].type == ITEM_TYPE.exp16 then
 				addEXP(16)
+			elseif items[iIndex].type == ITEM_TYPE.mun2 then
+				addMun(2)
+			elseif items[iIndex].type == ITEM_TYPE.mun10 then
+				addMun(10)
+			elseif items[iIndex].type == ITEM_TYPE.mun50 then
+				addMun(50)
 			else
 				addEXP(1)	-- default is exp1
 			end

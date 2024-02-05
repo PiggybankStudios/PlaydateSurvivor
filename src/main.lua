@@ -5,8 +5,9 @@ import "CoreLibs/math"
 
 import "LDtk"
 
-import "savefile"
 import "tags"
+import "savefile"
+--import "tags"
 import "bullet"
 import "particle"
 import "healthbar"
@@ -29,7 +30,6 @@ import "weaponmenu"
 import "bulletGraphic"
 
 local gfx <const> = playdate.graphics
-
 local reset = false
 local recycleValue = 0
 local currentFrame = 0
@@ -68,6 +68,8 @@ function playdate.update()
 			openStartMenu()
 			lastState = currentState
 		elseif lastState == GAMESTATE.nothing then
+			initializeConfig()
+			initializeSave()
 			menuCopy:addMenuItem("Main Menu", returnToMenuCall)
 			openStartMenu()
 			lastState = currentState
@@ -83,11 +85,10 @@ function playdate.update()
 	-- Main Menu
 	elseif currentState == GAMESTATE.mainmenu then
 		if lastState ~= currentState then
-			writeSaveFile()
+			readConfigFile()
 			closeStartMenu()
 			openMainMenu()
 			lastState = currentState
-			readSaveFile()
 		else
 			updateMainManu()
 		end

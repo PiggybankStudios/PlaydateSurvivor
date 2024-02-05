@@ -42,7 +42,10 @@ function bullet:init(x, y, rotation, newLifeTime, type, index, tier)
 		--self:setImage(gfx.image.new('Resources/Sprites/bullet/BulletWavegun'))
 		self:setImage(whichBullet(type,whichAngle))
 		--self:setRotation(rotation)
-		if whichAngle == 2 or whichAngle == 4 or whichAngle == 6 or whichAngle == 8 then self:setRotation(45) end
+		if whichAngle == 2 then self:setRotation(rotation)
+		elseif whichAngle == 4 then self:setRotation(rotation - 90)
+		elseif whichAngle == 6 then self:setRotation(rotation - 180)
+		elseif whichAngle == 8 then self:setRotation(rotation - 270) end
 		self.speed = getPayerBulletSpeed()
 		self.damage = 4 + getPlayerGunDamage()
 		self.knockback = 0
@@ -158,6 +161,7 @@ function bullet:move(currTime)
 			self.mode += 1
 			if self.damage > 1 then self.damage = math.ceil(self.damage/2) end
 			local rota = getBulletAngle(self.rot)
+			--self:setScale(1 + self.mode/2 * self.tier, 1)
 			if rota == 1 or rota == 2 or rota == 5 or rota == 6 then self:setScale(1 + self.mode/2 * self.tier, 1)
 			elseif rota == 3 or rota == 4 or rota == 7 or rota == 8 then self:setScale(1, 1 + self.mode/2 * self.tier)
 			else self:setScale(1 + self.mode/2 * self.tier, 1) end

@@ -116,8 +116,10 @@ function playdate.AButtonDown()
 	if getGameState() == GAMESTATE.startscreen then
 		setGameState(GAMESTATE.mainmenu)
 	elseif getGameState() == GAMESTATE.mainmenu then
-		setGameState(GAMESTATE.maingame)
-		gameStartTime = playdate.getCurrentTimeMilliseconds()
+		if MainMenuNavigate() == true then
+			setGameState(GAMESTATE.maingame)
+			gameStartTime = playdate.getCurrentTimeMilliseconds()
+		end
 	elseif getGameState() == GAMESTATE.maingame then
 		openPauseMenu()
 		setGameState(GAMESTATE.pausemenu)

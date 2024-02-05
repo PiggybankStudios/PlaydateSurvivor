@@ -40,6 +40,15 @@ function item:init(x, y, type)
 
 	elseif (self.type == ITEM_TYPE.exp16) then
 		self:setImage(gfx.image.new('Resources/Sprites/item/iEXP16'))
+		
+	elseif (self.type == ITEM_TYPE.mun2) then
+		self:setImage(gfx.image.new('Resources/Sprites/item/iMun2'))
+		
+	elseif (self.type == ITEM_TYPE.mun10) then
+		self:setImage(gfx.image.new('Resources/Sprites/item/iMun10'))
+		
+	elseif (self.type == ITEM_TYPE.mun50) then
+		self:setImage(gfx.image.new('Resources/Sprites/item/iMun50'))
 
 	else
 		-- default to exp1
