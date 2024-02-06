@@ -726,15 +726,15 @@ end
 -- |                            Render                            |
 -- +--------------------------------------------------------------+
 
-local img_bulletPeagun = gfx.image.new('Resources/Sprites/BulletPeagun')
-local img_bulletCannon = gfx.image.new('Resources/Sprites/BulletCannon')
-local img_bulletMinigun = gfx.image.new('Resources/Sprites/BulletMinigun')
-local img_bulletShotgun = gfx.image.new('Resources/Sprites/BulletShotgun')
-local img_bulletBurstGun = gfx.image.new('Resources/Sprites/BulletBurstgun')
-local img_bulletGrenade = gfx.image.new('Resources/Sprites/BulletGrenade')
-local img_bulletRanggun = gfx.image.new('Resources/Sprites/BulletRanggun')
-local img_bulletWavegun = gfx.image.new('Resources/Sprites/BulletWavegun')
-local img_bulletGrenadePellet = gfx.image.new('Resources/Sprites/BulletGrenadePellet')
+local img_bulletPeagun = gfx.image.new('Resources/Sprites/bullet/BulletPeagun')
+local img_bulletCannon = gfx.image.new('Resources/Sprites/bullet/BulletCannon')
+local img_bulletMinigun = gfx.image.new('Resources/Sprites/bullet/BulletMinigun')
+local img_bulletShotgun = gfx.image.new('Resources/Sprites/bullet/BulletShotgun')
+local img_bulletBurstGun = gfx.image.new('Resources/Sprites/bullet/BulletBurstgun')
+local img_bulletGrenade = gfx.image.new('Resources/Sprites/bullet/BulletGrenade')
+local img_bulletRanggun = gfx.image.new('Resources/Sprites/bullet/BulletRanggun')
+local img_bulletWavegun = gfx.image.new('Resources/Sprites/bullet/BulletWavegun')
+local img_bulletGrenadePellet = gfx.image.new('Resources/Sprites/bullet/BulletGrenadePellet')
 
 local IMAGE_LIST = {
 	img_bulletPeagun,

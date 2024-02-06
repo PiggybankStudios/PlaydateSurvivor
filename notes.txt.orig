@@ -118,11 +118,11 @@ This is a file that you can put any notes or TODO lists in
 				* check that item references are being removed	
 				* recycle possible items	
 		[ ] Particle management
-				*BUG* impact particle positions is wrong now
 		[ ] Bullet management
-				* DONE * destroy when off-screen
-				* DONE * destroy at end-of-life
-				* Collision handling - is it good enough?
+				* destroy when off-screen
+				* destroy at end-of-life
+				* need to give bullets their own subclasses
+				* Make a recycling system so we're not constantly creating/deleting
 		[DONE] Enemies spawn in radius rather than from screen size
 		[ ] Max enemy cap and recycling
 				* when enemies are off-screen for too long, teleport them closer to the player
@@ -132,6 +132,7 @@ This is a file that you can put any notes or TODO lists in
 		[Done] Camera fixes
 				* camera setoffset INSTEAD of draw offset for shake effects
 		[ ] Particle effect for when Chunky Arms starts to rage
+<<<<<<< HEAD
 		[ ] Particle effect for enemy impact on player DODGE
 		[ ] Particle effect for enemy impact on player INVINCIBILITY
 		[ ] Enemy Waves
@@ -146,8 +147,9 @@ This is a file that you can put any notes or TODO lists in
 				* poison damage is ticked on enemy update calcs
 				* Add poison particle effect
 				* add list of effects that happen when poisoned
-				
-				
+=======
+
+
 ***************************************************************************************************************************************
 the lists of things in game (planned)
 ***************************************************************************************************************************************
@@ -159,7 +161,7 @@ the lists of things in game (planned)
 	[DONE] Rifle
 	[DONE] Grenade
 	[DONE] Boomerang
-	[DONE] SoundWave			
+	[DONE] SoundWave
 	[] Dart - stops moving if enemy struck and deals damage over time, high poison chance
 	[] Mine - bullet loses speed then simply sits still a mine until expires or touched, then explodes
 	[] Sword - medium range swipe, decent knockback
@@ -261,3 +263,4 @@ the lists of things in game (planned)
 	[] (blessing) explode pushing enemies away if hurt - (curse) more shooter enemies next round
 	[] (blessing) all enemy bullets speed half - (curse) all your bullets move at half speed next round
 	[] (blessing) all enemy move at speed half for 3 seconds after hurt - (curse) no health items drop next round
+>>>>>>> 07a95efd9629719b6936d53955bea29130871be2

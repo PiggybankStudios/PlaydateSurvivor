@@ -10,18 +10,17 @@ local blinking = false
 local lastBlink = 0
 local weaponTier
 
-local writings = {}
 local newWeapon = 1
 
 --setup main menu
-local pauseImage = gfx.image.new('Resources/Sprites/weaponMenu')
+local pauseImage = gfx.image.new('Resources/Sprites/menu/weaponMenu')
 local pauseSprite = gfx.sprite.new(pauseImage)
 pauseSprite:setIgnoresDrawOffset(true)	-- forces sprite to be draw to screen, not world
 pauseSprite:setZIndex(ZINDEX.ui)
 pauseSprite:moveTo(halfScreenWidth, halfScreenHeight)
 
 --setup selector
-local selectImage = gfx.image.new('Resources/Sprites/levelUpselect')
+local selectImage = gfx.image.new('Resources/Sprites/menu/levelUpselect')
 local selectSprite = gfx.sprite.new(selectImage)
 selectSprite:setIgnoresDrawOffset(true)	-- forces sprite to be draw to screen, not world
 selectSprite:setZIndex(ZINDEX.uidetails)
@@ -41,7 +40,8 @@ function openWeaponMenu(newWeap, tier)
 	gun3Sprite:add()
 	gun4Sprite:add()
 	gunNewSprite:setImage(selectWeaponImage(newWeap))
-	addWeaponDetails(GUN_NAMES[newWeap] .. getTierStr(tier), 132, 148)
+	local strSend = GUN_NAMES[newWeap] .. getTierStr(tier)
+	writeTextToScreen(148, 132, strSend, true, true)
 	newWeapon = newWeap
 	gunNewSprite:add()
 	blinking = true
@@ -49,7 +49,7 @@ function openWeaponMenu(newWeap, tier)
 	for i=1,4,1 do
 		if getEquippedGun(i) ~= 0 then 
 			local strSend = GUN_NAMES[getEquippedGun(i)] .. getTierStr(getTierForGun(i))
-			addWeaponDetails(strSend, 15 + (45 * i), 346)
+			writeTextToScreen(346, 15 + (45 * i), strSend, true, true)
 		end
 	end
 	--print("paused")
@@ -65,12 +65,7 @@ function closeWeaponMenu()
 	gunNewSprite:remove()
 	selectSprite:moveTo(346, 40)
 	menuSpot = 1
-	for gIndex,gchar in pairs(writings) do --need all graphics removed first
-		writings[gIndex]:remove()
-	end
-	for gIndex,gchar in pairs(writings) do --need to clear the table now
-		table.remove(writings,gIndex)
-	end
+	cleanLetters()
 	--print("unpaused")
 end
 
@@ -160,20 +155,6 @@ function weaponMenuMoveU()
 			selectSprite:moveTo(346, 175)
 			menuSpot = 4
 		end
-	end
-end
-
-function addWeaponDetails(theString, trow, tcolumn)
-	local spacing = 4
-	local row = trow
-	local column = tcolumn
-	local lchars = {}
-	lchars = lstrtochar(theString)
-	column -= math.floor(#lchars * spacing / 2)
-	for lIndex,letter in pairs(lchars) do
-		newLetter = write((column + spacing * lIndex), row, letter, true)
-		newLetter:add()
-		writings[#writings + 1] = newLetter
 	end
 end
 

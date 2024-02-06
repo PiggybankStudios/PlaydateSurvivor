@@ -8,17 +8,15 @@ local halfScreenHeight <const> = screenHeight / 2
 local blinking = false
 local lastBlink = 0
 
-local writings = {}
-
 --setup main menu
-local deadImage = gfx.image.new('Resources/Sprites/deadMenu')
+local deadImage = gfx.image.new('Resources/Sprites/menu/deadMenu')
 local deadSprite = gfx.sprite.new(deadImage)
 deadSprite:setIgnoresDrawOffset(true)	-- forces sprite to be draw to screen, not world
 deadSprite:setZIndex(ZINDEX.ui)
 deadSprite:moveTo(halfScreenWidth, halfScreenHeight)
 
 --setup prompt
-local promptImage = gfx.image.new('Resources/Sprites/deadSelect')
+local promptImage = gfx.image.new('Resources/Sprites/menu/deadSelect')
 local promptSprite = gfx.sprite.new(promptImage)
 promptSprite:setIgnoresDrawOffset(true)	-- forces sprite to be draw to screen, not world
 promptSprite:setZIndex(ZINDEX.uidetails)
@@ -52,105 +50,65 @@ end
 function closeDeadMenu()
 	deadSprite:remove()
 	if blinking == true then promptSprite:remove() end
-	for gIndex,gchar in pairs(writings) do --need all graphics removed first
-		writings[gIndex]:remove()
-	end
-	for gIndex,gchar in pairs(writings) do --need to clear the table now
-		table.remove(writings,gIndex)
-	end
+	cleanLetters()
 	--print("unpaused")
 end
 
 
 function addFinalStats()
-	local spacing = 4
 	local newline = 8
 	local statrow = 1
 	local row = 26
 	local column = 12
 	local pstats = getFinalStats()
-	local lchars = {}
-	lchars = lstrtochar("difficulty reached: " .. tostring(pstats[1]))
-	for lIndex,letter in pairs(lchars) do
-		newLetter = write((column + spacing * lIndex), (row + newline * statrow), letter, true)
-		newLetter:add()
-		writings[#writings + 1] = newLetter
-	end
+	local sentence = ("difficulty reached: " .. tostring(pstats[1]))
+	writeTextToScreen(column, (row + newline * statrow), sentence, false, true)
+	
 	statrow += 1 --move on to the next line
-	lchars = lstrtochar("max level: " .. tostring(pstats[2]))
-	for lIndex,letter in pairs(lchars) do
-		newLetter = write((column + spacing * lIndex), (row + newline * statrow), letter, true)
-		newLetter:add()
-		writings[#writings + 1] = newLetter
-	end
+	sentence = ("max level: " .. tostring(pstats[2]))
+	writeTextToScreen(column, (row + newline * statrow), sentence, false, true)
+	
 	statrow += 1 --move on to the next line
-	lchars = lstrtochar("exp gained: " .. tostring(pstats[3]))
-	for lIndex,letter in pairs(lchars) do
-		newLetter = write((column + spacing * lIndex), (row + newline * statrow), letter, true)
-		newLetter:add()
-		writings[#writings + 1] = newLetter
-	end
+	sentence = ("exp gained: " .. tostring(pstats[3]))
+	writeTextToScreen(column, (row + newline * statrow), sentence, false, true)
+	
 	statrow += 1 --move on to the next line
-	lchars = lstrtochar("damage dealt: " .. tostring(pstats[4]))
-	for lIndex,letter in pairs(lchars) do
-		newLetter = write((column + spacing * lIndex), (row + newline * statrow), letter, true)
-		newLetter:add()
-		writings[#writings + 1] = newLetter
-	end
+	sentence = ("damage dealt: " .. tostring(pstats[4]))
+	writeTextToScreen(column, (row + newline * statrow), sentence, false, true)
+	
 	statrow += 1 --move on to the next line
-	lchars = lstrtochar("shots fired: " .. tostring(pstats[5]))
-	for lIndex,letter in pairs(lchars) do
-		newLetter = write((column + spacing * lIndex), (row + newline * statrow), letter, true)
-		newLetter:add()
-		writings[#writings + 1] = newLetter
-	end
+	sentence = ("shots fired: " .. tostring(pstats[5]))
+	writeTextToScreen(column, (row + newline * statrow), sentence, false, true)
+	
 	statrow += 1 --move on to the next line
-	lchars = lstrtochar("enemies killed: " .. tostring(pstats[6]))
-	for lIndex,letter in pairs(lchars) do
-		newLetter = write((column + spacing * lIndex), (row + newline * statrow), letter, true)
-		newLetter:add()
-		writings[#writings + 1] = newLetter
-	end
+	sentence = ("enemies killed: " .. tostring(pstats[6]))
+	writeTextToScreen(column, (row + newline * statrow), sentence, false, true)
+	
 	statrow += 1 --move on to the next line
-	lchars = lstrtochar("damage received: " .. tostring(pstats[7]))
-	for lIndex,letter in pairs(lchars) do
-		newLetter = write((column + spacing * lIndex), (row + newline * statrow), letter, true)
-		newLetter:add()
-		writings[#writings + 1] = newLetter
-	end
+	sentence = ("largest kill combo: " .. tostring(pstats[7]))
+	writeTextToScreen(column, (row + newline * statrow), sentence, false, true)
+	
 	statrow += 1 --move on to the next line
-	lchars = lstrtochar("items grabbed: " .. tostring(pstats[8]))
-	for lIndex,letter in pairs(lchars) do
-		newLetter = write((column + spacing * lIndex), (row + newline * statrow), letter, true)
-		newLetter:add()
-		writings[#writings + 1] = newLetter
-	end
+	sentence = ("damage received: " .. tostring(pstats[8]))
+	writeTextToScreen(column, (row + newline * statrow), sentence, false, true)
+	
 	statrow += 1 --move on to the next line
-	lchars = lstrtochar("time survived: " .. tostring(pstats[9]) .. " seconds")
-	for lIndex,letter in pairs(lchars) do
-		newLetter = write((column + spacing * lIndex), (row + newline * statrow), letter, true)
-		newLetter:add()
-		writings[#writings + 1] = newLetter
-	end
+	sentence = ("items grabbed: " .. tostring(pstats[9]))
+	writeTextToScreen(column, (row + newline * statrow), sentence, false, true)
+	
 	statrow += 1 --move on to the next line
-	lchars = lstrtochar("*****************************")
-	for lIndex,letter in pairs(lchars) do
-		newLetter = write((column + spacing * lIndex), (row + newline * statrow), letter, true)
-		newLetter:add()
-		writings[#writings + 1] = newLetter
-	end
+	sentence = ("time survived: " .. tostring(pstats[10]) .. " seconds")
+	writeTextToScreen(column, (row + newline * statrow), sentence, false, true)
+	
 	statrow += 1 --move on to the next line
-	lchars = lstrtochar("final score: " .. tostring(pstats[10]) .. " points")
-	for lIndex,letter in pairs(lchars) do
-		newLetter = write((column + spacing * lIndex), (row + newline * statrow), letter, true)
-		newLetter:add()
-		writings[#writings + 1] = newLetter
-	end
+	sentence = ("*****************************")
+	writeTextToScreen(column, (row + newline * statrow), sentence, false, true)
+	
 	statrow += 1 --move on to the next line
-	lchars = lstrtochar("*****************************")
-	for lIndex,letter in pairs(lchars) do
-		newLetter = write((column + spacing * lIndex), (row + newline * statrow), letter, true)
-		newLetter:add()
-		writings[#writings + 1] = newLetter
-	end
+	sentence = ("final score: " .. tostring(pstats[11]) .. " points")
+	writeTextToScreen(column, (row + newline * statrow), sentence, false, true)
+	
+	statrow += 1 --move on to the next line
+	sentence = ("*****************************")
+	writeTextToScreen(column, (row + newline * statrow), sentence, false, true)
 end

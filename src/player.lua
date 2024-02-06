@@ -8,11 +8,12 @@ local healthbarOffsetY <const> = 30
 local setDamageTimer <const> = 200
 
 -- Sprite
-playerSheet = gfx.imagetable.new('Resources/Sheets/player')
-animationLoop = gfx.animation.loop.new(16, playerSheet)
+--playerSheet = gfx.imagetable.new('Resources/Sheets/player')
+--animationLoop = gfx.animation.loop.new(16, playerSheet)
+local playerImage = gfx.image.new('Resources/Sprites/player')
 player = gfx.sprite:new()
 player:setZIndex(ZINDEX.player)
-player:setImage(animationLoop:image())
+player:setImage(playerImage)
 
 -- Collider
 local colliderSize <const> = 24
@@ -25,9 +26,11 @@ collider:setCollidesWithGroups( {GROUPS.walls, GROUPS.enemy})
 
 -- stattrack
 local damageDealt = 0
-local damageReceived = 0
+local damageTaken = 0
 local experienceGained = 0
 local enemiesKilled = 0
+local currentCombo = 0
+local maxCombo = 0
 local shotsFired = 0
 local itemsGrabbed = 0
 
@@ -42,7 +45,7 @@ local health = maxHealth
 local playerSpeed = 50
 local playerVelocity = vec.new(0, 0)
 local playerAttackRate = 100
-local playerAttackRateMin = 10 --limit
+local playerAttackRateMin = 25 --limit
 local playerExp = 0
 local startingExpForLevel = 5
 local playerMagnet = 50
@@ -55,18 +58,23 @@ local playerLuckMax = 100 --limit
 local playerBulletSpeed = 50
 local playerArmor = 0
 local playerDodge = 0
-local playerDodgeMax = 90 --limit
+local playerDodgeMax = 75 --limit
 local playerRunSpeed = 1
 local playerVampire = 0
 local playerVampireMax = 100 --limit
 local playerHealBonus = 0
 local playerStunChance = 0
-local playerStunChanceMax = 100
+local playerStunChanceMax = 75 --limit
+local playerMun = 0
 local damageTimer = 0
 local playerHealthbar
 local playerExpbar
 local gameStartTime = 0
 
+theCharmSlot1 = {0, 0, 0, 0} -- what charm is in column 1 for each gun slot
+theCharmSlot2 = {0, 0, 0, 0} -- what charm is in column 2 for each gun slot
+theCharmSlot3 = {0, 0, 0, 0} -- what charm is in column 3 for each gun slot
+theCharmSlot4 = {0, 0, 0, 0} -- what charm is in column 4 for each gun slot
 invincibleTime = 0
 invincible = false
 
@@ -152,8 +160,9 @@ function updateLevel()
 	if math.floor(playerLevel / 5) == playerSlots then
 		updateSlots()
 	end
-	if math.floor(playerLevel / 3) == difficulty then
-		if difficulty < maxDifficulty then difficulty += 1 end
+	if math.min(math.floor(playerLevel / 3) + 1,maxDifficulty) > difficulty then
+		difficulty = math.floor(playerLevel / 3)
+		if difficulty > maxDifficulty then difficulty = maxDifficulty end
 	end
 end
 
@@ -166,11 +175,14 @@ function addDamageDealt(amount)
 end
 
 function addDamageReceived(amount)
-	damageReceived += amount
+	damageTaken += amount
+	currentCombo = 0
 end
 
 function addKill()
 	enemiesKilled += 1
+	currentCombo += 1
+	if currentCombo > maxCombo then maxCombo = currentCombo end
 	if math.random(0,99) < playerVampire then heal(1) end
 end
 
@@ -195,12 +207,8 @@ end
 -- +--------------------------------------------------------------+
 
 
-function getPlayerVelocity()
-	return playerVelocity
-end
-
-function getPlayerPosition()
-	return vec.new(player.x, player.y)
+function getPlayerLevel()
+	return playerLevel
 end
 
 function getCurrTime()
@@ -237,6 +245,14 @@ end
 
 function getPlayerMagnetStat()
 	return playerMagnet
+end
+
+function getMun()
+	return playerMun
+end
+
+function addMun(amount)
+	playerMun += amount
 end
 
 -- +--------------------------------------------------------------+
@@ -318,11 +334,46 @@ function upgradeStat(stat, bonus)
 	end
 end
 
+function setStats()
+	damageDealt = getSaveValue(SAVE_REF.run_damage_dealt)
+	damageTaken = getSaveValue(SAVE_REF.run_damage_taken)
+	experienceGained = getSaveValue(SAVE_REF.run_exp_total)
+	enemiesKilled = getSaveValue(SAVE_REF.run_enemies_killed)
+	maxCombo = getSaveValue(SAVE_REF.run_max_combo)
+	shotsFired = getSaveValue(SAVE_REF.run_shots_fired)
+	itemsGrabbed = getSaveValue(SAVE_REF.run_items_grabbed)
+	difficulty = getSaveValue(SAVE_REF.run_difficulty)
+	playerLevel = getSaveValue(SAVE_REF.run_level)
+	maxHealth = getSaveValue(SAVE_REF.run_health_max)
+	health = getSaveValue(SAVE_REF.run_health)
+	playerSpeed = getSaveValue(SAVE_REF.run_speed)
+	playerAttackRate = getSaveValue(SAVE_REF.run_att_rate)
+	playerExp = getSaveValue(SAVE_REF.run_exp)
+	playerMagnet = getSaveValue(SAVE_REF.run_magnet)
+	playerSlots = getSaveValue(SAVE_REF.run_slots)
+	playerGunDamage = getSaveValue(SAVE_REF.run_damage)
+	playerReflectDamage = getSaveValue(SAVE_REF.run_reflect)
+	playerExpBonus = getSaveValue(SAVE_REF.run_exp_bonus)
+	playerLuck = getSaveValue(SAVE_REF.run_luck)
+	playerBulletSpeed = getSaveValue(SAVE_REF.run_bullet_speed)
+	playerArmor = getSaveValue(SAVE_REF.run_armor)
+	playerDodge = getSaveValue(SAVE_REF.run_dodge)
+	playerRunSpeed = getSaveValue(SAVE_REF.run_speed)
+	playerVampire = getSaveValue(SAVE_REF.run_vampire)
+	playerHealBonus = getSaveValue(SAVE_REF.run_heal_bonus)
+	playerStunChance = getSaveValue(SAVE_REF.run_stun)
+	playerMun = getSaveValue(SAVE_REF.mun)
+	theGunSlots = {getSaveValue(SAVE_REF.run_gun_1), getSaveValue(SAVE_REF.run_gun_2), getSaveValue(SAVE_REF.run_gun_3), getSaveValue(SAVE_REF.run_gun_4)}
+	theGunTier = {getSaveValue(SAVE_REF.run_gun_t1), getSaveValue(SAVE_REF.run_gun_t2), getSaveValue(SAVE_REF.run_gun_t3), getSaveValue(SAVE_REF.run_gun_t4)}
+end
+
 function clearStats()
 	damageDealt = 0
-	damageReceived = 0
+	damageTaken = 0
 	experienceGained = 0
 	enemiesKilled = 0
+	currentCombo = 0
+	maxCombo = 0
 	shotsFired = 0
 	itemsGrabbed = 0
 	difficulty = 1
@@ -338,7 +389,7 @@ function clearStats()
 	playerMagnet = 50
 	setDistanceCheckToPlayerMagnetStat(playerMagnet)
 	playerSlots = 1
-	playerGunDamage = 1
+	playerGunDamage = 0
 	playerReflectDamage = 0
 	playerExpBonus = 0
 	playerLuck = 0
@@ -349,6 +400,7 @@ function clearStats()
 	playerVampire = 0
 	playerHealBonus = 0
 	playerStunChance = 0
+	playerMun = 0
 	damageTimer = 0
 	clearGunStats()
 	invincibleTime = 0
@@ -365,10 +417,11 @@ function getFinalStats()
 	stats[#stats + 1] = damageDealt
 	stats[#stats + 1] = shotsFired
 	stats[#stats + 1] = enemiesKilled
-	stats[#stats + 1] = damageReceived
+	stats[#stats + 1] = maxCombo
+	stats[#stats + 1] = damageTaken
 	stats[#stats + 1] = itemsGrabbed
 	stats[#stats + 1] = survivedTime
-	stats[#stats + 1] = (difficulty + playerLevel) * (experienceGained + itemsGrabbed + survivedTime)
+	stats[#stats + 1] = (difficulty + playerLevel) * (experienceGained + itemsGrabbed + survivedTime + maxCombo)
 	return stats
 end
 
@@ -380,7 +433,7 @@ function getPlayerStats()
 	stats[#stats + 1] = health
 	stats[#stats + 1] = maxHealth
 	stats[#stats + 1] = playerSpeed
-	stats[#stats + 1] = playerAttackRate
+	stats[#stats + 1] = (4 - ((playerAttackRate - 25) / 25))
 	stats[#stats + 1] = playerMagnet
 	stats[#stats + 1] = playerSlots
 	stats[#stats + 1] = playerGunDamage
@@ -432,12 +485,24 @@ function shield(amount)
 	invincible = true
 end
 
-
 function newWeaponGrabbed(weapon, tier)
 	setGameState(GAMESTATE.newweaponmenu)
 	openWeaponMenu(weapon, tier)
 end
 
+--[[
+-- MIGHT HAVE MOVED TO BULLETS_V2 FILE --
+function newWeaponChosen(weapon, slot, tier)
+	local extraTier = 0
+	if theGunSlots[slot] == weapon then
+		if theGunTier[slot] == tier then extraTier = 1 end
+	end
+	theGunSlots[slot] = weapon
+	theGunTier[slot] = tier + extraTier
+	updateMenuWeapon(slot, weapon)
+end
+--------
+]]--
 
 function changeItemAbsorbRangeBy(value)
 	--itemAbsorberRange += value
@@ -445,13 +510,11 @@ function changeItemAbsorbRangeBy(value)
 	--itemAbsorber:setCollideRect(0, 0, itemAbsorberRange, itemAbsorberRange)
 end
 
-
 function setItemAbsorbRange(value)
 	--itemAbsorberRange = value
 	--itemAbsorber:setSize(itemAbsorberRange, itemAbsorberRange)
 	--itemAbsorber:setCollideRect(0, 0, itemAbsorberRange, itemAbsorberRange)
 end
-
 
 function getPlayerAttackRate()
 	return playerAttackRate
@@ -461,7 +524,6 @@ end
 -- +--------------------------------------------------------------+
 -- |                          Movement                            |
 -- +--------------------------------------------------------------+
-
 
 function movePlayer(dt)
 	if collider == nil then return end	-- If the collider doesn't exist, then don't look for collisions
@@ -503,6 +565,16 @@ function collider:collisionResponse(other)
 end
 
 
+function getPlayerPosition()
+	return vec.new(player.x, player.y)
+end
+
+
+function getPlayerVelocity()
+	return playerVelocity
+end
+
+
 -- +--------------------------------------------------------------+
 -- |                       Item Management                        |
 -- +--------------------------------------------------------------+
@@ -518,7 +590,7 @@ function decideWeaponTier()
 	end
 	return newTier
 end
-
+		
 
 -- +--------------------------------------------------------------+
 -- |                            Update                            |

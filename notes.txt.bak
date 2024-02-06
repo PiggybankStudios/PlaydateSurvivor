@@ -111,43 +111,23 @@ This is a file that you can put any notes or TODO lists in
 		[ ] - add marketplace for permanent upgrades
 		[ ] - get a currency for game score
 	@ Sean
-		[Done] Knockback stat for weapons in general
+		[ ] Knockback stat for weapons in general
 				* knockback for enemies already working 
-				* need to apply to bullets		
-		[ ] Item Management
-				* check that item references are being removed	
-				* recycle possible items	
-		[ ] Particle management
-				*BUG* impact particle positions is wrong now
+				* need to apply to bullets				
 		[ ] Bullet management
-				* DONE * destroy when off-screen
-				* DONE * destroy at end-of-life
-				* Collision handling - is it good enough?
+				* destroy when off-screen
+				* destroy at end-of-life
+				* need to give bullets their own subclasses
 		[DONE] Enemies spawn in radius rather than from screen size
 		[ ] Max enemy cap and recycling
 				* when enemies are off-screen for too long, teleport them closer to the player
 					* in player's move direction?
-				* DONE - check that all enemy references are removed once killed
 		[Done] Fix HP bar bug
 		[Done] Camera fixes
 				* camera setoffset INSTEAD of draw offset for shake effects
 		[ ] Particle effect for when Chunky Arms starts to rage
-		[ ] Particle effect for enemy impact on player DODGE
-		[ ] Particle effect for enemy impact on player INVINCIBILITY
-		[ ] Enemy Waves
-				* Enemy spawn icon based around player - within screen as well
-				* Spawn rate, max enemy tier for wave, enemy scaling for wave, wave timer, list of enemy spawn behaviors with times
-		[ ] Enemy spawn behavior patterns
-				* When timer reaches certain points, then specific spawning behaviors happen
-					* ring of 15 enemy spawn at once around player
-					* etc
-		[ ] Add enemy poison stat
-				* That can be increased when damaged by certain things
-				* poison damage is ticked on enemy update calcs
-				* Add poison particle effect
-				* add list of effects that happen when poisoned
-				
-				
+
+
 ***************************************************************************************************************************************
 the lists of things in game (planned)
 ***************************************************************************************************************************************
@@ -159,7 +139,7 @@ the lists of things in game (planned)
 	[DONE] Rifle
 	[DONE] Grenade
 	[DONE] Boomerang
-	[DONE] SoundWave			
+	[DONE] SoundWave
 	[] Dart - stops moving if enemy struck and deals damage over time, high poison chance
 	[] Mine - bullet loses speed then simply sits still a mine until expires or touched, then explodes
 	[] Sword - medium range swipe, decent knockback
@@ -259,5 +239,3 @@ the lists of things in game (planned)
 	[] (blessing) twice the enemies, half the health - (curse) items drop only 50% of the time next round
 	[] (blessing) half the enemies with double health - (curse) enemies move at double speed next round
 	[] (blessing) explode pushing enemies away if hurt - (curse) more shooter enemies next round
-	[] (blessing) all enemy bullets speed half - (curse) all your bullets move at half speed next round
-	[] (blessing) all enemy move at speed half for 3 seconds after hurt - (curse) no health items drop next round

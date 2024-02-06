@@ -173,7 +173,16 @@ local activateItemEffect = {
 	function() addEXP(16) end,
 
 	--Luck
-	function() incLuck() end
+	function() incLuck() end,
+
+	--Mun2
+	function() addMun(2) end,
+
+	--Mun10
+	function() addMun(10) end,
+
+	--Mun50
+	function() addMun(50) end
 }
 
 
@@ -182,17 +191,38 @@ local activateItemEffect = {
 -- +--------------------------------------------------------------+
 
 
-local img_AbsorbAll = gfx.image.new('Resources/Sprites/Items/iAbsorbAll')
-local img_EXP_1 = gfx.image.new('Resources/Sprites/Items/iEXP1')
-local img_EXP_2 = gfx.image.new('Resources/Sprites/Items/iEXP2')
-local img_EXP_3 = gfx.image.new('Resources/Sprites/Items/iEXP3')
-local img_EXP_6 = gfx.image.new('Resources/Sprites/Items/iEXP6')
-local img_EXP_9 = gfx.image.new('Resources/Sprites/Items/iEXP9')
-local img_EXP_16 = gfx.image.new('Resources/Sprites/Items/iEXP16')
-local img_Health = gfx.image.new('Resources/Sprites/Items/iHealth')
-local img_Luck = gfx.image.new('Resources/Sprites/Items/iLuck')
-local img_Shield = gfx.image.new('Resources/Sprites/Items/iShield')
-local img_Weapon = gfx.image.new('Resources/Sprites/Items/iWeapon')
+--[[
+	health = 1,
+	weapon = 2, 
+	shield = 3, 
+	absorbAll = 4,
+	exp1 = 5, 
+	exp2 = 6, 
+	exp3 = 7, 
+	exp6 = 8, 
+	exp9 = 9, 
+	exp16 = 10, 
+	luck = 11 ,
+	mun2 = 12 ,
+	mun10 = 13 ,
+	mun50 = 14 
+]]--
+
+local img_Health = gfx.image.new('Resources/Sprites/item/iHealth')
+local img_Weapon = gfx.image.new('Resources/Sprites/item/iWeapon')
+local img_Shield = gfx.image.new('Resources/Sprites/item/iShield')
+local img_AbsorbAll = gfx.image.new('Resources/Sprites/item/iAbsorbAll')
+local img_EXP_1 = gfx.image.new('Resources/Sprites/item/iEXP1')
+local img_EXP_2 = gfx.image.new('Resources/Sprites/item/iEXP2')
+local img_EXP_3 = gfx.image.new('Resources/Sprites/item/iEXP3')
+local img_EXP_6 = gfx.image.new('Resources/Sprites/item/iEXP6')
+local img_EXP_9 = gfx.image.new('Resources/Sprites/item/iEXP9')
+local img_EXP_16 = gfx.image.new('Resources/Sprites/item/iEXP16')
+local img_Luck = gfx.image.new('Resources/Sprites/item/iLuck')
+local img_Mun2 = gfx.image.new('Resources/Sprites/item/iMun2')
+local img_Mun10 = gfx.image.new('Resources/Sprites/item/iMun10')
+local img_Mun50 = gfx.image.new('Resources/Sprites/item/iMun50')
+
 
 local IMAGE_LIST = {
 	img_Health,
@@ -205,7 +235,10 @@ local IMAGE_LIST = {
 	img_EXP_6,
 	img_EXP_9,
 	img_EXP_16,  
-	img_Luck,	
+	img_Luck,
+	img_Mun2,
+	img_Mun10,
+	img_Mun50	
 }
 
 

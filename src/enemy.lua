@@ -28,7 +28,8 @@ local ENEMY_TYPE = {
 	bat = 3,
 	medic = 4,
 	bulletBill = 5,
-	chunkyArms = 6
+	chunkyArms = 6,
+	munBag = 7
 }
 
 local ITEM_TYPE = {
@@ -42,8 +43,13 @@ local ITEM_TYPE = {
 	exp6 = 		8,  
 	exp9 = 		9,
 	exp16 = 	10,
-	luck = 		11
+	luck = 		11,
+	mun2 = 		12 ,
+	mun10 = 	13 ,
+	mun50 = 	14 
 }
+
+
 
 local CAMERA_SHAKE_STRENGTH = {
 	tiny = 2,
@@ -89,6 +95,9 @@ function createEnemy(x, y, type)
 
 	elseif type == ENEMY_TYPE.chunkyArms then
 		newEnemy = chunkyArms(x, y)
+
+	elseif type == ENEMY_TYPE.munBag then
+		newEnemy = munBag(x, y)
 
 	else --type == ENEMY_TYPE.normalSquare	-- default
 		newEnemy = normalSquare(x, y)
@@ -158,12 +167,12 @@ end
 class('fastBall').extends(enemy)
 
 function fastBall:init(x, y)	
-	self:setImage(gfx.image.new('Resources/Sprites/Enemy1'))
+	self:setImage(gfx.image.new('Resources/Sprites/enemy/Enemy1'))
 	self.type = ENEMY_TYPE.fastBall
 	self.health = 2
 	self.speed = 5
 	self.accel = 3
-	self.damageAmount = 2
+	self.damageAmount = 1
 	self.shakeStrength = CAMERA_SHAKE_STRENGTH.tiny
 	self.drop = { ITEM_TYPE.exp1, ITEM_TYPE.health, ITEM_TYPE.luck}
 	self.dropPercent = { 94, 5, 1}
@@ -186,12 +195,12 @@ end
 class('normalSquare').extends(enemy)
 
 function normalSquare:init(x, y)	
-	self:setImage(gfx.image.new('Resources/Sprites/Enemy2'))
+	self:setImage(gfx.image.new('Resources/Sprites/enemy/Enemy2'))
 	self.type = ENEMY_TYPE.normalSquare
 	self.health = 5
 	self.speed = 3
 	self.accel = 1.5
-	self.damageAmount = 3
+	self.damageAmount = 5
 	self.shakeStrength = CAMERA_SHAKE_STRENGTH.medium
 	self.drop = { ITEM_TYPE.exp1, ITEM_TYPE.health, ITEM_TYPE.shield }
 	self.dropPercent = { 85, 10, 5}
@@ -213,12 +222,12 @@ end
 class('bat').extends(enemy)
 
 function bat:init(x, y)
-	self:setImage(gfx.image.new('Resources/Sprites/Enemy3'))
+	self:setImage(gfx.image.new('Resources/Sprites/enemy/Enemy3'))
 	self.type = ENEMY_TYPE.bat
 	self.health = 3
 	self.speed = 4
 	self.accel = 2
-	self.damageAmount = 1
+	self.damageAmount = 3
 	self.shakeStrength = CAMERA_SHAKE_STRENGTH.tiny
 	self.drop = { ITEM_TYPE.exp1, ITEM_TYPE.weapon, ITEM_TYPE.luck }
 	self.dropPercent = { 54, 45, 1}
@@ -257,12 +266,12 @@ end
 class('medic').extends(enemy)
 
 function medic:init(x, y)
-	self:setImage(gfx.image.new('Resources/Sprites/Enemy4'))
+	self:setImage(gfx.image.new('Resources/Sprites/enemy/Enemy4'))
 	self.type = ENEMY_TYPE.medic
 	self.health = 20
 	self.speed = 2
-	self.accel = 1
-	self.damageAmount = 1
+	self.accel = 4
+	self.damageAmount = 2
 	self.shakeStrength = CAMERA_SHAKE_STRENGTH.large
 	self.drop = { ITEM_TYPE.exp1, ITEM_TYPE.health, ITEM_TYPE.absorbAll }
 	self.dropPercent = { 60, 35, 5}
@@ -301,12 +310,12 @@ end
 class('bulletBill').extends(enemy)
 
 function bulletBill:init(x, y)	
-	self:setImage(gfx.image.new('Resources/Sprites/Enemy5')) --the Bullet Bill
+	self:setImage(gfx.image.new('Resources/Sprites/enemy/Enemy5')) --the Bullet Bill
 	self.type = ENEMY_TYPE.bulletBill
 	self.health = 6
 	self.speed = 7
 	self.accel = 3
-	self.damageAmount = 2
+	self.damageAmount = 4
 	self.shakeStrength = CAMERA_SHAKE_STRENGTH.large
 	self.drop = { ITEM_TYPE.exp1, ITEM_TYPE.health, ITEM_TYPE.luck }
 	self.dropPercent = { 80, 19, 1}
@@ -362,12 +371,12 @@ end
 class('chunkyArms').extends(enemy)
 
 function chunkyArms:init(x, y)	
-	self:setImage(gfx.image.new('Resources/Sprites/Enemy6'))
+	self:setImage(gfx.image.new('Resources/Sprites/enemy/Enemy6'))
 	self.type = ENEMY_TYPE.chunkyArms
 	self.health = 66
-	self.speed = 4
+	self.speed = 1
 	self.accel = 2
-	self.damageAmount = 5
+	self.damageAmount = 10
 	self.shakeStrength = CAMERA_SHAKE_STRENGTH.large
 	self.drop = { ITEM_TYPE.exp16, ITEM_TYPE.luck }
 	self.dropPercent = { 95, 5}
@@ -381,13 +390,49 @@ function chunkyArms:calculateMove(targetX, targetY)
 	if currentTime >= self.time then
 		self.time = currentTime + 500
 		if self.health < (self.fullhealth / 2) then self.speed += 0.3 end
-		if self.speed > (3 + math.floor(getDifficulty() / scaleDamage)) then self.speed = 5 end
+		if self.speed > (3 + math.floor(getDifficulty() / scaleDamage)) then self.speed = (3 + math.floor(getDifficulty() / scaleDamage)) end
 		if self.health < self.fullhealth then 
 			self:heal(1 + math.floor(getDifficulty() / scaleHealth))
 		end
 	end
 
 	chunkyArms.super.calculateMove(self)
+end
+
+------------------------------------------------
+				-- Mun Bag --
+
+class('munBag').extends(enemy)
+
+function munBag:init(x, y)	
+	self:setImage(gfx.image.new('Resources/Sprites/enemy/Enemy16'))
+	self.type = ENEMY_TYPE.munBag
+	self.health = 1 + math.floor(getMun() / 10)
+	self.speed = 1
+	self.accel = 1
+	self.damageAmount = 1
+	self.shakeStrength = CAMERA_SHAKE_STRENGTH.tiny
+	self.drop = { ITEM_TYPE.mun2, ITEM_TYPE.mun10, ITEM_TYPE.mun50 }
+	local tLuck1 = math.floor(getLuck()/4)
+	local tLuck2 = math.floor(getLuck()/20)
+	self.dropPercent = { (90 - tLuck1 - tLuck2), (10 + tLuck1), tLuck2}
+	self.rating = 1
+
+	munBag.super.init(self, x, y)
+end
+
+function munBag:calculateMove(targetX, targetY)
+	self.directionVec = vec.new(targetX - self.x, targetY - self.y)
+	if currentTime >= self.time then
+		self.time = currentTime + 500
+		if self.health < (self.fullhealth / 2) then self.speed += 0.3 end
+		if self.speed > (3 + math.floor(getDifficulty() / scaleDamage)) then self.speed = (3 + math.floor(getDifficulty() / scaleDamage)) end
+		if self.health < self.fullhealth then 
+			self:heal(1 + math.floor(getDifficulty() / scaleHealth))
+		end
+	end
+
+	munBag.super.calculateMove(self)
 end
 
 
@@ -638,7 +683,7 @@ local function spawnMonsters()
 		spawnInc += math.random(1, difficulty)
 		if spawnInc > 5 then
 			spawnInc = 0
-			eType = math.random(1, 6)
+			eType = math.random(1, 7)
 			createEnemy(-enemyX, -enemyY, eType)
 		end
 	end

@@ -19,6 +19,7 @@ function expbar:init(maxExp)
 	self:moveTo(halfScreenWidth, 7)
 	self:updateExpbar(self.exp)
 	self:add()
+	currLevel = getPlayerLevel()
 end
 
 function expbar:updateExpbar(newExp)
