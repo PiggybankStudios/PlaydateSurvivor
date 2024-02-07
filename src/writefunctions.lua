@@ -130,6 +130,12 @@ function letterSelect(letter)
 		return 21, 2
 	elseif letter == '"' then 
 		return 22, 2
+	elseif letter == '_' then 
+		return 23, 2
+	elseif letter == '(' then 
+		return 24, 2
+	elseif letter == ')' then 
+		return 25, 2
 	else
 		return 26, 2
 	end

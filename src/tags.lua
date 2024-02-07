@@ -80,25 +80,38 @@ PARTICLE_TYPE = {
 
 
 -- configfile
-CONFIG_REF = {}
-
--- configfile order
-CONFIG_REF_ORDER = {
-	"Default_Save",
-	"Toggle_Run_Mode",
-	"Pause_Timer_Length",
-	"No_Screen_Shake",
-	"No_Screen_Flash",
-	"Invincible",
-	"Infinite_Money",
-	"One_Hot_Kill",
-	"Unlock_All",
-	"Ironman_Mode"
+CONFIG_REF = {
+	Default_Save = "save 1",
+	run_mode = 0,
+	pause_time = 3,
+	No_Screen_Shake = 0,
+	No_Screen_Flash  = 0,
+	invincible  = 0,
+	Infinite_Money  = 0,
+	one_hit_kill  = 0,
+	Unlock_All  = 0,
+	Ironman_Mode  = 0
 }
 
 
 -- savefile
-SAVE_REF = {}
+SAVE_REF = {
+	mun = 0,
+	hiscore_0 = 0,
+	hiscore_1 = 0,
+	hiscore_2 = 0,
+	hiscore_3 = 0,
+	hiscore_4 = 0,
+	hiscore_5 = 0,
+	hiscore_6 = 0,
+	hiscore_7 = 0,
+	hiscore_8 = 0,
+	hiscore_9 = 0,
+	health = 15,
+	damage = 1,
+	exp_bonus = 0,
+	speed = 50
+}
 
 -- savefile order
 SAVE_REF_ORDER = {

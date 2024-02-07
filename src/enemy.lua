@@ -677,7 +677,7 @@ local function spawnMonsters()
 		enemyX = screenCenter.x + (direction.x * distance.x)
 		enemyY = screenCenter.y + (direction.y * distance.y)
 
-		local eType = math.random(1, 5)
+		local eType = 7--math.random(1, 5)
 		createEnemy(enemyX, enemyY, eType)
 
 		spawnInc += math.random(1, difficulty)

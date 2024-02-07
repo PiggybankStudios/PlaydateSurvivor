@@ -50,8 +50,6 @@ end
 function closeDeadMenu()
 	deadSprite:remove()
 	if blinking == true then promptSprite:remove() end
-	cleanLetters()
-	--print("unpaused")
 end
 
 

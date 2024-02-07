@@ -122,7 +122,6 @@ function playdate.AButtonDown()
 			gameStartTime = playdate.getCurrentTimeMilliseconds()
 		end
 	elseif getGameState() == GAMESTATE.maingame then
-		openPauseMenu()
 		setGameState(GAMESTATE.pausemenu)
 	elseif getGameState() == GAMESTATE.levelupmenu then
 		upgradeStat(levelUpSelection(),levelUpBonus())
@@ -139,24 +138,9 @@ function playdate.AButtonDown()
 		setUnpaused(true)
 		setGameState(GAMESTATE.maingame)
 	elseif getGameState() == GAMESTATE.pausemenu then
-		if pauseSelection() == 0 then
-			closePauseMenu()
-			setUnpaused(true)
-			setGameState(GAMESTATE.maingame)
-		elseif pauseSelection() == 1 then
-			closePauseMenu()
-			setUnpaused(true)
-			clearAllThings()
-			clearStats()
-			restartGame()
-			setGameState(GAMESTATE.maingame)
-		elseif pauseSelection() == 2 then
-			closePauseMenu()
-			setUnpaused(true)
-			clearAllThings()
-			clearStats()
-			setGameState(GAMESTATE.startscreen)
-		end
+		closePauseMenu()
+		setUnpaused(true)
+		setGameState(GAMESTATE.maingame)
 			
 	elseif getGameState() == GAMESTATE.deathscreen then
 		setGameState(GAMESTATE.startscreen)

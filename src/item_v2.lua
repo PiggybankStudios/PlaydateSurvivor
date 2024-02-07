@@ -138,7 +138,7 @@ local activateItemEffect = {
 
 	-- Weapon
 	function()
-		newWeaponGrabbed(random(1, 6), decideWeaponTier()) -- not allowing choice of boomerange or wavegun, until fixed
+		newWeaponGrabbed() -- not allowing choice of boomerange or wavegun, until fixed
 		addItemsGrabbed()
 	end,
 

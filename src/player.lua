@@ -65,7 +65,6 @@ local playerVampireMax = 100 --limit
 local playerHealBonus = 0
 local playerStunChance = 0
 local playerStunChanceMax = 75 --limit
-local playerMun = 0
 local damageTimer = 0
 local playerHealthbar
 local playerExpbar
@@ -155,7 +154,6 @@ end
 
 function updateLevel()
 	playerLevel += 1
-	openLevelUpMenu()
 	setGameState(GAMESTATE.levelupmenu)
 	if math.floor(playerLevel / 5) == playerSlots then
 		updateSlots()
@@ -245,14 +243,6 @@ end
 
 function getPlayerMagnetStat()
 	return playerMagnet
-end
-
-function getMun()
-	return playerMun
-end
-
-function addMun(amount)
-	playerMun += amount
 end
 
 -- +--------------------------------------------------------------+
@@ -362,7 +352,6 @@ function setStats()
 	playerVampire = getSaveValue(SAVE_REF.run_vampire)
 	playerHealBonus = getSaveValue(SAVE_REF.run_heal_bonus)
 	playerStunChance = getSaveValue(SAVE_REF.run_stun)
-	playerMun = getSaveValue(SAVE_REF.mun)
 	theGunSlots = {getSaveValue(SAVE_REF.run_gun_1), getSaveValue(SAVE_REF.run_gun_2), getSaveValue(SAVE_REF.run_gun_3), getSaveValue(SAVE_REF.run_gun_4)}
 	theGunTier = {getSaveValue(SAVE_REF.run_gun_t1), getSaveValue(SAVE_REF.run_gun_t2), getSaveValue(SAVE_REF.run_gun_t3), getSaveValue(SAVE_REF.run_gun_t4)}
 end
@@ -400,7 +389,6 @@ function clearStats()
 	playerVampire = 0
 	playerHealBonus = 0
 	playerStunChance = 0
-	playerMun = 0
 	damageTimer = 0
 	clearGunStats()
 	invincibleTime = 0
@@ -485,9 +473,8 @@ function shield(amount)
 	invincible = true
 end
 
-function newWeaponGrabbed(weapon, tier)
+function newWeaponGrabbed()
 	setGameState(GAMESTATE.newweaponmenu)
-	openWeaponMenu(weapon, tier)
 end
 
 --[[

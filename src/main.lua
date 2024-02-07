@@ -21,6 +21,7 @@ import "controls"
 import "player"
 import "camera"
 import "gameScene"
+import "mun"
 --import "item"
 import "item_v2"
 import "startmenu"
@@ -30,8 +31,9 @@ import "levelupmenu"
 import "weaponmenu"
 import "bulletGraphic"
 
+local random <const> = math.random
+
 local gfx <const> = playdate.graphics
-local reset = false
 local recycleValue = 0
 local mainLoopTime = 0
 local mainTimePassed = 0
@@ -68,6 +70,7 @@ function playdate.update()
 	-- Start Screen
 	if currentState == GAMESTATE.startscreen then
 		if lastState == GAMESTATE.deathscreen then
+			cleanLetters()
 			closeDeadMenu()
 			--snapCamera() somehow need to handle offset on death
 			gfx.sprite.removeAll()
@@ -81,6 +84,7 @@ function playdate.update()
 			lastState = currentState
 		elseif lastState ~= currentState then
 			--snapCamera() somehow need to handle offset on death
+			cleanLetters()
 			gfx.sprite.removeAll()
 			openStartMenu()
 			lastState = currentState
@@ -91,6 +95,7 @@ function playdate.update()
 	-- Main Menu
 	elseif currentState == GAMESTATE.mainmenu then
 		if lastState ~= currentState then
+			cleanLetters()
 			readConfigFile()
 			closeStartMenu()
 			openMainMenu()
@@ -102,14 +107,14 @@ function playdate.update()
 	-- Main Game
 	elseif currentState == GAMESTATE.maingame then
 		if lastState == GAMESTATE.mainmenu then
+			cleanLetters()
 			closeMainMenu()
 			gameScene()
+			updateMun()
 			lastState = currentState
-		elseif reset == true then
-			gameScene()
-			lastState = currentState
-			reset = false
 		elseif lastState ~= currentState then
+			cleanLetters()
+			updateMun()
 			lastState = currentState
 			elapsedPauseTime = mainLoopTime - startPauseTime
 			if recycleValue ~= 0 then
@@ -131,6 +136,8 @@ function playdate.update()
 	-- Pause Menu
 	elseif currentState == GAMESTATE.pausemenu then
 		if lastState ~= currentState then
+			cleanLetters()
+			openPauseMenu()
 			startPauseTime = mainLoopTime
 			lastState = currentState
 		end
@@ -140,6 +147,8 @@ function playdate.update()
 	-- Level Up Menu
 	elseif currentState == GAMESTATE.levelupmenu then
 		if lastState ~= currentState then
+			cleanLetters()
+			openLevelUpMenu()
 			startPauseTime = mainLoopTime
 			lastState = currentState
 		end
@@ -149,6 +158,8 @@ function playdate.update()
 	-- Weapon Menu
 	elseif currentState == GAMESTATE.newweaponmenu then
 		if lastState ~= currentState then
+			cleanLetters()
+			openWeaponMenu(random(1, 6), decideWeaponTier())
 			startPauseTime = mainLoopTime
 			lastState = currentState
 		end
@@ -158,6 +169,7 @@ function playdate.update()
 	-- Death Screen
 	elseif currentState == GAMESTATE.deathscreen then
 		if lastState ~= currentState then
+			cleanLetters()
 			openDeadMenu()
 			startPauseTime = mainLoopTime
 			lastState = currentState
@@ -177,12 +189,6 @@ end
 -- |                     Game State Functions                     |
 -- +--------------------------------------------------------------+
 
-
-function resetGame()
-	print("empty")
-end
-
-
 function getGameState()
 	return currentState
 end
@@ -190,9 +196,4 @@ end
 
 function setGameState(newState)
 	currentState = newState
-end
-
-
-function restartGame()
-	reset = true
 end

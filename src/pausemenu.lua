@@ -85,7 +85,6 @@ function closePauseMenu()
 	gun4Sprite:remove()
 	--selectSprite:moveTo(55, 212)
 	menuSpot = 0
-	cleanLetters()
 	--print("unpaused")
 end
 
@@ -129,10 +128,6 @@ function pauseMenuMoveL()
 		selectSprite:moveTo(204, 212)
 		menuSpot = 1
 	end
-end
-
-function pauseSelection()
-	return menuSpot
 end
 
 function selectWeaponImage(gun)

@@ -65,7 +65,6 @@ function closeWeaponMenu()
 	gunNewSprite:remove()
 	selectSprite:moveTo(346, 40)
 	menuSpot = 1
-	cleanLetters()
 	--print("unpaused")
 end
 

@@ -81,7 +81,6 @@ function closeLevelUpMenu()
 	level4Sprite:remove()
 	selectSprite:moveTo(114, 132)
 	menuSpot = 1
-	cleanLetters()
 	--print("unpaused")
 end
 
