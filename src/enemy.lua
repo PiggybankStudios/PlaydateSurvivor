@@ -268,7 +268,7 @@ class('medic').extends(enemy)
 function medic:init(x, y)
 	self:setImage(gfx.image.new('Resources/Sprites/enemy/Enemy4'))
 	self.type = ENEMY_TYPE.medic
-	self.health = 100
+	self.health = 75
 	self.speed = 2
 	self.accel = 4
 	self.damageAmount = 10
@@ -669,7 +669,7 @@ local function spawnMonsters()
 		enemyX = screenCenter.x + (direction.x * distance.x)
 		enemyY = screenCenter.y + (direction.y * distance.y)
 
-		local eType = 7--math.random(1, 5)
+		local eType = math.random(1, 5)
 		createEnemy(enemyX, enemyY, eType)
 
 		spawnInc += math.random(1, difficulty)

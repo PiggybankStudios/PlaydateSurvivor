@@ -189,7 +189,7 @@ function addKill()
 	enemiesKilled += 1
 	currentCombo += 1
 	if currentCombo > maxCombo then maxCombo = currentCombo end
-	if math.random(0,99) < playerVampire then heal(1) end
+	if math.random(0,99) < playerVampire then heal(5) end
 end
 
 function addExpTotal(amount)
@@ -277,8 +277,8 @@ function upgradeStat(stat, bonus)
 		print('bullet speed increased by ' .. tostring(bonus))
 
 	elseif stat == 4 then
-		playerGunDamage += bonus
-		print('damage increased by ' .. tostring(bonus))
+		playerGunDamage += 2 * bonus
+		print('damage increased by ' .. tostring(2 * bonus))
 
 	elseif stat == 5 then
 		playerDodge += 3 * bonus
@@ -289,14 +289,14 @@ function upgradeStat(stat, bonus)
 		print('bonus exp increased by ' .. tostring(bonus))
 
 	elseif stat == 7 then
-		playerHealBonus += bonus
-		print('heal increased by ' .. tostring(bonus))
+		playerHealBonus += 4 * bonus
+		print('heal increased by ' .. tostring(4 * bonus))
 
 	elseif stat == 8 then
-		maxHealth += 2 * bonus
+		maxHealth += 8 * bonus
 		playerHealthbar:updateMaxHealth(maxHealth, health)
-		heal(2 * bonus)
-		print('health increased by ' .. tostring(2 * bonus))
+		heal(8 * bonus)
+		print('health increased by ' .. tostring(8 * bonus))
 
 	elseif stat == 9 then
 		playerLuck += 5 * bonus
@@ -329,10 +329,10 @@ function upgradeStat(stat, bonus)
 		print('error')
 	end
 	if math.random(0,99) < playerLuck then
-		maxHealth += 1
+		maxHealth += 5
 		playerHealthbar:updateMaxHealth(maxHealth, health)
-		heal(1)
-		print('health increased by 1 bonus')
+		heal(5)
+		print('health increased by 5 bonus')
 	end
 end
 

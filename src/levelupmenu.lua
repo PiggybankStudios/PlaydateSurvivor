@@ -283,7 +283,7 @@ function whatStatSprite(sel,slot)
 	elseif sel == "damage" then
 		theStat = 4
 		theImage = stat4Image
-		addStatDetails("damage +" .. tostring(levelBonus), slot)
+		addStatDetails("damage +" .. tostring(2 * levelBonus), slot)
 	elseif sel == "dodge" then
 		theStat = 5
 		theImage = stat5Image
@@ -295,11 +295,11 @@ function whatStatSprite(sel,slot)
 	elseif sel == "heal" then
 		theStat = 7
 		theImage = stat7Image
-		addStatDetails("bonus heal +" .. tostring(levelBonus), slot)
+		addStatDetails("bonus heal +" .. tostring(4 * levelBonus), slot)
 	elseif sel == "health" then
 		theStat = 8
 		theImage = stat8Image
-		addStatDetails("max health +" .. tostring(2 * levelBonus), slot)
+		addStatDetails("max health +" .. tostring(8 * levelBonus), slot)
 	elseif sel == "luck" then
 		theStat = 9
 		theImage = stat9Image
