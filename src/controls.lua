@@ -58,12 +58,12 @@ function getCrankAngle()
 end
 
 function getInputX()
-	print("x:"..inputXL..","..inputXR)
+	--print("x:"..inputXL..","..inputXR)
 	return (inputXR - inputXL)
 end
 
 function getInputY()
-	print("y:"..inputYU..","..inputYD)
+	--print("y:"..inputYU..","..inputYD)
 	return (inputYD - inputYU)
 end
 

@@ -231,7 +231,7 @@ function MainMenuNavigate()
 		local yourMun = getTotalMun()
 		if menuSpot == 1 then
 			if yourMun >= 10 then
-				setSaveValue(wordArrayStats[1], getSaveValue(wordArrayStats[1]) + 1)
+				setSaveValue(wordArrayStats[1], getSaveValue(wordArrayStats[1]) + 5)
 				addTotalMun(-10)
 			end
 		elseif menuSpot == 2 then

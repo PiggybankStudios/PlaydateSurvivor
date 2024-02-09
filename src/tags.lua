@@ -108,8 +108,8 @@ SAVE_REF = {
 	hiscore_7 = 0,
 	hiscore_8 = 0,
 	hiscore_9 = 0,
-	health = 15,
-	damage = 1,
+	health = 75,
+	damage = 5,
 	exp_bonus = 0,
 	speed = 50
 }

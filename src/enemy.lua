@@ -17,7 +17,7 @@ local bounceBuffer = 10
 local bounceStrength = 4
 local rotateSpeed = 5
 local scaleHealth = 3
-local scaleSpeed = 4
+local scaleSpeed = 5
 local scaleDamage = 5
 local stunWiggleAmount = 3
 local movementParticleSpawnRate = 50
@@ -127,8 +127,8 @@ function enemy:init(x, y)
 	enemy.super.init(self)
 	self:add()
 	
-	self.health *= (1 + math.floor(getDifficulty() / scaleHealth))
-	self.damageAmount *= (1 + math.floor(getDifficulty() / scaleDamage))
+	self.health *= (1 + math.floor(getDifficulty() / scaleHealth) / (getMaxDifficulty()/scaleHealth))
+	self.damageAmount *= (1 + math.floor(getDifficulty() / scaleDamage) / (getMaxDifficulty()/scaleDamage))
 	self.speed += (math.floor(getDifficulty() / scaleSpeed))
 	self.fullhealth = self.health
 
@@ -169,10 +169,10 @@ class('fastBall').extends(enemy)
 function fastBall:init(x, y)	
 	self:setImage(gfx.image.new('Resources/Sprites/enemy/Enemy1'))
 	self.type = ENEMY_TYPE.fastBall
-	self.health = 2
+	self.health = 10
 	self.speed = 5
 	self.accel = 3
-	self.damageAmount = 1
+	self.damageAmount = 5
 	self.shakeStrength = CAMERA_SHAKE_STRENGTH.tiny
 	self.drop = { ITEM_TYPE.exp1, ITEM_TYPE.health, ITEM_TYPE.luck}
 	self.dropPercent = { 94, 5, 1}
@@ -197,10 +197,10 @@ class('normalSquare').extends(enemy)
 function normalSquare:init(x, y)	
 	self:setImage(gfx.image.new('Resources/Sprites/enemy/Enemy2'))
 	self.type = ENEMY_TYPE.normalSquare
-	self.health = 5
+	self.health = 25
 	self.speed = 3
 	self.accel = 1.5
-	self.damageAmount = 5
+	self.damageAmount = 25
 	self.shakeStrength = CAMERA_SHAKE_STRENGTH.medium
 	self.drop = { ITEM_TYPE.exp1, ITEM_TYPE.health, ITEM_TYPE.shield }
 	self.dropPercent = { 85, 10, 5}
@@ -224,10 +224,10 @@ class('bat').extends(enemy)
 function bat:init(x, y)
 	self:setImage(gfx.image.new('Resources/Sprites/enemy/Enemy3'))
 	self.type = ENEMY_TYPE.bat
-	self.health = 3
+	self.health = 15
 	self.speed = 4
 	self.accel = 2
-	self.damageAmount = 3
+	self.damageAmount = 15
 	self.shakeStrength = CAMERA_SHAKE_STRENGTH.tiny
 	self.drop = { ITEM_TYPE.exp1, ITEM_TYPE.weapon, ITEM_TYPE.luck }
 	self.dropPercent = { 54, 45, 1}
@@ -268,10 +268,10 @@ class('medic').extends(enemy)
 function medic:init(x, y)
 	self:setImage(gfx.image.new('Resources/Sprites/enemy/Enemy4'))
 	self.type = ENEMY_TYPE.medic
-	self.health = 20
+	self.health = 100
 	self.speed = 2
 	self.accel = 4
-	self.damageAmount = 2
+	self.damageAmount = 10
 	self.shakeStrength = CAMERA_SHAKE_STRENGTH.large
 	self.drop = { ITEM_TYPE.exp1, ITEM_TYPE.health, ITEM_TYPE.absorbAll }
 	self.dropPercent = { 60, 35, 5}
@@ -289,7 +289,7 @@ function medic:calculateMove(targetX, targetY)
 		self.directionVec *= -1
 		if currentTime >= self.time then
 			self.time = currentTime + 1000
-			self:heal(2 * (1 + math.floor(getDifficulty() / scaleHealth)))
+			self:heal(8 * (1 + math.floor(getDifficulty() / scaleHealth)))
 		end
 		-- once finished healing, move normally again
 		if self.health == self.fullhealth then self.AIsmarts = 1 end
@@ -312,10 +312,10 @@ class('bulletBill').extends(enemy)
 function bulletBill:init(x, y)	
 	self:setImage(gfx.image.new('Resources/Sprites/enemy/Enemy5')) --the Bullet Bill
 	self.type = ENEMY_TYPE.bulletBill
-	self.health = 6
+	self.health = 30
 	self.speed = 7
 	self.accel = 3
-	self.damageAmount = 4
+	self.damageAmount =20
 	self.shakeStrength = CAMERA_SHAKE_STRENGTH.large
 	self.drop = { ITEM_TYPE.exp1, ITEM_TYPE.health, ITEM_TYPE.luck }
 	self.dropPercent = { 80, 19, 1}
@@ -373,10 +373,10 @@ class('chunkyArms').extends(enemy)
 function chunkyArms:init(x, y)	
 	self:setImage(gfx.image.new('Resources/Sprites/enemy/Enemy6'))
 	self.type = ENEMY_TYPE.chunkyArms
-	self.health = 66
+	self.health = 330
 	self.speed = 1
 	self.accel = 2
-	self.damageAmount = 10
+	self.damageAmount = 50
 	self.shakeStrength = CAMERA_SHAKE_STRENGTH.large
 	self.drop = { ITEM_TYPE.exp16, ITEM_TYPE.luck }
 	self.dropPercent = { 95, 5}
@@ -392,7 +392,7 @@ function chunkyArms:calculateMove(targetX, targetY)
 		if self.health < (self.fullhealth / 2) then self.speed += 0.3 end
 		if self.speed > (3 + math.floor(getDifficulty() / scaleDamage)) then self.speed = (3 + math.floor(getDifficulty() / scaleDamage)) end
 		if self.health < self.fullhealth then 
-			self:heal(1 + math.floor(getDifficulty() / scaleHealth))
+			self:heal(4 + math.floor(getDifficulty() / scaleHealth))
 		end
 	end
 
@@ -407,10 +407,10 @@ class('munBag').extends(enemy)
 function munBag:init(x, y)	
 	self:setImage(gfx.image.new('Resources/Sprites/enemy/Enemy16'))
 	self.type = ENEMY_TYPE.munBag
-	self.health = 1 + math.floor(getMun() / 10)
+	self.health = 5 + math.floor(getMun() / 10)
 	self.speed = 1
 	self.accel = 1
-	self.damageAmount = 1
+	self.damageAmount = 5
 	self.shakeStrength = CAMERA_SHAKE_STRENGTH.tiny
 	self.drop = { ITEM_TYPE.mun2, ITEM_TYPE.mun10, ITEM_TYPE.mun50 }
 	local tLuck1 = math.floor(getLuck()/4)

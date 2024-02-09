@@ -40,7 +40,7 @@ local maxDifficulty = 15
 
 -- Player
 local playerLevel = 0
-local maxHealth = 15
+local maxHealth = 1
 local health = maxHealth
 local playerSpeed = 50
 local playerVelocity = vec.new(0, 0)
@@ -237,6 +237,10 @@ function getDifficulty()
 	return difficulty
 end
 
+function getMaxDifficulty()
+	return maxDifficulty
+end
+
 function getLuck()
 	return playerLuck
 end
@@ -332,38 +336,6 @@ function upgradeStat(stat, bonus)
 	end
 end
 
-function setStats()
-	damageDealt = getSaveValue(SAVE_REF.run_damage_dealt)
-	damageTaken = getSaveValue(SAVE_REF.run_damage_taken)
-	experienceGained = getSaveValue(SAVE_REF.run_exp_total)
-	enemiesKilled = getSaveValue(SAVE_REF.run_enemies_killed)
-	maxCombo = getSaveValue(SAVE_REF.run_max_combo)
-	shotsFired = getSaveValue(SAVE_REF.run_shots_fired)
-	itemsGrabbed = getSaveValue(SAVE_REF.run_items_grabbed)
-	difficulty = getSaveValue(SAVE_REF.run_difficulty)
-	playerLevel = getSaveValue(SAVE_REF.run_level)
-	maxHealth = getSaveValue(SAVE_REF.run_health_max)
-	health = getSaveValue(SAVE_REF.run_health)
-	playerSpeed = getSaveValue(SAVE_REF.run_speed)
-	playerAttackRate = getSaveValue(SAVE_REF.run_att_rate)
-	playerExp = getSaveValue(SAVE_REF.run_exp)
-	playerMagnet = getSaveValue(SAVE_REF.run_magnet)
-	playerSlots = getSaveValue(SAVE_REF.run_slots)
-	playerGunDamage = getSaveValue(SAVE_REF.run_damage)
-	playerReflectDamage = getSaveValue(SAVE_REF.run_reflect)
-	playerExpBonus = getSaveValue(SAVE_REF.run_exp_bonus)
-	playerLuck = getSaveValue(SAVE_REF.run_luck)
-	playerBulletSpeed = getSaveValue(SAVE_REF.run_bullet_speed)
-	playerArmor = getSaveValue(SAVE_REF.run_armor)
-	playerDodge = getSaveValue(SAVE_REF.run_dodge)
-	playerRunSpeed = getSaveValue(SAVE_REF.run_speed)
-	playerVampire = getSaveValue(SAVE_REF.run_vampire)
-	playerHealBonus = getSaveValue(SAVE_REF.run_heal_bonus)
-	playerStunChance = getSaveValue(SAVE_REF.run_stun)
-	theGunSlots = {getSaveValue(SAVE_REF.run_gun_1), getSaveValue(SAVE_REF.run_gun_2), getSaveValue(SAVE_REF.run_gun_3), getSaveValue(SAVE_REF.run_gun_4)}
-	theGunTier = {getSaveValue(SAVE_REF.run_gun_t1), getSaveValue(SAVE_REF.run_gun_t2), getSaveValue(SAVE_REF.run_gun_t3), getSaveValue(SAVE_REF.run_gun_t4)}
-end
-
 function clearStats()
 	damageDealt = 0
 	damageTaken = 0
@@ -377,18 +349,13 @@ function clearStats()
 	maxDifficulty = 15
 	spawnInc = 0
 	playerLevel = 0
-	maxHealth = 15
-	health = maxHealth
-	playerSpeed = 50
 	playerAttackRate = 100
 	playerExp = 0
 	startingExpForLevel = 5
 	playerMagnet = 50
 	setDistanceCheckToPlayerMagnetStat(playerMagnet)
 	playerSlots = 1
-	playerGunDamage = 0
 	playerReflectDamage = 0
-	playerExpBonus = 0
 	playerLuck = 0
 	playerBulletSpeed = 50
 	playerArmor = 0
@@ -525,7 +492,7 @@ function movePlayer(dt)
 	if collider == nil then return end	-- If the collider doesn't exist, then don't look for collisions
 
 	-- Reset input to 0 if nothing is held
-	if playdate.getButtonState() == 0 then resetInputXY() end
+	--if playdate.getButtonState() == 0 then resetInputXY() end
 
 	local moveSpeed = playerSpeed * playerRunSpeed * dt
 	playerVelocity.x = getInputX() * moveSpeed
