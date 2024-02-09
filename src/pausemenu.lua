@@ -8,6 +8,14 @@ local menuSpot = 0
 
 local blinking = false
 local lastBlink = 0
+local lTime = 0
+
+--setup main menu
+local unpauseImage = gfx.image.new('Resources/Sprites/lTextBox')
+local unpauseSprite = gfx.sprite.new(unpauseImage)
+unpauseSprite:setIgnoresDrawOffset(true)	-- forces sprite to be draw to screen, not world
+unpauseSprite:setZIndex(ZINDEX.uibanner)
+unpauseSprite:moveTo(halfScreenWidth, halfScreenHeight)
 
 --setup main menu
 local pauseImage = gfx.image.new('Resources/Sprites/menu/pauseMenu')
@@ -102,6 +110,8 @@ function updatePauseManu()
 			blinking = true
 		end
 	end
+	lTime = playdate.getCurrentTimeMilliseconds()
+	
 end
 
 function pauseMenuMoveR()
@@ -241,4 +251,17 @@ function clearPauseMenu()
 	gun2Sprite:setImage(gunxImage)
 	gun3Sprite:setImage(gunxImage)
 	gun4Sprite:setImage(gunxImage)
+end
+
+function updateUnPaused()
+	cleanLetters()
+	unpauseSprite:add()
+	local pauseT = getConfigValue("pause_time")
+	local cTime = math.ceil((lTime - playdate.getCurrentTimeMilliseconds())/1000 + pauseT)
+	writeTextToScreen(halfScreenWidth - 5, halfScreenHeight, tostring(cTime), true, false)
+	if cTime <= 0 then
+		setUnpaused(true)
+		setGameState(GAMESTATE.maingame)
+		unpauseSprite:remove()
+	end
 end

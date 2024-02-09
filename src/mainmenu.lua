@@ -101,8 +101,8 @@ function MainMenuText(wordArray)
 		for Ind, tWord in pairs(tArray) do
 			writeTextToScreen(halfScreenWidth + 120, halfScreenHeight + 30 * (Ind - menuSpot), tWord, true, false)
 		end
-		updateTotalMun()
 	end
+	updateTotalMun()
 end
 
 function MainMenuSaveCheckText(tStr)
@@ -222,27 +222,33 @@ function MainMenuNavigate()
 			setConfigValue(wordArrayOption[2], 4)
 		elseif menuSpot == 6 then
 			setConfigValue(wordArrayOption[2], 5)
-		elseif menuSpot == 7 then
-			currArray = wordArrayOption
-			menuState = MENU.options
-			menuSpot = 1
-			promptSprite:setImage(promptImageL)
-		else
-			return false
 		end
+		currArray = wordArrayOption
+		menuState = MENU.options
+		menuSpot = 1
+		promptSprite:setImage(promptImageL)
 	elseif menuState == MENU.stats then --buy stats {"health", "damage", "exp_bonus", "speed", "back"}
+		local yourMun = getTotalMun()
 		if menuSpot == 1 then
-			setSaveValue(wordArrayStats[1], getSaveValue(wordArrayStats[1]) + 1)
-			addTotalMun(-10)
+			if yourMun >= 10 then
+				setSaveValue(wordArrayStats[1], getSaveValue(wordArrayStats[1]) + 1)
+				addTotalMun(-10)
+			end
 		elseif menuSpot == 2 then
-			setSaveValue(wordArrayStats[2], getSaveValue(wordArrayStats[2]) + 1)
-			addTotalMun(-50)
+			if yourMun >= 50 then
+				setSaveValue(wordArrayStats[2], getSaveValue(wordArrayStats[2]) + 1)
+				addTotalMun(-50)
+			end
 		elseif menuSpot == 3 then
-			setSaveValue(wordArrayStats[3], getSaveValue(wordArrayStats[3]) + 1)
-			addTotalMun(-20)
+			if yourMun >= 20 then
+				setSaveValue(wordArrayStats[3], getSaveValue(wordArrayStats[3]) + 1)
+				addTotalMun(-20)
+			end
 		elseif menuSpot == 4 then
-			setSaveValue(wordArrayStats[4], getSaveValue(wordArrayStats[4]) + 5)
-			addTotalMun(-30)
+			if yourMun >= 30 then
+				setSaveValue(wordArrayStats[4], getSaveValue(wordArrayStats[4]) + 5)
+				addTotalMun(-30)
+			end
 		elseif menuSpot == 5 then
 			currArray = wordArrayUpgrade
 			menuState = MENU.upgrade

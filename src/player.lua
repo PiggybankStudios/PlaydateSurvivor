@@ -91,6 +91,8 @@ function addPlayerSpritesToList()
 
 	player:add()
 	collider:add()
+	
+	addSaveStatsToPlayer()
 	--itemAbsorber:add()
 	health = maxHealth
 	playerHealthbar = healthbar(player.x, player.y - healthbarOffsetY, health)
@@ -98,6 +100,12 @@ function addPlayerSpritesToList()
 	movePlayerWithCollider(150,150) -- move to starting location
 end
 
+function addSaveStatsToPlayer()
+	maxHealth = getSaveValue("health")
+	playerGunDamage = getSaveValue("damage")
+	playerExpBonus = getSaveValue("exp_bonus")
+	playerSpeed = getSaveValue("speed")
+end
 
 function heal(amount)
 	health += (amount + playerHealBonus)
@@ -394,6 +402,7 @@ function clearStats()
 	invincibleTime = 0
 	invincible = false
 	Unpaused = false
+	addMun(-getMun())
 end
 
 function getFinalStats()

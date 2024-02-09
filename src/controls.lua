@@ -1,7 +1,9 @@
 -- playdate screen 400 x 240
 
-local inputX = 0 
-local inputY = 0
+local inputXL = 0 
+local inputXR = 0 
+local inputYU = 0
+local inputYD = 0
 local physicalCrankAngle = playdate.getCrankPosition()
 local crankAngle = physicalCrankAngle - 90
 
@@ -56,54 +58,62 @@ function getCrankAngle()
 end
 
 function getInputX()
-	return inputX
+	print("x:"..inputXL..","..inputXR)
+	return (inputXR - inputXL)
 end
 
 function getInputY()
-	return inputY
+	print("y:"..inputYU..","..inputYD)
+	return (inputYD - inputYU)
 end
 
 function resetInputXY()
-	inputX = 0
-	inputY = 0
+	inputXL = 0 
+	inputXR = 0 
+	inputYU = 0
+	inputYD = 0
 end
 
 function playdate.leftButtonDown()
-	inputX = -1
-	if getGameState() == GAMESTATE.pausemenu then print("no move L")--pauseMenuMoveL()
-	elseif getGameState() == GAMESTATE.levelupmenu then pauseLevelUpMoveL() end
+	inputXL = 1
+	if getGameState() == GAMESTATE.levelupmenu then pauseLevelUpMoveL() end
 end
 function playdate.leftButtonUp()
-	inputX = 0
+	inputXL = 0
 end
+
 function playdate.rightButtonDown()
-	inputX = 1
-	if getGameState() == GAMESTATE.pausemenu then print("no move R")--pauseMenuMoveR()
-	elseif getGameState() == GAMESTATE.levelupmenu then pauseLevelUpMoveR() end
+	inputXR = 1
+	if getGameState() == GAMESTATE.levelupmenu then pauseLevelUpMoveR() end
 end
 function playdate.rightButtonUp()
-	inputX = 0
+	inputXR = 0
 end
+
 function playdate.upButtonDown()
-	inputY = -1
+	inputYU = 1
 	if getGameState() == GAMESTATE.newweaponmenu then weaponMenuMoveU()
 	elseif getGameState() == GAMESTATE.mainmenu then mainMenuMoveU() end
 end
 function playdate.upButtonUp()
-	inputY = 0
+	inputYU = 0
 end
+
 function playdate.downButtonDown()
-	inputY = 1
+	inputYD = 1
 	if getGameState() == GAMESTATE.newweaponmenu then weaponMenuMoveD()
 	elseif getGameState() == GAMESTATE.mainmenu then mainMenuMoveD() end
 end
 function playdate.downButtonUp()
-	inputY = 0
+	inputYD = 0
 end
 
 function playdate.BButtonDown()
 	if getGameState() == GAMESTATE.startscreen then
 		setGameState(GAMESTATE.mainmenu)
+	elseif getGameState() == GAMESTATE.deathscreen then
+		setGameState(GAMESTATE.startscreen)
+		clearStats()
 	else
 		setRunSpeed(2)
 	end
@@ -139,8 +149,9 @@ function playdate.AButtonDown()
 		setGameState(GAMESTATE.maingame)
 	elseif getGameState() == GAMESTATE.pausemenu then
 		closePauseMenu()
-		setUnpaused(true)
-		setGameState(GAMESTATE.maingame)
+		setGameState(GAMESTATE.unpaused)
+		--setUnpaused(true)
+		--setGameState(GAMESTATE.maingame)
 			
 	elseif getGameState() == GAMESTATE.deathscreen then
 		setGameState(GAMESTATE.startscreen)

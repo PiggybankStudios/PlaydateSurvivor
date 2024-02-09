@@ -176,6 +176,15 @@ function playdate.update()
 		else
 			updateDeadManu()
 		end
+
+	-- UnPaused
+	elseif currentState == GAMESTATE.unpaused then
+		if lastState ~= currentState then
+			updateUnPaused()
+			lastState = currentState
+		else
+			updateUnPaused()
+		end
 	end
 
 	gfx.sprite.update()

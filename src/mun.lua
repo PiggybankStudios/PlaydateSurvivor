@@ -15,7 +15,7 @@ end
 
 function updateTotalMun()
 	local totalMun = "mun:" .. playerTotalMun
-	writeTextToScreen(halfScreenWidth - 150, 30, totalMun, true, false)
+	writeTextToScreen(15, 25, totalMun, false, false)
 end
 
 function addMun(amount)

@@ -28,6 +28,7 @@ function openDeadMenu()
 	promptSprite:add()
 	blinking = true
 	addFinalStats()
+	addTotalMun(getMun())
 	--print("dead!")
 end
 
@@ -96,6 +97,10 @@ function addFinalStats()
 	
 	statrow += 1 --move on to the next line
 	sentence = ("time survived: " .. tostring(pstats[10]) .. " seconds")
+	writeTextToScreen(column, (row + newline * statrow), sentence, false, true)
+	
+	statrow += 1 --move on to the next line
+	sentence = ("mun collected: " .. tostring(getMun()))
 	writeTextToScreen(column, (row + newline * statrow), sentence, false, true)
 	
 	statrow += 1 --move on to the next line

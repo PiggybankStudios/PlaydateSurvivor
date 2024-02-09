@@ -423,14 +423,6 @@ end
 
 function munBag:calculateMove(targetX, targetY)
 	self.directionVec = vec.new(targetX - self.x, targetY - self.y)
-	if currentTime >= self.time then
-		self.time = currentTime + 500
-		if self.health < (self.fullhealth / 2) then self.speed += 0.3 end
-		if self.speed > (3 + math.floor(getDifficulty() / scaleDamage)) then self.speed = (3 + math.floor(getDifficulty() / scaleDamage)) end
-		if self.health < self.fullhealth then 
-			self:heal(1 + math.floor(getDifficulty() / scaleHealth))
-		end
-	end
 
 	munBag.super.calculateMove(self)
 end
