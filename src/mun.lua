@@ -10,7 +10,7 @@ end
 
 function updateMun()
 	local totalMun = "mun:" .. playerMun
-	writeTextToScreen(halfScreenWidth - 5, 18, totalMun, true, true)
+	writeTextToScreen(25, 18, totalMun, false, true)
 end
 
 function updateTotalMun()
@@ -20,7 +20,7 @@ end
 
 function addMun(amount)
 	playerMun += amount
-	cleanLetters()
+	setSaveValue("playerMun", playerMun)
 	updateMun()
 end
 

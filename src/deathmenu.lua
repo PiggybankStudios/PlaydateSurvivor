@@ -33,7 +33,7 @@ function openDeadMenu()
 end
 
 function updateDeadManu()
-	local theCurrTime = playdate.getCurrentTimeMilliseconds()
+	local theCurrTime = getRunTime()
 	if theCurrTime > lastBlink then
 		if blinking then
 			lastBlink = theCurrTime + 300
@@ -60,7 +60,7 @@ function addFinalStats()
 	local row = 26
 	local column = 12
 	local pstats = getFinalStats()
-	local sentence = ("difficulty reached: " .. tostring(pstats[1]))
+	local sentence = ("wave reached: " .. tostring(pstats[1]))
 	writeTextToScreen(column, (row + newline * statrow), sentence, false, true)
 	
 	statrow += 1 --move on to the next line

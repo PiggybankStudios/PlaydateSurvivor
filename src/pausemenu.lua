@@ -9,6 +9,7 @@ local menuSpot = 0
 local blinking = false
 local lastBlink = 0
 local lTime = 0
+local Unpaused = false
 
 --setup main menu
 local unpauseImage = gfx.image.new('Resources/Sprites/lTextBox')
@@ -93,11 +94,10 @@ function closePauseMenu()
 	gun4Sprite:remove()
 	--selectSprite:moveTo(55, 212)
 	menuSpot = 0
-	--print("unpaused")
 end
 
 function updatePauseManu()
-	local theCurrTime = playdate.getCurrentTimeMilliseconds()
+	local theCurrTime = getRunTime()
 	if theCurrTime > lastBlink then
 		if blinking == true then
 			lastBlink = theCurrTime + 300
@@ -110,7 +110,7 @@ function updatePauseManu()
 			blinking = true
 		end
 	end
-	lTime = playdate.getCurrentTimeMilliseconds()
+	lTime = getRunTime()
 	
 end
 
@@ -253,11 +253,23 @@ function clearPauseMenu()
 	gun4Sprite:setImage(gunxImage)
 end
 
+function setUnpaused(value)
+	Unpaused = value
+end
+
+function getUnpaused()
+	return Unpaused
+end
+
+function setPauseTime()
+	lTime = getRunTime()
+end
+
 function updateUnPaused()
 	cleanLetters()
 	unpauseSprite:add()
 	local pauseT = getConfigValue("pause_time")
-	local cTime = math.ceil((lTime - playdate.getCurrentTimeMilliseconds())/1000 + pauseT)
+	local cTime = math.ceil((lTime - getRunTime())/1000 + pauseT)
 	writeTextToScreen(halfScreenWidth - 5, halfScreenHeight, tostring(cTime), true, false)
 	if cTime <= 0 then
 		setUnpaused(true)

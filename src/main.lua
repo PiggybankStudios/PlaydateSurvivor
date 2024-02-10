@@ -60,6 +60,10 @@ function recycleGun(value)
 	recycleValue = value
 end
 
+function getRunTime()
+	return mainLoopTime
+end
+
 function playdate.update()
 	mainLoopTime = playdate.getCurrentTimeMilliseconds()
 
@@ -110,11 +114,9 @@ function playdate.update()
 			cleanLetters()
 			closeMainMenu()
 			gameScene()
-			updateMun()
+			addClock()
 			lastState = currentState
 		elseif lastState ~= currentState then
-			cleanLetters()
-			updateMun()
 			lastState = currentState
 			elapsedPauseTime = mainLoopTime - startPauseTime
 			if recycleValue ~= 0 then
@@ -122,7 +124,11 @@ function playdate.update()
 				recycleValue = 0
 			end
 		end
-
+		
+		cleanLetters()
+		updateMun()
+		updateWaveTime()
+		updateWaveNumber()
 		updatePlayer(dt)
 		updateCamera(dt)
 		updateBullets(dt, mainTimePassed, mainLoopTime, elapsedPauseTime)
@@ -185,12 +191,43 @@ function playdate.update()
 		else
 			updateUnPaused()
 		end
+		
+	-- waveScreen
+	elseif currentState == GAMESTATE.wavescreen then
+		if lastState ~= currentState then
+			cleanLetters()
+			lastState = currentState
+		else
+			if getLevelUpList() > 0 then 
+				incLevelUpList(-1)
+				updateLevel()
+			elseif getWeaponsGrabbedList() > 0 then
+				incWeaponsGrabbedList(-1)
+				setGameState(GAMESTATE.newweaponmenu)
+			else
+				setPauseTime()
+				setGameState(GAMESTATE.unpaused)
+			end
+		end
+		updateCamera(dt)
+	end
+	if getWaveOver() == true then
+		screenFlash()
+		clearItems()
+		clearEnemies()
+		clearBullets()
+		clearParticles()
+		setWaveOver(false)
+		setSaveValue("level_up_list", getLevelUpList())
+		setSaveValue("weapons_grabbed_list", getWeaponsGrabbedList())
+		writeSaveFile(getConfigValue("Default_Save"))
+		setGameState(GAMESTATE.wavescreen) 
 	end
 
 	gfx.sprite.update()
 
-	mainTimePassed = playdate.getCurrentTimeMilliseconds() - mainLoopTime
-	playdate.drawFPS()
+	mainTimePassed = getRunTime() - mainLoopTime
+	--playdate.drawFPS()
 end
 
 

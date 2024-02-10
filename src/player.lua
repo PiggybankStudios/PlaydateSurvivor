@@ -33,6 +33,7 @@ local currentCombo = 0
 local maxCombo = 0
 local shotsFired = 0
 local itemsGrabbed = 0
+local weaponsGrabbedList = 0
 
 -- difficulty
 local difficulty = 1
@@ -78,7 +79,6 @@ invincibleTime = 0
 invincible = false
 
 --Menu
---Unpaused = false
 local theCurrTime
 
 -- +--------------------------------------------------------------+
@@ -88,7 +88,7 @@ local theCurrTime
 -- Add the player sprite and collider back to the drawing list after level load - also sets starting position
 function addPlayerSpritesToList()
 	player:setRotation(getCrankAngle())
-
+	
 	player:add()
 	collider:add()
 	
@@ -118,7 +118,7 @@ end
 
 -- Damage player health - called via enemies
 function player:damage(amount, camShakeStrength, enemyX, enemyY)
-	if Unpaused then damageTimer += theLastTime end
+	if getUnpaused() then damageTimer += theLastTime end
 	-- Invincibility
 	if damageTimer > theCurrTime then
 		return
@@ -166,10 +166,10 @@ function updateLevel()
 	if math.floor(playerLevel / 5) == playerSlots then
 		updateSlots()
 	end
-	if math.min(math.floor(playerLevel / 3) + 1,maxDifficulty) > difficulty then
-		difficulty = math.floor(playerLevel / 3)
-		if difficulty > maxDifficulty then difficulty = maxDifficulty end
-	end
+	--if math.min(math.floor(playerLevel / 3) + 1,maxDifficulty) > difficulty then
+	--	difficulty = math.floor(playerLevel / 3)
+	--	if difficulty > maxDifficulty then difficulty = maxDifficulty end
+	--end
 end
 
 function addShot()
@@ -235,6 +235,10 @@ end
 
 function getDifficulty()
 	return difficulty
+end
+
+function setDifficulty(amount)
+	difficulty = math.min(amount,maxDifficulty)
 end
 
 function getMaxDifficulty()
@@ -368,14 +372,14 @@ function clearStats()
 	clearGunStats()
 	invincibleTime = 0
 	invincible = false
-	Unpaused = false
+	setUnpaused(false)
 	addMun(-getMun())
 end
 
 function getFinalStats()
 	local stats = {}
 	local survivedTime = math.floor((theLastTime - gameStartTime) / 1000)
-	stats[#stats + 1] = difficulty
+	stats[#stats + 1] = getWave()
 	stats[#stats + 1] = playerLevel
 	stats[#stats + 1] = experienceGained
 	stats[#stats + 1] = damageDealt
@@ -385,7 +389,7 @@ function getFinalStats()
 	stats[#stats + 1] = damageTaken
 	stats[#stats + 1] = itemsGrabbed
 	stats[#stats + 1] = survivedTime
-	stats[#stats + 1] = (difficulty + playerLevel) * (experienceGained + itemsGrabbed + survivedTime + maxCombo)
+	stats[#stats + 1] = (getWave() + playerLevel) * (experienceGained + itemsGrabbed + survivedTime + maxCombo)
 	return stats
 end
 
@@ -450,7 +454,16 @@ function shield(amount)
 end
 
 function newWeaponGrabbed()
-	setGameState(GAMESTATE.newweaponmenu)
+	incWeaponsGrabbedList(1)
+	--setGameState(GAMESTATE.newweaponmenu)
+end
+
+function getWeaponsGrabbedList()
+	return weaponsGrabbedList
+end
+
+function incWeaponsGrabbedList(amount)
+	weaponsGrabbedList += amount
 end
 
 --[[
@@ -512,6 +525,7 @@ function movePlayerWithCollider(x, y)
 	local floorY = mathFloor(y)
 	player:moveTo(floorX, floorY)
 	collider:moveTo(floorX, floorY)
+	
 	playerHealthbar:moveTo(floorX, floorY - healthbarOffsetY)
 end
 
@@ -558,17 +572,11 @@ end
 -- +--------------------------------------------------------------+
 -- |                            Update                            |
 -- +--------------------------------------------------------------+
-
-function setUnpaused(value)
-	Unpaused = value
-end
-
-
 function updatePlayer(dt)
-	theCurrTime = playdate.getCurrentTimeMilliseconds()
+	theCurrTime = getRunTime()
 
 
-	if Unpaused then 
+	if getUnpaused() then 
 		theLastTime = theCurrTime - theLastTime 
 		invincibleTime += theLastTime
 		gameStartTime += theLastTime
@@ -592,8 +600,8 @@ function updatePlayer(dt)
 	player:setRotation(crankAngle)
 	
 	theLastTime = theCurrTime
-	Unpaused = false
-	--death
+	setUnpaused(false)
+	
 	if health == 0 then
 		handleDeath()
 	end

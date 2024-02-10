@@ -20,6 +20,10 @@ function clearAllThings()
 	clearBullets()
 	clearParticles()
 	clearPauseMenu()
+	hideUIBanner()
+	hideClock()
+	setWaveOver(false)
+	incWave(1 - getWave())
 end
 
 function returnToMenuCall()
@@ -129,15 +133,15 @@ function playdate.AButtonDown()
 	elseif getGameState() == GAMESTATE.mainmenu then
 		if MainMenuNavigate() == true then
 			setGameState(GAMESTATE.maingame)
-			gameStartTime = playdate.getCurrentTimeMilliseconds()
+			gameStartTime = getRunTime()
 		end
 	elseif getGameState() == GAMESTATE.maingame then
 		setGameState(GAMESTATE.pausemenu)
 	elseif getGameState() == GAMESTATE.levelupmenu then
 		upgradeStat(levelUpSelection(),levelUpBonus())
 		closeLevelUpMenu()
-		setUnpaused(true)
-		setGameState(GAMESTATE.maingame)
+		setGameState(GAMESTATE.wavescreen)
+		--setGameState(GAMESTATE.maingame)
 	elseif getGameState() == GAMESTATE.newweaponmenu then
 		if newWeaponSlot() ~= 5 then
 			newWeaponChosen(newWeaponGot(), newWeaponSlot(), getweaponTier())
@@ -145,13 +149,11 @@ function playdate.AButtonDown()
 			recycleGun(5)
 		end
 		closeWeaponMenu()
-		setUnpaused(true)
-		setGameState(GAMESTATE.maingame)
+		setGameState(GAMESTATE.wavescreen)
+		--setGameState(GAMESTATE.maingame)
 	elseif getGameState() == GAMESTATE.pausemenu then
 		closePauseMenu()
 		setGameState(GAMESTATE.unpaused)
-		--setUnpaused(true)
-		--setGameState(GAMESTATE.maingame)
 			
 	elseif getGameState() == GAMESTATE.deathscreen then
 		setGameState(GAMESTATE.startscreen)

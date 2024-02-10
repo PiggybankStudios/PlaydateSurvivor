@@ -170,7 +170,7 @@ function fastBall:init(x, y)
 	self:setImage(gfx.image.new('Resources/Sprites/enemy/Enemy1'))
 	self.type = ENEMY_TYPE.fastBall
 	self.health = 10
-	self.speed = 5
+	self.speed = 4
 	self.accel = 3
 	self.damageAmount = 5
 	self.shakeStrength = CAMERA_SHAKE_STRENGTH.tiny
@@ -198,7 +198,7 @@ function normalSquare:init(x, y)
 	self:setImage(gfx.image.new('Resources/Sprites/enemy/Enemy2'))
 	self.type = ENEMY_TYPE.normalSquare
 	self.health = 25
-	self.speed = 3
+	self.speed = 2
 	self.accel = 1.5
 	self.damageAmount = 25
 	self.shakeStrength = CAMERA_SHAKE_STRENGTH.medium
@@ -225,7 +225,7 @@ function bat:init(x, y)
 	self:setImage(gfx.image.new('Resources/Sprites/enemy/Enemy3'))
 	self.type = ENEMY_TYPE.bat
 	self.health = 15
-	self.speed = 4
+	self.speed = 3
 	self.accel = 2
 	self.damageAmount = 15
 	self.shakeStrength = CAMERA_SHAKE_STRENGTH.tiny
@@ -269,7 +269,7 @@ function medic:init(x, y)
 	self:setImage(gfx.image.new('Resources/Sprites/enemy/Enemy4'))
 	self.type = ENEMY_TYPE.medic
 	self.health = 75
-	self.speed = 2
+	self.speed = 1
 	self.accel = 4
 	self.damageAmount = 10
 	self.shakeStrength = CAMERA_SHAKE_STRENGTH.large
@@ -313,7 +313,7 @@ function bulletBill:init(x, y)
 	self:setImage(gfx.image.new('Resources/Sprites/enemy/Enemy5')) --the Bullet Bill
 	self.type = ENEMY_TYPE.bulletBill
 	self.health = 30
-	self.speed = 7
+	self.speed = 6
 	self.accel = 3
 	self.damageAmount =20
 	self.shakeStrength = CAMERA_SHAKE_STRENGTH.large
@@ -375,7 +375,7 @@ function chunkyArms:init(x, y)
 	self.type = ENEMY_TYPE.chunkyArms
 	self.health = 330
 	self.speed = 1
-	self.accel = 2
+	self.accel = 1
 	self.damageAmount = 50
 	self.shakeStrength = CAMERA_SHAKE_STRENGTH.large
 	self.drop = { ITEM_TYPE.exp16, ITEM_TYPE.luck }
@@ -409,7 +409,7 @@ function munBag:init(x, y)
 	self.type = ENEMY_TYPE.munBag
 	self.health = 5 + math.floor(getMun() / 10)
 	self.speed = 1
-	self.accel = 1
+	self.accel = 3
 	self.damageAmount = 5
 	self.shakeStrength = CAMERA_SHAKE_STRENGTH.tiny
 	self.drop = { ITEM_TYPE.mun2, ITEM_TYPE.mun10, ITEM_TYPE.mun50 }
@@ -640,7 +640,7 @@ end
 
 local function spawnMonsters()
 	-- 
-	if Unpaused then theSpawnTime += (currentTime - timeFromPause) end
+	if getUnpaused() then theSpawnTime += (currentTime - timeFromPause) end
 
 	if currentTime >= theSpawnTime then
 		local difficulty = getDifficulty()
@@ -733,9 +733,9 @@ end
 
 function clearEnemies()
 	local function clearList(list)
-		for i = 1, #list do		
-			list[1]:remove()
-			table.remove(list, 1)			
+		for i, enemy in pairs(list) do		
+			list[i]:remove()
+			table.remove(list, i)			
 		end
 	end
 
@@ -765,11 +765,11 @@ end
 local frame = 1
 
 function updateEnemies(dt)
-	currentTime = playdate.getCurrentTimeMilliseconds()
+	currentTime = getRunTime()
 	frame = (frame + 1) % 3
 
 	-- PAUSED - need to save the time
-	if Unpaused == false then
+	if getUnpaused() == false then
 		if timeFromPause == 0 then timeFromPause = currentTime end
 
 	-- NOT PAUSED - save the time difference from how long we were paused
@@ -782,7 +782,7 @@ function updateEnemies(dt)
 	moveEnemies(dt)
 
 	-- NOT paused and finished with reset
-	if Unpaused == true and pauseDiff ~= 0 then
+	if getUnpaused() == true and pauseDiff ~= 0 then
 		pauseDiff = 0
 		timeFromPause = 0
 	end

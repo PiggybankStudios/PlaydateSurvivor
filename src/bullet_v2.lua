@@ -805,7 +805,7 @@ local function collideMove(dt, index, image, offsetX, offsetY)
 	local width, height = image:getSize()			
 	local halfWidth = width * size * 0.5
 	local halfheight = height * size * 0.5
-
+	
 	-- collision: pre-movement	
 	local blockX = mathFloor(startOffsetX / colliderBlockWidth) + 1
 	local blockY = mathFloor(startOffsetY / colliderBlockHeight) * 8
@@ -878,7 +878,7 @@ local function updateBulletLists(dt, mainLoopTime, elapsedPauseTime)
 			local type = bulletType[i]
 			local image = IMAGE_LIST[type]
 			local x, y, halfWidth, halfheight, size = collideMove(dt, i, image, offsetX, offsetY)
-
+			
 			-- delete
 			if localCurrentTime > lifeTime[i] then
 				if type == BULLET_TYPE.grenade then

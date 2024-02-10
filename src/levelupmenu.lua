@@ -81,11 +81,10 @@ function closeLevelUpMenu()
 	level4Sprite:remove()
 	selectSprite:moveTo(114, 132)
 	menuSpot = 1
-	--print("unpaused")
 end
 
 function updateLevelUpManu()
-	local theCurrTime = playdate.getCurrentTimeMilliseconds()
+	local theCurrTime = getRunTime()
 	if theCurrTime > lastBlink then
 		if blinking == true then
 			lastBlink = theCurrTime + 300

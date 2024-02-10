@@ -69,7 +69,7 @@ function closeWeaponMenu()
 end
 
 function updateWeaponMenu()
-	local theCurrTime = playdate.getCurrentTimeMilliseconds()
+	local theCurrTime = getRunTime()
 	if theCurrTime > lastBlink then
 		if blinking == true then
 			lastBlink = theCurrTime + 300

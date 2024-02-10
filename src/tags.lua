@@ -40,7 +40,8 @@ GAMESTATE = {
 	newweaponmenu = 5,
 	deathscreen = 6,
 	mainmenu = 7,
-	unpaused = 8
+	unpaused = 8,
+	wavescreen = 9
 }
 
 
@@ -111,7 +112,11 @@ SAVE_REF = {
 	health = 75,
 	damage = 5,
 	exp_bonus = 0,
-	speed = 50
+	speed = 50,
+	waveNumber = 1,
+	level_up_list = 0,
+	weapons_grabbed_list = 0,
+	playerMun = 0
 }
 
 -- savefile order

@@ -190,7 +190,7 @@ end
 
 
 function updateCamera(dt)
-	currentTime = playdate.getCurrentTimeMilliseconds()
+	currentTime = getRunTime()
 
 	setCameraPos(getCrankAngle(), player.x, player.y)
 	moveCamera()
