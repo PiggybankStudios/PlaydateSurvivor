@@ -21,6 +21,7 @@ local scaleSpeed = 5
 local scaleDamage = 5
 local stunWiggleAmount = 3
 local movementParticleSpawnRate = 50
+local enemyTypes = 7
 
 local ENEMY_TYPE = {
 	fastBall = 1,
@@ -28,8 +29,8 @@ local ENEMY_TYPE = {
 	bat = 3,
 	medic = 4,
 	bulletBill = 5,
-	chunkyArms = 6,
-	munBag = 7
+	munBag = 6,
+	chunkyArms = 7
 }
 
 local ITEM_TYPE = {
@@ -129,7 +130,7 @@ function enemy:init(x, y)
 	
 	self.health *= (1 + math.floor(getDifficulty() / scaleHealth) / (getMaxDifficulty()/scaleHealth))
 	self.damageAmount *= (1 + math.floor(getDifficulty() / scaleDamage) / (getMaxDifficulty()/scaleDamage))
-	self.speed += (math.floor(getDifficulty() / scaleSpeed))
+	self.speed += (math.floor(getDifficulty() / scaleSpeed)/2)
 	self.fullhealth = self.health
 
 	self.time = currentTime
@@ -669,14 +670,21 @@ local function spawnMonsters()
 		enemyX = screenCenter.x + (direction.x * distance.x)
 		enemyY = screenCenter.y + (direction.y * distance.y)
 
-		local eType = math.random(1, 5)
+		local eType = math.random(1, math.min(difficulty,5))
 		createEnemy(enemyX, enemyY, eType)
 
 		spawnInc += math.random(1, difficulty)
+		if spawnInc > 10 then
+			eType = math.random(5, math.min(difficulty,enemyTypes))
+			createEnemy(enemyX, -enemyY, eType)
+		end
 		if spawnInc > 5 then
-			spawnInc = 0
-			eType = math.random(1, 7)
+			eType = math.random(1, math.min(difficulty,enemyTypes))
 			createEnemy(-enemyX, -enemyY, eType)
+			if (spawnInc + getLuck()) > math.random(20,100) then
+				createEnemy(-enemyX, enemyY, ENEMY_TYPE.munBag)
+			end
+			spawnInc = 0
 		end
 	end
 end
@@ -734,6 +742,7 @@ end
 function clearEnemies()
 	local function clearList(list)
 		for i, enemy in pairs(list) do		
+			enemy.healthbar:updateHealth(0)
 			list[i]:remove()
 			table.remove(list, i)			
 		end
