@@ -52,6 +52,7 @@ local flashTimer
 function screenFlash()
 	dsp.setInverted(true)
 	flashTimer = currentTime + setFlashTimer
+	--print("flash")
 end
 
 

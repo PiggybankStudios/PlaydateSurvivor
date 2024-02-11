@@ -57,7 +57,7 @@ lastState = GAMESTATE.nothing
 -- +--------------------------------------------------------------+
 
 function recycleGun(value)
-	recycleValue = value
+	recycleValue += value
 end
 
 function getRunTime()
@@ -115,6 +115,11 @@ function playdate.update()
 			closeMainMenu()
 			gameScene()
 			addClock()
+			setPauseTime()
+			startPauseTime = mainLoopTime
+			setGameState(GAMESTATE.unpaused)
+			setEndWaveText("start wave " .. getWave())
+			setSpawnTime(mainLoopTime + (getConfigValue("pause_time") + 1)*1000)
 			lastState = currentState
 		elseif lastState ~= currentState then
 			lastState = currentState
@@ -144,7 +149,6 @@ function playdate.update()
 		if lastState ~= currentState then
 			cleanLetters()
 			openPauseMenu()
-			startPauseTime = mainLoopTime
 			lastState = currentState
 		end
 		updatePauseManu()
@@ -155,7 +159,6 @@ function playdate.update()
 		if lastState ~= currentState then
 			cleanLetters()
 			openLevelUpMenu()
-			startPauseTime = mainLoopTime
 			lastState = currentState
 		end
 		updateLevelUpManu()
@@ -166,7 +169,6 @@ function playdate.update()
 		if lastState ~= currentState then
 			cleanLetters()
 			openWeaponMenu(random(1, 6), decideWeaponTier())
-			startPauseTime = mainLoopTime
 			lastState = currentState
 		end
 		updateWeaponMenu()
@@ -197,6 +199,7 @@ function playdate.update()
 		if lastState ~= currentState then
 			cleanLetters()
 			lastState = currentState
+			startPauseTime = mainLoopTime
 		else
 			if getLevelUpList() > 0 then 
 				incLevelUpList(-1)
@@ -207,6 +210,7 @@ function playdate.update()
 			else
 				setPauseTime()
 				setGameState(GAMESTATE.unpaused)
+				setEndWaveText("start wave " .. getWave())
 			end
 		end
 		updateCamera(dt)

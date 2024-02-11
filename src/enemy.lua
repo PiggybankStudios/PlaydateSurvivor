@@ -409,7 +409,7 @@ function munBag:init(x, y)
 	self:setImage(gfx.image.new('Resources/Sprites/enemy/Enemy16'))
 	self.type = ENEMY_TYPE.munBag
 	self.health = 5 + math.floor(getMun() / 10)
-	self.speed = 1
+	self.speed = 0.5
 	self.accel = 3
 	self.damageAmount = 5
 	self.shakeStrength = CAMERA_SHAKE_STRENGTH.tiny
@@ -638,6 +638,10 @@ end
 -- +--------------------------------------------------------------+
 -- |                          Management                          |
 -- +--------------------------------------------------------------+
+
+function setSpawnTime(value)
+	theSpawnTime = value
+end
 
 local function spawnMonsters()
 	-- 

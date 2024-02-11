@@ -22,5 +22,6 @@ function write:init(x, y, letter, offgrid, small)
 	if offgrid then self:setIgnoresDrawOffset(true) end
 	self:moveTo(x, y)
 	self:setZIndex(ZINDEX.uidetails)
+	self:setImageDrawMode("XOR")
 	--print(letter)
 end

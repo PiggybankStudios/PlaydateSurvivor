@@ -10,6 +10,7 @@ local blinking = false
 local lastBlink = 0
 local lTime = 0
 local Unpaused = false
+local endWaveText = "none"
 
 --setup main menu
 local unpauseImage = gfx.image.new('Resources/Sprites/lTextBox')
@@ -265,13 +266,21 @@ function setPauseTime()
 	lTime = getRunTime()
 end
 
+function setEndWaveText(text)
+	endWaveText = text
+end
+
 function updateUnPaused()
 	cleanLetters()
 	unpauseSprite:add()
 	local pauseT = getConfigValue("pause_time")
 	local cTime = math.ceil((lTime - getRunTime())/1000 + pauseT)
 	writeTextToScreen(halfScreenWidth - 5, halfScreenHeight, tostring(cTime), true, false)
+	if endWaveText ~= "none" then
+		writeTextToScreen(halfScreenWidth - 5, halfScreenHeight - 20, endWaveText, true, false)
+	end
 	if cTime <= 0 then
+		endWaveText = "none"
 		setUnpaused(true)
 		setGameState(GAMESTATE.maingame)
 		unpauseSprite:remove()

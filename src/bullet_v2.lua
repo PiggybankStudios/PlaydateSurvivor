@@ -706,8 +706,10 @@ end
 
 
 function newWeaponChosen(weapon, slot, tier)
+	local extraTier = 0
+	if (theGunSlots[slot] == weapon) and (theGunTier[slot] == tier) then extraTier = 1 end
 	theGunSlots[slot] = weapon
-	theGunTier[slot] = tier
+	theGunTier[slot] = math.min(tier + extraTier,3)
 	updateMenuWeapon(slot, weapon)
 end
 

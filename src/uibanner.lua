@@ -90,11 +90,12 @@ function getWaveTime()
 end
 
 function setWaveTime()
-	waveTime = 25 + (waveNumber * 5)
+	waveTime = 26 + (waveNumber * 5)
 end
 
 function handleEndWave()
 	targTime = getRunTime()
+	setEndWaveText("end wave " .. waveNumber)
 	incWave(1)
 	setWaveTime()
 	setWaveOver(true)
