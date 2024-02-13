@@ -131,6 +131,10 @@ local peircing = {}
 local tier = {}
 local mode = {}
 local timer = {}
+local genadeX = {}
+local grenadeY = {}
+local grenadeTier = {}
+local grenadeCount = 0
 
 -- Gun Slots
 local theShotTimes = {0, 0, 0, 0} --how long until next shot
@@ -323,10 +327,10 @@ end
 
 
 -- Grenade Pellet Only
-local function createGrenadePellets(index, gX, gY, totalBullets, mainLoopTime)
+local function createGrenadePellets(tier, gX, gY, mainLoopTime)
 	local grenadeX = gX
 	local grenadeY = gY
-	local grenadeTier = tier[index]
+	local grenadeTier = tier
 	local amount = 4 + (4 * grenadeTier)
 	local degree = mathFloor(360/amount)
 	local newRotation = 0
@@ -334,8 +338,6 @@ local function createGrenadePellets(index, gX, gY, totalBullets, mainLoopTime)
 		newRotation += degree
 		create(BULLET_TYPE.grenadePellet, grenadeX, grenadeY, newRotation, grenadeTier, mainLoopTime)
 	end
-
-	return totalBullets + amount
 end
 
 
@@ -888,32 +890,44 @@ local function updateBulletLists(dt, mainLoopTime, elapsedPauseTime)
 			local type = bulletType[i]
 			local image = IMAGE_LIST[type]
 			local x, y, halfWidth, halfheight, size = collideMove(dt, i, image, offsetX, offsetY)
+			--print("totbullets:" .. i .. "/" .. currentActiveBullets .. "-" .. type)
 			
 			-- delete
 			if localCurrentTime > lifeTime[i] then
+				local tier = tier[i]
+				delete(i, currentActiveBullets)
+				currentActiveBullets -= 1
 				if type == BULLET_TYPE.grenade then
 					if halfWidth ~= nil then
 						x -= offsetX
 						y -= offsetY
 					end
-					currentActiveBullets = createGrenadePellets(i, x, y, currentActiveBullets, mainLoopTime) 
+					grenadeCount += 1
+					genadeX[grenadeCount] = x
+					grenadeY[grenadeCount] = y
+					grenadeTier[grenadeCount] = tier
 				end
-				delete(i, currentActiveBullets)
-				currentActiveBullets -= 1
-				i -= 1	
+				--i -= 1	
 			
 			-- draw, if not deleted
 			else 
 				image:drawScaled(x - halfWidth, y - halfheight, size)
-
+				i += 1
 			end
 
 			-- increment
-			i += 1		
+			--i += 1		
 		end
-
+	
 	unlockFocus()
 	activeBullets = currentActiveBullets
+	
+	if grenadeCount > 0 then
+		for i = 1, grenadeCount do
+			createGrenadePellets(grenadeTier[i], genadeX[i], grenadeY[i], mainLoopTime)
+		end
+	end
+	grenadeCount = 0
 end
 
 
