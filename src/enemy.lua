@@ -24,8 +24,8 @@ local movementParticleSpawnRate = 50
 local enemyTypes = 7
 
 local ENEMY_TYPE = {
-	fastBall = 1,
-	normalSquare = 2,
+	normalSquare = 1,
+	fastBall = 2,
 	bat = 3,
 	medic = 4,
 	bulletBill = 5,

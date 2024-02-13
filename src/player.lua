@@ -312,7 +312,7 @@ function upgradeStat(stat, bonus)
 		print('magnet increased by ' .. tostring(20 * bonus))
 
 	elseif stat == 11 then
-		playerReflectDamage += bonus
+		playerReflectDamage += 3 * bonus
 		print('reflect increased by ' .. tostring(bonus))
 
 	elseif stat == 12 then

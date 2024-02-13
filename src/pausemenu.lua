@@ -240,11 +240,10 @@ function addStats()
 end
 
 function addDifficulty()
-	local spacing = 4
-	local row = 20
-	local column = 162
 	local sentence = ("difficulty --" .. tostring(getDifficulty()) .. "--")
-	writeTextToScreen(column, row, sentence, false, true)
+	writeTextToScreen(162, 20, sentence, false, true)
+	local sentence = ("mun:" .. tostring(getMun()))
+	writeTextToScreen(162, 27, sentence, false, true)
 end
 
 function clearPauseMenu()

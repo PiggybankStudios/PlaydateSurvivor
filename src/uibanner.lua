@@ -68,6 +68,12 @@ function updateWaveTime()
 	writeTextToScreen(halfScreenWidth - 5, 25, tostring(timerTime), true, false)
 	lastTime = getRunTime()
 	if timerTime <= 0 then handleEndWave() end
+	
+	local tempText = "lvl:" .. getPlayerLevel() .. "+" .. levelUpBonus()
+	writeTextToScreen(60, 16, tempText, false, true)
+	
+	local tempText = "wpn:" .. getNumEquippedGuns() .. "/" .. getPlayerSlots() .. "+" .. getWeaponsGrabbedList()
+	writeTextToScreen(105, 16, tempText, false, true)
 end
 
 function updateWaveNumber()

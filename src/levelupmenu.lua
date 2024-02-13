@@ -83,7 +83,7 @@ function closeLevelUpMenu()
 	menuSpot = 1
 end
 
-function updateLevelUpManu()
+function updateLevelUpMenu()
 	local theCurrTime = getRunTime()
 	if theCurrTime > lastBlink then
 		if blinking == true then
@@ -100,45 +100,17 @@ function updateLevelUpManu()
 end
 
 function pauseLevelUpMoveR()
-	if menuSpot == 1 then 
-		selectSprite:moveTo(174, 132)
-		menuSpot = 2
-	elseif menuSpot == 2 then 
-		selectSprite:moveTo(234, 132)
-		menuSpot = 3
-	elseif menuSpot == 3 then 
-		if bonusStat == 1 then
-			selectSprite:moveTo(294, 132)
-			menuSpot = 4
-		else
-			selectSprite:moveTo(114, 132)
-			menuSpot = 1
-		end
-	elseif menuSpot == 4 then 
-		selectSprite:moveTo(114, 132)
-		menuSpot = 1
-	end
+	menuSpot += 1
+	if menuSpot > (3 + bonusStat) then menuSpot = 1 end
+	local selectSpot = 54 + (60 * menuSpot)
+	selectSprite:moveTo(selectSpot, 132)
 end
 
 function pauseLevelUpMoveL()
-	if menuSpot == 1 then 
-		if bonusStat == 1 then
-			selectSprite:moveTo(294, 132)
-			menuSpot = 4
-		else
-			selectSprite:moveTo(234, 132)
-			menuSpot = 3
-		end
-	elseif menuSpot == 2 then 
-		selectSprite:moveTo(114, 132)
-		menuSpot = 1
-	elseif menuSpot == 3 then 
-		selectSprite:moveTo(174, 132)
-		menuSpot = 2
-	elseif menuSpot == 4 then 
-		selectSprite:moveTo(234, 132)
-		menuSpot = 3
-	end
+	menuSpot -= 1
+	if menuSpot < 1 then menuSpot = (3 + bonusStat) end
+	local selectSpot = 54 + (60 * menuSpot)
+	selectSprite:moveTo(selectSpot, 132)
 end
 
 function levelUpSelection()
@@ -310,7 +282,7 @@ function whatStatSprite(sel,slot)
 	elseif sel == "reflect" then
 		theStat = 11
 		theImage = stat11Image
-		addStatDetails("reflect +" .. tostring(levelBonus), slot)
+		addStatDetails("reflect +" .. tostring(3 * levelBonus), slot)
 	elseif sel == "speed" then
 		theStat = 12
 		theImage = stat12Image

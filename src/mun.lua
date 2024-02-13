@@ -10,7 +10,7 @@ end
 
 function updateMun()
 	local totalMun = "mun:" .. playerMun
-	writeTextToScreen(25, 18, totalMun, false, true)
+	writeTextToScreen(25, 16, totalMun, false, true)
 end
 
 function updateTotalMun()

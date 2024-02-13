@@ -161,7 +161,7 @@ function playdate.update()
 			openLevelUpMenu()
 			lastState = currentState
 		end
-		updateLevelUpManu()
+		updateLevelUpMenu()
 		updateCamera(dt)
 
 	-- Weapon Menu

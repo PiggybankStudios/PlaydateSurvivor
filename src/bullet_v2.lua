@@ -699,6 +699,14 @@ function getEquippedGun(index)
 	return theGunSlots[index]
 end
 
+function getNumEquippedGuns()
+	local totEquipped = 1
+	if theGunSlots[2] > 0 then totEquipped += 1 end
+	if theGunSlots[3] > 0 then totEquipped += 1 end
+	if theGunSlots[4] > 0 then totEquipped += 1 end
+	return totEquipped
+end
+
 
 function getTierForGun(index)
 	return theGunTier[index]

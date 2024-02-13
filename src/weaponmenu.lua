@@ -43,6 +43,7 @@ function openWeaponMenu(newWeap, tier)
 	local strSend = GUN_NAMES[newWeap] .. getTierStr(tier)
 	writeTextToScreen(148, 132, strSend, true, true)
 	newWeapon = newWeap
+	menuSpot = 1
 	gunNewSprite:add()
 	blinking = true
 	weaponTier = tier
@@ -87,14 +88,16 @@ end
 function weaponMenuMoveD()
 	menuSpot += 1
 	if menuSpot > 5 then menuSpot = 1 end
-	local selectSpot = 40 + (45 * menuSpot - 1)
+	if menuSpot > getPlayerSlots() then menuSpot = 5 end
+	local selectSpot = (45 * menuSpot) - 5
 	selectSprite:moveTo(346, selectSpot)
 end
 
 function weaponMenuMoveU()
 	menuSpot -= 1
+	if menuSpot > getPlayerSlots() then menuSpot = getPlayerSlots() end
 	if menuSpot < 1 then menuSpot = 5 end
-	local selectSpot = 40 + (45 * menuSpot - 1)
+	local selectSpot = (45 * menuSpot) - 5
 	selectSprite:moveTo(346, selectSpot)
 end
 
