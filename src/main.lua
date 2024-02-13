@@ -116,7 +116,6 @@ function playdate.update()
 			gameScene()
 			addClock()
 			setPauseTime()
-			startPauseTime = mainLoopTime
 			setGameState(GAMESTATE.unpaused)
 			setEndWaveText("start wave " .. getWave())
 			setSpawnTime(mainLoopTime + (getConfigValue("pause_time") + 1)*1000)
@@ -140,6 +139,7 @@ function playdate.update()
 		updateEnemies(dt)
 		updateItems(dt, mainTimePassed, mainLoopTime)
 		updateParticles(dt, mainTimePassed, mainLoopTime, elapsedPauseTime)
+		startPauseTime = mainLoopTime
 
 		-- clear possible pause time
 		elapsedPauseTime = 0
@@ -188,11 +188,9 @@ function playdate.update()
 	-- UnPaused
 	elseif currentState == GAMESTATE.unpaused then
 		if lastState ~= currentState then
-			updateUnPaused()
 			lastState = currentState
-		else
-			updateUnPaused()
 		end
+		updateUnPaused()
 		
 	-- waveScreen
 	elseif currentState == GAMESTATE.wavescreen then

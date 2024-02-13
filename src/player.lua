@@ -128,7 +128,7 @@ function player:damage(amount, camShakeStrength, enemyX, enemyY)
 		screenFlash()
 		return
 	end
-
+	local newamount = math.floor(amount)
 	-- Damaging
 	local amountLost = math.max(amount - playerArmor, 1)
 	damageTimer = theCurrTime + setDamageTimer
@@ -281,7 +281,7 @@ function upgradeStat(stat, bonus)
 		print('bullet speed increased by ' .. tostring(bonus))
 
 	elseif stat == 4 then
-		playerGunDamage += 2 * bonus
+		playerGunDamage += bonus
 		print('damage increased by ' .. tostring(2 * bonus))
 
 	elseif stat == 5 then
@@ -293,7 +293,7 @@ function upgradeStat(stat, bonus)
 		print('bonus exp increased by ' .. tostring(bonus))
 
 	elseif stat == 7 then
-		playerHealBonus += 4 * bonus
+		playerHealBonus += 2 * bonus
 		print('heal increased by ' .. tostring(4 * bonus))
 
 	elseif stat == 8 then
@@ -312,7 +312,7 @@ function upgradeStat(stat, bonus)
 		print('magnet increased by ' .. tostring(20 * bonus))
 
 	elseif stat == 11 then
-		playerReflectDamage += 3 * bonus
+		playerReflectDamage += 2 * bonus
 		print('reflect increased by ' .. tostring(bonus))
 
 	elseif stat == 12 then

@@ -43,7 +43,7 @@ function openWeaponMenu(newWeap, tier)
 	local strSend = GUN_NAMES[newWeap] .. getTierStr(tier)
 	writeTextToScreen(148, 132, strSend, true, true)
 	newWeapon = newWeap
-	menuSpot = 1
+	--menuSpot = 1
 	gunNewSprite:add()
 	blinking = true
 	weaponTier = tier
@@ -53,6 +53,8 @@ function openWeaponMenu(newWeap, tier)
 			writeTextToScreen(346, 15 + (45 * i), strSend, true, true)
 		end
 	end
+	local tempText = "+" .. getWeaponsGrabbedList() .. " more"
+	writeTextToScreen(148, 25, tempText, true, false)
 	--print("paused")
 end
 

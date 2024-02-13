@@ -69,6 +69,8 @@ function openLevelUpMenu()
 	blinking = true
 	addStatOptions()
 	addLevelOptions()
+	local tempText = "+" .. getLevelUpList() .. " more"
+	writeTextToScreen(346, 50, tempText, true, false)
 	--print("paused")
 end
 
@@ -254,7 +256,7 @@ function whatStatSprite(sel,slot)
 	elseif sel == "damage" then
 		theStat = 4
 		theImage = stat4Image
-		addStatDetails("damage +" .. tostring(2 * levelBonus), slot)
+		addStatDetails("damage +" .. tostring(levelBonus), slot)
 	elseif sel == "dodge" then
 		theStat = 5
 		theImage = stat5Image
@@ -266,7 +268,7 @@ function whatStatSprite(sel,slot)
 	elseif sel == "heal" then
 		theStat = 7
 		theImage = stat7Image
-		addStatDetails("bonus heal +" .. tostring(4 * levelBonus), slot)
+		addStatDetails("bonus heal +" .. tostring(2 * levelBonus), slot)
 	elseif sel == "health" then
 		theStat = 8
 		theImage = stat8Image
@@ -282,7 +284,7 @@ function whatStatSprite(sel,slot)
 	elseif sel == "reflect" then
 		theStat = 11
 		theImage = stat11Image
-		addStatDetails("reflect +" .. tostring(3 * levelBonus), slot)
+		addStatDetails("reflect +" .. tostring(2 * levelBonus), slot)
 	elseif sel == "speed" then
 		theStat = 12
 		theImage = stat12Image

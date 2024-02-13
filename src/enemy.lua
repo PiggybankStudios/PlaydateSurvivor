@@ -128,8 +128,8 @@ function enemy:init(x, y)
 	enemy.super.init(self)
 	self:add()
 	
-	self.health *= (1 + math.floor(getDifficulty() / scaleHealth) / (getMaxDifficulty()/scaleHealth))
-	self.damageAmount *= (1 + math.floor(getDifficulty() / scaleDamage) / (getMaxDifficulty()/scaleDamage))
+	self.health *= (1 + math.floor(getDifficulty() / scaleHealth) / math.floor(getMaxDifficulty()/scaleHealth))
+	self.damageAmount *= (1 + math.floor(getDifficulty() / scaleDamage) / math.floor(getMaxDifficulty()/scaleDamage))
 	self.speed += (math.floor(getDifficulty() / scaleSpeed)/2)
 	self.fullhealth = self.health
 
@@ -675,15 +675,18 @@ local function spawnMonsters()
 		enemyY = screenCenter.y + (direction.y * distance.y)
 
 		local eType = math.random(1, math.min(difficulty,5))
+		if difficulty >= 15 then eType = ENEMY_TYPE.chunkyArms end
 		createEnemy(enemyX, enemyY, eType)
 
 		spawnInc += math.random(1, difficulty)
 		if spawnInc > 10 then
 			eType = math.random(5, math.min(difficulty,enemyTypes))
+			if difficulty >= 15 then eType = ENEMY_TYPE.chunkyArms end
 			createEnemy(enemyX, -enemyY, eType)
 		end
 		if spawnInc > 5 then
 			eType = math.random(1, math.min(difficulty,enemyTypes))
+			if difficulty >= 15 then eType = ENEMY_TYPE.chunkyArms end
 			createEnemy(-enemyX, -enemyY, eType)
 			if (spawnInc + getLuck()) > math.random(20,100) then
 				createEnemy(-enemyX, enemyY, ENEMY_TYPE.munBag)
