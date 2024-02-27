@@ -147,7 +147,42 @@ This is a file that you can put any notes or TODO lists in
 				* Add poison particle effect
 				* add list of effects that happen when poisoned
 				
-				
+
++ Spinning is dodge roll? Or to tornado push people away?
+
+# Gun ideas based on Input types:
+	[ ] Location
+		+ When inside even/odd grid cells, gun shoots differently
+		+ Mini-games in a particular arena?
+		+ Stand in the circle
+		+ Orbs are dropping around and you gotta pick them up
+	[ ] Rotation
+		+ Activates when you're rotating
+			+ wind up
+			+ Rotating does close range melee
+		+ N/E/S/W make different bullets
+		+ Ball and chain with centrifigul force that pushes the ball out the faster you rotate
+		+ Spin crank to become a tornado, do a bunch of damage, then cooldown
+	[ ] Momentum
+		+ Fire in reverse direction of movement
+		+ Spawn drills that do damage, but fire when you stop and in the direction you're facing
+		+ Joust that moves automatically in direction it's facing, maybe charges over time
+		+ Sword/Shield hybrid based on if you're moving away/toward side
+		+ Build up tension on a pole like thing connected to a wall, until you move and then it releases
+	[ ] Proximity
+		+ Attack rate based on closest enemy
+		+ Void, black holes, that pull things in (enemies and bullets)
+	[ ] Resources (Health, Experience, Money, Kills)
+		+ Doing more damaage or bullets at low health
+		+ After 10 enemies you do something (maybe 10 in a row)
+	[ ] Time (periodic)
+		+ 10 seconds shoot fast, 10 seconds less
+		+ Prime numbers cause massive damage spike
+		+ DDR facing directions
+		+ Venus flytrap that slowly digests enemies whole, one at a time
+		+ Red light green light
+		
+
 ***************************************************************************************************************************************
 the lists of things in game (planned)
 ***************************************************************************************************************************************
