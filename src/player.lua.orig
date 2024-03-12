@@ -57,7 +57,7 @@ local maxHealth = 1
 local health = maxHealth
 local playerSpeed = 50
 local playerVelocity = vec.new(0, 0)
-local playerAttackRate = 100
+local playerAttackRate = 40
 local playerAttackRateMin = 10 --25 --limit
 local playerExp = 0
 local startingExpForLevel = 5
@@ -100,6 +100,7 @@ local theCurrTime
 -- Add the player sprite and collider back to the drawing list after level load - also sets starting position
 function addPlayerSpritesToList(gameSceneWorld, width, height)
 	player:setRotation(getCrankAngle())
+<<<<<<< HEAD
 	player:moveTo(150, 150)
 	player:add()
 	--collider:add()
@@ -110,6 +111,14 @@ function addPlayerSpritesToList(gameSceneWorld, width, height)
 	worldHeight = height
 	world:add(playerRect, 150, 150, colliderSize, colliderSize)
 
+=======
+	
+	player:add()
+	collider:add()
+	
+	addSaveStatsToPlayer()
+	--itemAbsorber:add()
+>>>>>>> faaffb1ccff9fabaf162d302322dea1b24826ad3
 	health = maxHealth
 	playerHealthbar = healthbar(player.x, player.y - healthbarOffsetY, health)
 	playerExpbar = expbar(startingExpForLevel)
@@ -216,12 +225,20 @@ function updateLevel()
 	if math.floor(playerLevel / 5) == playerSlots then
 		updateSlots()
 	end
-	--if math.min(math.floor(playerLevel / 3) + 1,maxDifficulty) > difficulty then
-	--	difficulty = math.floor(playerLevel / 3)
+<<<<<<< HEAD
+	if math.min(math.floor(playerLevel / 3) + 1,maxDifficulty) > difficulty then
+		difficulty = math.floor(playerLevel / 3)
 		if difficulty > maxDifficulty then 
 			difficulty = maxDifficulty 
 			setEnemyDifficulty(difficulty)
 		end
+	end
+=======
+	--if math.min(math.floor(playerLevel / 3) + 1,maxDifficulty) > difficulty then
+	--	difficulty = math.floor(playerLevel / 3)
+	--	if difficulty > maxDifficulty then difficulty = maxDifficulty end
+	--end
+>>>>>>> faaffb1ccff9fabaf162d302322dea1b24826ad3
 end
 
 function addShot()
@@ -368,8 +385,12 @@ function upgradeStat(stat, bonus)
 		print('magnet increased by ' .. tostring(20 * bonus))
 
 	elseif stat == 11 then
-		playerReflectDamage += 2 * bonus
+<<<<<<< HEAD
+		playerReflectDamage += bonus
 		setEnemyReflectDamage(playerReflectDamage)
+=======
+		playerReflectDamage += 2 * bonus
+>>>>>>> faaffb1ccff9fabaf162d302322dea1b24826ad3
 		print('reflect increased by ' .. tostring(bonus))
 
 	elseif stat == 12 then
@@ -419,7 +440,11 @@ function clearStats()
 	setDistanceCheckToPlayerMagnetStat(playerMagnet)
 	playerSlots = 1
 	playerReflectDamage = 0
+<<<<<<< HEAD
 	setEnemyReflectDamage(0)
+	playerExpBonus = 0
+=======
+>>>>>>> faaffb1ccff9fabaf162d302322dea1b24826ad3
 	playerLuck = 0
 	playerBulletSpeed = 50
 	playerArmor = 0
@@ -428,7 +453,11 @@ function clearStats()
 	playerVampire = 0
 	playerHealBonus = 0
 	playerStunChance = 0
+<<<<<<< HEAD
 	setEnemyStunChance(0)
+	playerMun = 0
+=======
+>>>>>>> faaffb1ccff9fabaf162d302322dea1b24826ad3
 	damageTimer = 0
 	clearGunStats()
 	invincibleTime = 0

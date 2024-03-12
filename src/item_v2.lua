@@ -132,13 +132,13 @@ end
 local activateItemEffect = {
 	-- Health
 	function()
-		heal(3) 
+		heal(20) 
 		addItemsGrabbed() 
 	end,
 
 	-- Weapon
 	function()
-		newWeaponGrabbed(random(1, 6), decideWeaponTier()) -- not allowing choice of boomerange or wavegun, until fixed
+		newWeaponGrabbed() -- not allowing choice of boomerange or wavegun, until fixed
 		addItemsGrabbed()
 	end,
 
@@ -179,10 +179,10 @@ local activateItemEffect = {
 	function() addMun(2) end,
 
 	--Mun10
-	function() addMun(10) end,
+	function() addMun(5) end,
 
 	--Mun50
-	function() addMun(50) end
+	function() addMun(20) end
 }
 
 

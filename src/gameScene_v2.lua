@@ -151,7 +151,7 @@ function gameSceneUpdate()
 
 		gfx.setColor(gfx.kColorBlack)
 
-		--[[
+		
 		-- draw cells
 		for cy, row in pairs(world.rows) do
 			for cx, cell in pairs(row) do
@@ -164,7 +164,7 @@ function gameSceneUpdate()
 				gfx.drawText(cellCount, l + (0.4 * w), t + (0.4 * h))
 			end
 		end
-		]]
+		
 
 		-- draw colliders
 		local colliders, length = world:queryRect(0, 0, width, height)

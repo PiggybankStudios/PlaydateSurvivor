@@ -28,11 +28,12 @@ function openDeadMenu()
 	promptSprite:add()
 	blinking = true
 	addFinalStats()
+	addTotalMun(getMun())
 	--print("dead!")
 end
 
 function updateDeadManu()
-	local theCurrTime = playdate.getCurrentTimeMilliseconds()
+	local theCurrTime = getRunTime()
 	if theCurrTime > lastBlink then
 		if blinking then
 			lastBlink = theCurrTime + 300
@@ -50,8 +51,6 @@ end
 function closeDeadMenu()
 	deadSprite:remove()
 	if blinking == true then promptSprite:remove() end
-	cleanLetters()
-	--print("unpaused")
 end
 
 
@@ -61,7 +60,7 @@ function addFinalStats()
 	local row = 26
 	local column = 12
 	local pstats = getFinalStats()
-	local sentence = ("difficulty reached: " .. tostring(pstats[1]))
+	local sentence = ("wave reached: " .. tostring(pstats[1]))
 	writeTextToScreen(column, (row + newline * statrow), sentence, false, true)
 	
 	statrow += 1 --move on to the next line
@@ -98,6 +97,10 @@ function addFinalStats()
 	
 	statrow += 1 --move on to the next line
 	sentence = ("time survived: " .. tostring(pstats[10]) .. " seconds")
+	writeTextToScreen(column, (row + newline * statrow), sentence, false, true)
+	
+	statrow += 1 --move on to the next line
+	sentence = ("mun collected: " .. tostring(getMun()))
 	writeTextToScreen(column, (row + newline * statrow), sentence, false, true)
 	
 	statrow += 1 --move on to the next line

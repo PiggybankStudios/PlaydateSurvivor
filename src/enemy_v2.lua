@@ -943,7 +943,7 @@ local function moveSingleEnemy(dt, i, type, mainLoopTime, offsetX, offsetY, play
 	local y = posY[i]
 
 	-- collision interaction
-	damagePlayer(damageAmount[i], ENEMY_CAMERA_SHAKE[type], x, y)
+	--damagePlayer(damageAmount[i], ENEMY_CAMERA_SHAKE[type], x, y)
 
 	-- Moving the enemy and attached UI
 	rects[i].x, rects[i].y = x, y
@@ -998,6 +998,11 @@ end
 
 function setEnemyDifficulty(value)
 	difficulty = value
+end
+
+
+function setSpawnTime(value)
+	theSpawnTime = value
 end
 
 

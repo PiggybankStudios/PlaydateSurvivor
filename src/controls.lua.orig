@@ -1,13 +1,20 @@
 -- playdate screen 400 x 240
 
+<<<<<<< HEAD
 local pd <const> = playdate
 local physicalCrankAngle <const> = pd.getCrankPosition
 
-local inputXL = 0
-local inputXR = 0
+local inputX = 0 
+local inputY = 0
+local crankAngle = physicalCrankAngle() - 90
+=======
+local inputXL = 0 
+local inputXR = 0 
 local inputYU = 0
 local inputYD = 0
-local crankAngle = physicalCrankAngle() - 90
+local physicalCrankAngle = playdate.getCrankPosition()
+local crankAngle = physicalCrankAngle - 90
+>>>>>>> faaffb1ccff9fabaf162d302322dea1b24826ad3
 
 
 function handleDeath()
@@ -80,11 +87,44 @@ function resetInputXY()
 	inputYD = 0
 end
 
+<<<<<<< HEAD
 function pd.leftButtonDown()
+	inputX = -1
+	if getGameState() == GAMESTATE.pausemenu then print("no move L")--pauseMenuMoveL()
+	elseif getGameState() == GAMESTATE.levelupmenu then pauseLevelUpMoveL() end
+end
+function pd.leftButtonUp()
+	inputX = 0
+end
+function pd.rightButtonDown()
+	inputX = 1
+	if getGameState() == GAMESTATE.pausemenu then print("no move R")--pauseMenuMoveR()
+	elseif getGameState() == GAMESTATE.levelupmenu then pauseLevelUpMoveR() end
+end
+function pd.rightButtonUp()
+	inputX = 0
+end
+function pd.upButtonDown()
+	inputY = -1
+	if getGameState() == GAMESTATE.newweaponmenu then weaponMenuMoveU()
+	elseif getGameState() == GAMESTATE.mainmenu then mainMenuMoveU() end
+end
+function pd.upButtonUp()
+	inputY = 0
+end
+function pd.downButtonDown()
+	inputY = 1
+	if getGameState() == GAMESTATE.newweaponmenu then weaponMenuMoveD()
+	elseif getGameState() == GAMESTATE.mainmenu then mainMenuMoveD() end
+end
+function pd.downButtonUp()
+	inputY = 0
+=======
+function playdate.leftButtonDown()
 	inputXL = 1
 	if getGameState() == GAMESTATE.levelupmenu then pauseLevelUpMoveL() end
 end
-function pd.leftButtonUp()
+function playdate.leftButtonUp()
 	inputXL = 0
 end
 
@@ -92,7 +132,7 @@ function playdate.rightButtonDown()
 	inputXR = 1
 	if getGameState() == GAMESTATE.levelupmenu then pauseLevelUpMoveR() end
 end
-function pd.rightButtonUp()
+function playdate.rightButtonUp()
 	inputXR = 0
 end
 
@@ -101,7 +141,7 @@ function playdate.upButtonDown()
 	if getGameState() == GAMESTATE.newweaponmenu then weaponMenuMoveU()
 	elseif getGameState() == GAMESTATE.mainmenu then mainMenuMoveU() end
 end
-function pd.upButtonUp()
+function playdate.upButtonUp()
 	inputYU = 0
 end
 
@@ -110,8 +150,9 @@ function playdate.downButtonDown()
 	if getGameState() == GAMESTATE.newweaponmenu then weaponMenuMoveD()
 	elseif getGameState() == GAMESTATE.mainmenu then mainMenuMoveD() end
 end
-function pd.downButtonUp()
+function playdate.downButtonUp()
 	inputYD = 0
+>>>>>>> faaffb1ccff9fabaf162d302322dea1b24826ad3
 end
 
 
@@ -141,7 +182,11 @@ function pd.AButtonDown()
 	elseif getGameState() == GAMESTATE.mainmenu then
 		if MainMenuNavigate() == true then
 			setGameState(GAMESTATE.maingame)
+<<<<<<< HEAD
+			gameStartTime = pd.getCurrentTimeMilliseconds()
+=======
 			gameStartTime = getRunTime()
+>>>>>>> faaffb1ccff9fabaf162d302322dea1b24826ad3
 		end
 	elseif getGameState() == GAMESTATE.maingame then
 		setGameState(GAMESTATE.pausemenu)

@@ -17,19 +17,20 @@ local bounceBuffer = 10
 local bounceStrength = 4
 local rotateSpeed = 5
 local scaleHealth = 3
-local scaleSpeed = 4
+local scaleSpeed = 5
 local scaleDamage = 5
 local stunWiggleAmount = 3
 local movementParticleSpawnRate = 50
+local enemyTypes = 7
 
 local ENEMY_TYPE = {
-	fastBall = 1,
-	normalSquare = 2,
+	normalSquare = 1,
+	fastBall = 2,
 	bat = 3,
 	medic = 4,
 	bulletBill = 5,
-	chunkyArms = 6,
-	munBag = 7
+	munBag = 6,
+	chunkyArms = 7
 }
 
 local ITEM_TYPE = {
@@ -127,9 +128,9 @@ function enemy:init(x, y)
 	enemy.super.init(self)
 	self:add()
 	
-	self.health *= (1 + math.floor(getDifficulty() / scaleHealth))
-	self.damageAmount *= (1 + math.floor(getDifficulty() / scaleDamage))
-	self.speed += (math.floor(getDifficulty() / scaleSpeed))
+	self.health *= (1 + math.floor(getDifficulty() / scaleHealth) / math.floor(getMaxDifficulty()/scaleHealth))
+	self.damageAmount *= (1 + math.floor(getDifficulty() / scaleDamage) / math.floor(getMaxDifficulty()/scaleDamage))
+	self.speed += (math.floor(getDifficulty() / scaleSpeed)/2)
 	self.fullhealth = self.health
 
 	self.time = currentTime
@@ -169,10 +170,10 @@ class('fastBall').extends(enemy)
 function fastBall:init(x, y)	
 	self:setImage(gfx.image.new('Resources/Sprites/enemy/Enemy1'))
 	self.type = ENEMY_TYPE.fastBall
-	self.health = 2
-	self.speed = 5
+	self.health = 10
+	self.speed = 4
 	self.accel = 3
-	self.damageAmount = 1
+	self.damageAmount = 5
 	self.shakeStrength = CAMERA_SHAKE_STRENGTH.tiny
 	self.drop = { ITEM_TYPE.exp1, ITEM_TYPE.health, ITEM_TYPE.luck}
 	self.dropPercent = { 94, 5, 1}
@@ -197,10 +198,10 @@ class('normalSquare').extends(enemy)
 function normalSquare:init(x, y)	
 	self:setImage(gfx.image.new('Resources/Sprites/enemy/Enemy2'))
 	self.type = ENEMY_TYPE.normalSquare
-	self.health = 5
-	self.speed = 3
+	self.health = 25
+	self.speed = 2
 	self.accel = 1.5
-	self.damageAmount = 5
+	self.damageAmount = 25
 	self.shakeStrength = CAMERA_SHAKE_STRENGTH.medium
 	self.drop = { ITEM_TYPE.exp1, ITEM_TYPE.health, ITEM_TYPE.shield }
 	self.dropPercent = { 85, 10, 5}
@@ -224,10 +225,10 @@ class('bat').extends(enemy)
 function bat:init(x, y)
 	self:setImage(gfx.image.new('Resources/Sprites/enemy/Enemy3'))
 	self.type = ENEMY_TYPE.bat
-	self.health = 3
-	self.speed = 4
+	self.health = 15
+	self.speed = 3
 	self.accel = 2
-	self.damageAmount = 3
+	self.damageAmount = 15
 	self.shakeStrength = CAMERA_SHAKE_STRENGTH.tiny
 	self.drop = { ITEM_TYPE.exp1, ITEM_TYPE.weapon, ITEM_TYPE.luck }
 	self.dropPercent = { 54, 45, 1}
@@ -268,10 +269,10 @@ class('medic').extends(enemy)
 function medic:init(x, y)
 	self:setImage(gfx.image.new('Resources/Sprites/enemy/Enemy4'))
 	self.type = ENEMY_TYPE.medic
-	self.health = 20
-	self.speed = 2
+	self.health = 75
+	self.speed = 1
 	self.accel = 4
-	self.damageAmount = 2
+	self.damageAmount = 10
 	self.shakeStrength = CAMERA_SHAKE_STRENGTH.large
 	self.drop = { ITEM_TYPE.exp1, ITEM_TYPE.health, ITEM_TYPE.absorbAll }
 	self.dropPercent = { 60, 35, 5}
@@ -289,7 +290,7 @@ function medic:calculateMove(targetX, targetY)
 		self.directionVec *= -1
 		if currentTime >= self.time then
 			self.time = currentTime + 1000
-			self:heal(2 * (1 + math.floor(getDifficulty() / scaleHealth)))
+			self:heal(8 * (1 + math.floor(getDifficulty() / scaleHealth)))
 		end
 		-- once finished healing, move normally again
 		if self.health == self.fullhealth then self.AIsmarts = 1 end
@@ -312,10 +313,10 @@ class('bulletBill').extends(enemy)
 function bulletBill:init(x, y)	
 	self:setImage(gfx.image.new('Resources/Sprites/enemy/Enemy5')) --the Bullet Bill
 	self.type = ENEMY_TYPE.bulletBill
-	self.health = 6
-	self.speed = 7
+	self.health = 30
+	self.speed = 6
 	self.accel = 3
-	self.damageAmount = 4
+	self.damageAmount =20
 	self.shakeStrength = CAMERA_SHAKE_STRENGTH.large
 	self.drop = { ITEM_TYPE.exp1, ITEM_TYPE.health, ITEM_TYPE.luck }
 	self.dropPercent = { 80, 19, 1}
@@ -373,10 +374,10 @@ class('chunkyArms').extends(enemy)
 function chunkyArms:init(x, y)	
 	self:setImage(gfx.image.new('Resources/Sprites/enemy/Enemy6'))
 	self.type = ENEMY_TYPE.chunkyArms
-	self.health = 66
+	self.health = 330
 	self.speed = 1
-	self.accel = 2
-	self.damageAmount = 10
+	self.accel = 1
+	self.damageAmount = 50
 	self.shakeStrength = CAMERA_SHAKE_STRENGTH.large
 	self.drop = { ITEM_TYPE.exp16, ITEM_TYPE.luck }
 	self.dropPercent = { 95, 5}
@@ -392,7 +393,7 @@ function chunkyArms:calculateMove(targetX, targetY)
 		if self.health < (self.fullhealth / 2) then self.speed += 0.3 end
 		if self.speed > (3 + math.floor(getDifficulty() / scaleDamage)) then self.speed = (3 + math.floor(getDifficulty() / scaleDamage)) end
 		if self.health < self.fullhealth then 
-			self:heal(1 + math.floor(getDifficulty() / scaleHealth))
+			self:heal(4 + math.floor(getDifficulty() / scaleHealth))
 		end
 	end
 
@@ -407,10 +408,10 @@ class('munBag').extends(enemy)
 function munBag:init(x, y)	
 	self:setImage(gfx.image.new('Resources/Sprites/enemy/Enemy16'))
 	self.type = ENEMY_TYPE.munBag
-	self.health = 1 + math.floor(getMun() / 10)
-	self.speed = 1
-	self.accel = 1
-	self.damageAmount = 1
+	self.health = 5 + math.floor(getMun() / 10)
+	self.speed = 0.5
+	self.accel = 3
+	self.damageAmount = 5
 	self.shakeStrength = CAMERA_SHAKE_STRENGTH.tiny
 	self.drop = { ITEM_TYPE.mun2, ITEM_TYPE.mun10, ITEM_TYPE.mun50 }
 	local tLuck1 = math.floor(getLuck()/4)
@@ -423,14 +424,6 @@ end
 
 function munBag:calculateMove(targetX, targetY)
 	self.directionVec = vec.new(targetX - self.x, targetY - self.y)
-	if currentTime >= self.time then
-		self.time = currentTime + 500
-		if self.health < (self.fullhealth / 2) then self.speed += 0.3 end
-		if self.speed > (3 + math.floor(getDifficulty() / scaleDamage)) then self.speed = (3 + math.floor(getDifficulty() / scaleDamage)) end
-		if self.health < self.fullhealth then 
-			self:heal(1 + math.floor(getDifficulty() / scaleHealth))
-		end
-	end
 
 	munBag.super.calculateMove(self)
 end
@@ -646,9 +639,13 @@ end
 -- |                          Management                          |
 -- +--------------------------------------------------------------+
 
+function setSpawnTime(value)
+	theSpawnTime = value
+end
+
 local function spawnMonsters()
 	-- 
-	if Unpaused then theSpawnTime += (currentTime - timeFromPause) end
+	if getUnpaused() then theSpawnTime += (currentTime - timeFromPause) end
 
 	if currentTime >= theSpawnTime then
 		local difficulty = getDifficulty()
@@ -677,14 +674,24 @@ local function spawnMonsters()
 		enemyX = screenCenter.x + (direction.x * distance.x)
 		enemyY = screenCenter.y + (direction.y * distance.y)
 
-		local eType = math.random(1, 5)
+		local eType = math.random(1, math.min(difficulty,5))
+		if difficulty >= 15 then eType = ENEMY_TYPE.chunkyArms end
 		createEnemy(enemyX, enemyY, eType)
 
 		spawnInc += math.random(1, difficulty)
+		if spawnInc > 10 then
+			eType = math.random(5, math.min(difficulty,enemyTypes))
+			if difficulty >= 15 then eType = ENEMY_TYPE.chunkyArms end
+			createEnemy(enemyX, -enemyY, eType)
+		end
 		if spawnInc > 5 then
-			spawnInc = 0
-			eType = math.random(1, 7)
+			eType = math.random(1, math.min(difficulty,enemyTypes))
+			if difficulty >= 15 then eType = ENEMY_TYPE.chunkyArms end
 			createEnemy(-enemyX, -enemyY, eType)
+			if (spawnInc + getLuck()) > math.random(20,100) then
+				createEnemy(-enemyX, enemyY, ENEMY_TYPE.munBag)
+			end
+			spawnInc = 0
 		end
 	end
 end
@@ -741,9 +748,10 @@ end
 
 function clearEnemies()
 	local function clearList(list)
-		for i = 1, #list do		
-			list[1]:remove()
-			table.remove(list, 1)			
+		for i, enemy in pairs(list) do		
+			enemy.healthbar:updateHealth(0)
+			list[i]:remove()
+			table.remove(list, i)			
 		end
 	end
 
@@ -773,11 +781,11 @@ end
 local frame = 1
 
 function updateEnemies(dt)
-	currentTime = playdate.getCurrentTimeMilliseconds()
+	currentTime = getRunTime()
 	frame = (frame + 1) % 3
 
 	-- PAUSED - need to save the time
-	if Unpaused == false then
+	if getUnpaused() == false then
 		if timeFromPause == 0 then timeFromPause = currentTime end
 
 	-- NOT PAUSED - save the time difference from how long we were paused
@@ -790,7 +798,7 @@ function updateEnemies(dt)
 	moveEnemies(dt)
 
 	-- NOT paused and finished with reset
-	if Unpaused == true and pauseDiff ~= 0 then
+	if getUnpaused() == true and pauseDiff ~= 0 then
 		pauseDiff = 0
 		timeFromPause = 0
 	end

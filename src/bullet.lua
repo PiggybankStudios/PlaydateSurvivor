@@ -105,7 +105,7 @@ function bullet:collisionResponse(other)
 		return 'overlap'
 	elseif tag == TAGS.enemy then
 		if self.type == 7 then
-			if self.timer < playdate.getCurrentTimeMilliseconds() then -- will have a local current time when having bullet class manage itself
+			if self.timer < getRunTime() then -- will have a local current time when having bullet class manage itself
 				other:damage(self.damage)
 				other:potentialStun()
 				self.timer = getCurrTime() + 50
@@ -115,7 +115,7 @@ function bullet:collisionResponse(other)
 			if self.timer < getCurrTime() then
 				other:damage(self.damage)
 				other:potentialStun()
-				self.timer = playdate.getCurrentTimeMilliseconds() + 50
+				self.timer = getRunTime() + 50
 			end
 			return 'overlap'
 		else

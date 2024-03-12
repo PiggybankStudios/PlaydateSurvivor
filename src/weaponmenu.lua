@@ -43,6 +43,7 @@ function openWeaponMenu(newWeap, tier)
 	local strSend = GUN_NAMES[newWeap] .. getTierStr(tier)
 	writeTextToScreen(148, 132, strSend, true, true)
 	newWeapon = newWeap
+	--menuSpot = 1
 	gunNewSprite:add()
 	blinking = true
 	weaponTier = tier
@@ -52,6 +53,8 @@ function openWeaponMenu(newWeap, tier)
 			writeTextToScreen(346, 15 + (45 * i), strSend, true, true)
 		end
 	end
+	local tempText = "+" .. getWeaponsGrabbedList() .. " more"
+	writeTextToScreen(148, 25, tempText, true, false)
 	--print("paused")
 end
 
@@ -65,12 +68,11 @@ function closeWeaponMenu()
 	gunNewSprite:remove()
 	selectSprite:moveTo(346, 40)
 	menuSpot = 1
-	cleanLetters()
 	--print("unpaused")
 end
 
 function updateWeaponMenu()
-	local theCurrTime = playdate.getCurrentTimeMilliseconds()
+	local theCurrTime = getRunTime()
 	if theCurrTime > lastBlink then
 		if blinking == true then
 			lastBlink = theCurrTime + 300
@@ -86,76 +88,19 @@ function updateWeaponMenu()
 end
 
 function weaponMenuMoveD()
-	if menuSpot == 1 then 
-		if getPlayerSlots() == 2 then
-			selectSprite:moveTo(346, 85)
-			menuSpot = 2
-		elseif getPlayerSlots() == 3 then
-			selectSprite:moveTo(346, 130)
-			menuSpot = 3
-		elseif getPlayerSlots() == 4 then
-			selectSprite:moveTo(346, 175)
-			menuSpot = 4
-		else
-			selectSprite:moveTo(346, 210)
-			menuSpot = 5
-		end
-	elseif menuSpot == 2 then 
-		if getPlayerSlots() == 3 then
-			selectSprite:moveTo(346, 130)
-			menuSpot = 3
-		elseif getPlayerSlots() == 4 then
-			selectSprite:moveTo(346, 175)
-			menuSpot = 4
-		else
-			selectSprite:moveTo(346, 210)
-			menuSpot = 5
-		end
-	elseif menuSpot == 3 then 
-		if getPlayerSlots() == 4 then
-			selectSprite:moveTo(346, 175)
-			menuSpot = 4
-		else
-			selectSprite:moveTo(346, 210)
-			menuSpot = 5
-		end
-	elseif menuSpot == 4 then 
-		selectSprite:moveTo(346, 210)
-		menuSpot = 5
-	elseif menuSpot == 5 then 
-		selectSprite:moveTo(346, 40)
-		menuSpot = 1
-	end
+	menuSpot += 1
+	if menuSpot > 5 then menuSpot = 1 end
+	if menuSpot > getPlayerSlots() then menuSpot = 5 end
+	local selectSpot = (45 * menuSpot) - 5
+	selectSprite:moveTo(346, selectSpot)
 end
 
 function weaponMenuMoveU()
-	if menuSpot == 1 then 
-		selectSprite:moveTo(346, 210)
-		menuSpot = 5
-	elseif menuSpot == 2 then 
-		selectSprite:moveTo(346, 40)
-		menuSpot = 1
-	elseif menuSpot == 3 then 
-		selectSprite:moveTo(346, 85)
-		menuSpot = 2
-	elseif menuSpot == 4 then 
-		selectSprite:moveTo(346, 130)
-		menuSpot = 3
-	elseif menuSpot == 5 then 
-		if getPlayerSlots() == 1 then
-			selectSprite:moveTo(346, 40)
-			menuSpot = 1
-		elseif getPlayerSlots() == 2 then
-			selectSprite:moveTo(346, 85)
-			menuSpot = 2
-		elseif getPlayerSlots() == 3 then
-			selectSprite:moveTo(346, 130)
-			menuSpot = 3
-		else
-			selectSprite:moveTo(346, 175)
-			menuSpot = 4
-		end
-	end
+	menuSpot -= 1
+	if menuSpot > getPlayerSlots() then menuSpot = getPlayerSlots() end
+	if menuSpot < 1 then menuSpot = 5 end
+	local selectSpot = (45 * menuSpot) - 5
+	selectSprite:moveTo(346, selectSpot)
 end
 
 function getTierStr(value)

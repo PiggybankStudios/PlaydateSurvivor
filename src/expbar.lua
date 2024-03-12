@@ -9,6 +9,7 @@ class('expbar').extends(gfx.sprite)
 
 local expGrowthFactor <const> = 3
 local currLevel = 0
+local levelUpList = 0
 
 
 function expbar:init(maxExp)
@@ -84,15 +85,26 @@ end
 
 
 function expbar:levelUp()
-	--print("leveled up") 
-	updateLevel()
+	incLevelUpList(1)
 	currLevel += 1
-						--crit, damage, rate, bounce, pierce, velocity, bulletlife, amount, 
-						--speed, hp, slot, magnet, luck, spin, armor, mod
 	self.exp = math.abs(self.exp - self.maxExp) -- move overfill exp into next level
 	self.maxExp += expGrowthFactor + math.floor(currLevel/10)
 	self:updateExpbar(self.exp)
 end
 
 
+function expbar:freeLevelUp()
+	incLevelUpList(1)
+	currLevel += 1
+	self.maxExp += expGrowthFactor + math.floor(currLevel/10)
+	self:updateExpbar(self.exp)
+end
+
+function getLevelUpList()
+	return levelUpList
+end
+
+function incLevelUpList(amount)
+	levelUpList += amount --updateLevel()  newWeaponGrabbed()
+end
 

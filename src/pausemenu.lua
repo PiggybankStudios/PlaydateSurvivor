@@ -8,6 +8,16 @@ local menuSpot = 0
 
 local blinking = false
 local lastBlink = 0
+local lTime = 0
+local Unpaused = false
+local endWaveText = "none"
+
+--setup main menu
+local unpauseImage = gfx.image.new('Resources/Sprites/lTextBox')
+local unpauseSprite = gfx.sprite.new(unpauseImage)
+unpauseSprite:setIgnoresDrawOffset(true)	-- forces sprite to be draw to screen, not world
+unpauseSprite:setZIndex(ZINDEX.uibanner)
+unpauseSprite:moveTo(halfScreenWidth, halfScreenHeight)
 
 --setup main menu
 local pauseImage = gfx.image.new('Resources/Sprites/menu/pauseMenu')
@@ -85,12 +95,10 @@ function closePauseMenu()
 	gun4Sprite:remove()
 	--selectSprite:moveTo(55, 212)
 	menuSpot = 0
-	cleanLetters()
-	--print("unpaused")
 end
 
 function updatePauseManu()
-	local theCurrTime = playdate.getCurrentTimeMilliseconds()
+	local theCurrTime = getRunTime()
 	if theCurrTime > lastBlink then
 		if blinking == true then
 			lastBlink = theCurrTime + 300
@@ -103,6 +111,8 @@ function updatePauseManu()
 			blinking = true
 		end
 	end
+	lTime = getRunTime()
+	
 end
 
 function pauseMenuMoveR()
@@ -129,10 +139,6 @@ function pauseMenuMoveL()
 		selectSprite:moveTo(204, 212)
 		menuSpot = 1
 	end
-end
-
-function pauseSelection()
-	return menuSpot
 end
 
 function selectWeaponImage(gun)
@@ -234,11 +240,10 @@ function addStats()
 end
 
 function addDifficulty()
-	local spacing = 4
-	local row = 20
-	local column = 162
 	local sentence = ("difficulty --" .. tostring(getDifficulty()) .. "--")
-	writeTextToScreen(column, row, sentence, false, true)
+	writeTextToScreen(162, 20, sentence, false, true)
+	local sentence = ("mun:" .. tostring(getMun()))
+	writeTextToScreen(162, 27, sentence, false, true)
 end
 
 function clearPauseMenu()
@@ -246,4 +251,37 @@ function clearPauseMenu()
 	gun2Sprite:setImage(gunxImage)
 	gun3Sprite:setImage(gunxImage)
 	gun4Sprite:setImage(gunxImage)
+end
+
+function setUnpaused(value)
+	Unpaused = value
+end
+
+function getUnpaused()
+	return Unpaused
+end
+
+function setPauseTime()
+	lTime = getRunTime()
+end
+
+function setEndWaveText(text)
+	endWaveText = text
+end
+
+function updateUnPaused()
+	cleanLetters()
+	unpauseSprite:add()
+	local pauseT = getConfigValue("pause_time")
+	local cTime = math.ceil((lTime - getRunTime())/1000 + pauseT)
+	writeTextToScreen(halfScreenWidth - 5, halfScreenHeight, tostring(cTime), true, false)
+	if endWaveText ~= "none" then
+		writeTextToScreen(halfScreenWidth - 5, halfScreenHeight - 20, endWaveText, true, false)
+	end
+	if cTime <= 0 then
+		endWaveText = "none"
+		setUnpaused(true)
+		setGameState(GAMESTATE.maingame)
+		unpauseSprite:remove()
+	end
 end

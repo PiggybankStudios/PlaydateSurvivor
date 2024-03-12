@@ -31,7 +31,7 @@ function openStartMenu()
 end
 
 function updateStartManu()
-	local theCurrTime = playdate.getCurrentTimeMilliseconds()
+	local theCurrTime = getRunTime()
 	if theCurrTime > lastBlink then
 		lastBlink = theCurrTime + 500
 		if blinking then
