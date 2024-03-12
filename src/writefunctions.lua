@@ -4,6 +4,8 @@ class('writefunctions').extends(gfx.sprite)
 
 -- sheet
 local writings = {}
+setmetatable(writings, {__mode = "vk"}) -- making table weak, hopefully GC will collect removed elements?
+
 local sheetRow = 1
 --numberList = gfx.animation.loop.new(10, numberSheet)
 --numbers = gfx.sprite:new()

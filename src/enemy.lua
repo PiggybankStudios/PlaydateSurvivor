@@ -63,9 +63,9 @@ local CAMERA_SHAKE_STRENGTH = {
 local enemyList1 = {}
 local enemyList2 = {}
 local enemyList3 = {}
-setmetatable(enemyList1, {__mode = "k"})
-setmetatable(enemyList2, {__mode = "k"})
-setmetatable(enemyList3, {__mode = "k"})
+setmetatable(enemyList1, {__mode = "vk"})
+setmetatable(enemyList2, {__mode = "vk"})
+setmetatable(enemyList3, {__mode = "vk"})
 
 local spawnInc = 0
 local currentTime = 0
@@ -785,7 +785,7 @@ function updateEnemies(dt)
 		if pauseDiff == 0 then pauseDiff = currentTime - timeFromPause end
 	end
 
-	spawnMonsters()
+	--spawnMonsters()
 	updateEnemyLists(frame)
 	moveEnemies(dt)
 

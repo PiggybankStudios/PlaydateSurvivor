@@ -13,7 +13,7 @@ local defaultDistanceCheck = getPlayerMagnetStat()
 local playerCollisionDistance <const> = 15	-- distance from player that is close enough to mimic a collision
 
 -- Items
-local maxItems <const> = 10000 --500 -- max that can exist in the world at one time
+local maxItems <const> = 3000 --500 -- max that can exist in the world at one time
 local activeItems = 0
 local absorbAllFlag = false
 
@@ -23,7 +23,7 @@ local posX = {}
 local posY = {}
 local rotation = {}
 local distanceCheck = {}
-local lifeTime = {}
+local lifeTime = {} -- NO LIFE TIMES
 
 
 -----------

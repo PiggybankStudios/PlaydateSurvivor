@@ -3,26 +3,32 @@ import "CoreLibs/sprites"
 import "CoreLibs/animation"
 import "CoreLibs/math"
 
+bump = import "bump"
 import "LDtk"
 
 import "tags"
 import "savefile"
 --import "bullet"
-import "bullet_v2"
-import "particle"
-import "healthbar"
+
+import "healthbar" -- edit player healthbar so we can get rid of this
 import "uibanner"
 import "pausemenu"
-import "write"
-import "writefunctions"
+
 import "expbar"
-import "enemy"
+--import "enemy"
+
 import "controls"
 import "player"
 import "camera"
-import "gameScene"
 --import "item"
 import "item_v2"
+import "enemy_v2"
+import "bullet_v2"
+import "particle"
+import "write"
+import "writefunctions"
+--import "gameScene"
+import "gameScene_v2"
 import "startmenu"
 import "mainmenu"
 import "deathmenu"
@@ -37,6 +43,8 @@ local mainLoopTime = 0
 local mainTimePassed = 0
 local elapsedPauseTime = 0
 local startPauseTime = 0
+
+local map
 
 gfx.setColor(gfx.kColorWhite)
 gfx.fillRect(0, 0, 400, 240)
@@ -118,10 +126,11 @@ function playdate.update()
 			end
 		end
 
+		gameSceneUpdate()
 		updatePlayer(dt)
 		updateCamera(dt)
 		updateBullets(dt, mainTimePassed, mainLoopTime, elapsedPauseTime)
-		updateEnemies(dt)
+		updateEnemies(dt, mainTimePassed, mainLoopTime)
 		updateItems(dt, mainTimePassed, mainLoopTime)
 		updateParticles(dt, mainTimePassed, mainLoopTime, elapsedPauseTime)
 

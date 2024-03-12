@@ -1,9 +1,11 @@
 -- playdate screen 400 x 240
 
+local pd <const> = playdate
+local physicalCrankAngle <const> = pd.getCrankPosition
+
 local inputX = 0 
 local inputY = 0
-local physicalCrankAngle = playdate.getCrankPosition()
-local crankAngle = physicalCrankAngle - 90
+local crankAngle = physicalCrankAngle() - 90
 
 
 function handleDeath()
@@ -68,58 +70,64 @@ function resetInputXY()
 	inputY = 0
 end
 
-function playdate.leftButtonDown()
+function pd.leftButtonDown()
 	inputX = -1
 	if getGameState() == GAMESTATE.pausemenu then print("no move L")--pauseMenuMoveL()
 	elseif getGameState() == GAMESTATE.levelupmenu then pauseLevelUpMoveL() end
 end
-function playdate.leftButtonUp()
+function pd.leftButtonUp()
 	inputX = 0
 end
-function playdate.rightButtonDown()
+function pd.rightButtonDown()
 	inputX = 1
 	if getGameState() == GAMESTATE.pausemenu then print("no move R")--pauseMenuMoveR()
 	elseif getGameState() == GAMESTATE.levelupmenu then pauseLevelUpMoveR() end
 end
-function playdate.rightButtonUp()
+function pd.rightButtonUp()
 	inputX = 0
 end
-function playdate.upButtonDown()
+function pd.upButtonDown()
 	inputY = -1
 	if getGameState() == GAMESTATE.newweaponmenu then weaponMenuMoveU()
 	elseif getGameState() == GAMESTATE.mainmenu then mainMenuMoveU() end
 end
-function playdate.upButtonUp()
+function pd.upButtonUp()
 	inputY = 0
 end
-function playdate.downButtonDown()
+function pd.downButtonDown()
 	inputY = 1
 	if getGameState() == GAMESTATE.newweaponmenu then weaponMenuMoveD()
 	elseif getGameState() == GAMESTATE.mainmenu then mainMenuMoveD() end
 end
-function playdate.downButtonUp()
+function pd.downButtonUp()
 	inputY = 0
 end
 
-function playdate.BButtonDown()
+
+function pd.BButtonDown()
 	if getGameState() == GAMESTATE.startscreen then
 		setGameState(GAMESTATE.mainmenu)
 	else
-		setRunSpeed(2)
+		--setRunSpeed(2)
+		--worldToggleDrawCells()
+		debugSpawnMassEnemy()
+		--debugSpawnMassAllEnemies()
 	end
+
 end
 
-function playdate.BButtonUp()
+
+function pd.BButtonUp()
 	setRunSpeed(1)
 end
 
-function playdate.AButtonDown()
+function pd.AButtonDown()
 	if getGameState() == GAMESTATE.startscreen then
 		setGameState(GAMESTATE.mainmenu)
 	elseif getGameState() == GAMESTATE.mainmenu then
 		if MainMenuNavigate() == true then
 			setGameState(GAMESTATE.maingame)
-			gameStartTime = playdate.getCurrentTimeMilliseconds()
+			gameStartTime = pd.getCurrentTimeMilliseconds()
 		end
 	elseif getGameState() == GAMESTATE.maingame then
 		openPauseMenu()
@@ -164,8 +172,8 @@ function playdate.AButtonDown()
 	end
 end
 
-function playdate.cranked(change, acceleratedChange)
-	physicalCrankAngle += change
-	crankAngle = physicalCrankAngle - 90
+-- constrains crankAngle to 0 - 360 range
+function pd.cranked()
+	crankAngle = physicalCrankAngle() - 90
 end
 

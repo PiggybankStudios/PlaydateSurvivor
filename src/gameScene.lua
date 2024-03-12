@@ -35,6 +35,10 @@ function gameScene:goToLevel(level_name)
 
 			local emptyTiles = ldtk.get_empty_tileIDs(level_name, "Solid", layer_name)
 			if (emptyTiles) then
+
+				-- bump collision
+
+				-- playdate collision
 				local wallSpriteList = gfx.sprite.addWallSprites(tilemap, emptyTiles)
 				for i = 1, #wallSpriteList do
 					wallSpriteList[i]:setGroups(GROUPS.walls)	-- set each collider to the wall group

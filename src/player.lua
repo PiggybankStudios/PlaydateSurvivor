@@ -7,22 +7,34 @@ local mathFloor <const> = math.floor
 local healthbarOffsetY <const> = 30
 local setDamageTimer <const> = 200
 
+-- World Reference
+local world, worldWidth, worldHeight
+
 -- Sprite
 --playerSheet = gfx.imagetable.new('Resources/Sheets/player')
 --animationLoop = gfx.animation.loop.new(16, playerSheet)
 local playerImage = gfx.image.new('Resources/Sprites/player')
-player = gfx.sprite:new()
+local player = gfx.sprite:new()
 player:setZIndex(ZINDEX.player)
 player:setImage(playerImage)
+player:setCenter(0.5, 0.5)
+
 
 -- Collider
-local colliderSize <const> = 24
+local colliderSize <const> = 25
+local halfCol <const> = mathFloor(colliderSize * 0.5)
+local playerRect = { x = 150, y = 150, width = colliderSize, height = colliderSize, tag = TAGS.player}
+
+-- Collider
+--[[
+
 collider = gfx.sprite:new()
 collider:setTag(TAGS.player)
 collider:setSize(colliderSize, colliderSize)
 collider:setCollideRect(0, 0, colliderSize, colliderSize)
 collider:setGroups(GROUPS.player)
-collider:setCollidesWithGroups( {GROUPS.walls, GROUPS.enemy})
+collider:setCollidesWithGroups( {GROUPS.walls, GROUPS.enemy} )
+]]
 
 -- stattrack
 local damageDealt = 0
@@ -44,8 +56,8 @@ local maxHealth = 15
 local health = maxHealth
 local playerSpeed = 50
 local playerVelocity = vec.new(0, 0)
-local playerAttackRate = 100
-local playerAttackRateMin = 25 --limit
+local playerAttackRate = 40
+local playerAttackRateMin = 10 --25 --limit
 local playerExp = 0
 local startingExpForLevel = 5
 local playerMagnet = 50
@@ -87,16 +99,22 @@ local theCurrTime
 -- +--------------------------------------------------------------+
 
 -- Add the player sprite and collider back to the drawing list after level load - also sets starting position
-function addPlayerSpritesToList()
+function addPlayerSpritesToList(gameSceneWorld, width, height)
 	player:setRotation(getCrankAngle())
-
+	player:moveTo(150, 150)
 	player:add()
-	collider:add()
-	--itemAbsorber:add()
+	--collider:add()
+
+	-- add player collider to the world
+	world = gameSceneWorld
+	worldWidth = width
+	worldHeight = height
+	world:add(playerRect, 150, 150, colliderSize, colliderSize)
+
 	health = maxHealth
 	playerHealthbar = healthbar(player.x, player.y - healthbarOffsetY, health)
 	playerExpbar = expbar(startingExpForLevel)
-	movePlayerWithCollider(150,150) -- move to starting location
+	--movePlayerWithCollider(150,150) -- move to starting location
 end
 
 
@@ -109,7 +127,39 @@ function heal(amount)
 end
 
 
+-- TO DO: delete commented damage code --
+
 -- Damage player health - called via enemies
+function damagePlayer(amount, camShakeStrength, enemyX, enemyY)
+	if Unpaused then damageTimer += theLastTime end
+	-- Invincibility
+	if damageTimer > theCurrTime then
+		return
+	elseif invincible then
+		return
+	elseif math.random(0,99) < playerDodge then
+		screenFlash()
+		return
+	end
+
+	-- Damaging
+	local amountLost = math.max(amount - playerArmor, 1)
+	damageTimer = theCurrTime + setDamageTimer
+	health -= amountLost
+	if health < 0 then
+		amountLost += health
+		health = 0
+	end
+	playerHealthbar:updateHealth(health)
+	addDamageReceived(amountLost)
+
+	-- Camera Shake
+	local direction = vec.new(enemyX - player.x, enemyY - player.y):normalized()
+	cameraShake(camShakeStrength, direction)
+	spawnParticleEffect(PARTICLE_TYPE.playerImpact, player.x, player.y, direction)
+	screenFlash()
+end
+--[[
 function player:damage(amount, camShakeStrength, enemyX, enemyY)
 	if Unpaused then damageTimer += theLastTime end
 	-- Invincibility
@@ -141,6 +191,8 @@ function player:damage(amount, camShakeStrength, enemyX, enemyY)
 	spawnParticleEffect(PARTICLE_TYPE.playerImpact, player.x, player.y, direction)
 	screenFlash()
 end
+]]
+
 
 function getPlayerSlots()
 	return playerSlots
@@ -162,7 +214,10 @@ function updateLevel()
 	end
 	if math.min(math.floor(playerLevel / 3) + 1,maxDifficulty) > difficulty then
 		difficulty = math.floor(playerLevel / 3)
-		if difficulty > maxDifficulty then difficulty = maxDifficulty end
+		if difficulty > maxDifficulty then 
+			difficulty = maxDifficulty 
+			setEnemyDifficulty(difficulty)
+		end
 	end
 end
 
@@ -206,6 +261,10 @@ end
 -- |            Player get values section            |
 -- +--------------------------------------------------------------+
 
+
+function getPlayerImageSize()
+	return player:getSize()
+end
 
 function getPlayerLevel()
 	return playerLevel
@@ -307,6 +366,7 @@ function upgradeStat(stat, bonus)
 
 	elseif stat == 11 then
 		playerReflectDamage += bonus
+		setEnemyReflectDamage(playerReflectDamage)
 		print('reflect increased by ' .. tostring(bonus))
 
 	elseif stat == 12 then
@@ -321,7 +381,8 @@ function upgradeStat(stat, bonus)
 	elseif stat == 14 then
 		playerStunChance += 5 * bonus
 		if playerStunChance > playerStunChanceMax then playerStunChance = playerStunChanceMax end
-		print('vampire increased by ' .. tostring(5 * bonus))
+		setEnemyStunChance(playerStunChance)
+		print('stun chance increased by ' .. tostring(5 * bonus))
 
 	else
 		print('error')
@@ -377,6 +438,7 @@ function clearStats()
 	shotsFired = 0
 	itemsGrabbed = 0
 	difficulty = 1
+	setEnemyDifficulty(1)
 	maxDifficulty = 15
 	spawnInc = 0
 	playerLevel = 0
@@ -391,6 +453,7 @@ function clearStats()
 	playerSlots = 1
 	playerGunDamage = 0
 	playerReflectDamage = 0
+	setEnemyReflectDamage(0)
 	playerExpBonus = 0
 	playerLuck = 0
 	playerBulletSpeed = 50
@@ -400,6 +463,7 @@ function clearStats()
 	playerVampire = 0
 	playerHealBonus = 0
 	playerStunChance = 0
+	setEnemyStunChance(0)
 	playerMun = 0
 	damageTimer = 0
 	clearGunStats()
@@ -490,19 +554,6 @@ function newWeaponGrabbed(weapon, tier)
 	openWeaponMenu(weapon, tier)
 end
 
---[[
--- MIGHT HAVE MOVED TO BULLETS_V2 FILE --
-function newWeaponChosen(weapon, slot, tier)
-	local extraTier = 0
-	if theGunSlots[slot] == weapon then
-		if theGunTier[slot] == tier then extraTier = 1 end
-	end
-	theGunSlots[slot] = weapon
-	theGunTier[slot] = tier + extraTier
-	updateMenuWeapon(slot, weapon)
-end
---------
-]]--
 
 function changeItemAbsorbRangeBy(value)
 	--itemAbsorberRange += value
@@ -525,6 +576,61 @@ end
 -- |                          Movement                            |
 -- +--------------------------------------------------------------+
 
+local localTags = TAGS
+local playerFilter = function(item, other)
+	local tag = other.tag
+	if 		tag == localTags.walls then return 'slide'
+	elseif 	tag == localTags.enemy then return 'cross'
+	elseif  tag == localTags.weapon then return 'cross'
+	end
+	-- else return nil
+end
+
+
+local function movePlayer(dt)
+	if world == nil then return end -- If the world reference hasn't been passed yet, don't do anything
+
+	-- Reset input to 0 if nothing is held
+	--if playdate.getButtonState()
+
+	local moveSpeed = playerSpeed * playerRunSpeed * dt
+	playerVelocity.x, playerVelocity.y = getInputX() * moveSpeed, getInputY() * moveSpeed
+	local goalX, goalY = playerRect.x + playerVelocity.x, playerRect.y + playerVelocity.y
+
+	local actualX, actualY, cols, length = world:move(playerRect, goalX, goalY, playerFilter)
+	local floorX, floorY = mathFloor(actualX), mathFloor(actualY)
+	playerRect.x, playerRect.y = floorX, floorY
+
+	floorX += halfCol
+	floorY += halfCol
+	player:moveTo(floorX, floorY)
+	playerHealthbar:moveTo(floorX, floorY - healthbarOffsetY)
+
+	local offX, offY = gfx.getDrawOffset()
+	--local itemsInCell = world:getCellItemsCountFromPosition(floorX, floorY)
+	--print("items in cell: " .. itemsInCell)
+
+	-- collision triggers
+	--[[
+	for i = 1, length do
+		local other = cols[i].other
+		if other.tag == localTags.walls then print("wall collision") end
+	end
+	]]
+end
+
+
+local function teleportPlayer(x, y)
+	if world == nil then return end
+
+	local floorX = mathFloor(x)
+	local floorY = mathFloor(y)
+	player:moveTo(floorX + halfCol, floorY + halfCol)
+	world:update(playerRect, floorX, floorY)
+	playerHealthbar:moveTo(floorX, floorY - healthbarOffsetY)
+end
+
+--[[
 function movePlayer(dt)
 	if collider == nil then return end	-- If the collider doesn't exist, then don't look for collisions
 
@@ -541,8 +647,8 @@ function movePlayer(dt)
 	local actualX, actualY, collisions = collider:checkCollisions(goalX, goalY)
 	movePlayerWithCollider(actualX, actualY)
 end
-
-
+]]
+--[[
 -- Moves both player sprite and collider - flooring stops jittering b/c only integers
 function movePlayerWithCollider(x, y)
 	local floorX = mathFloor(x)
@@ -551,8 +657,8 @@ function movePlayerWithCollider(x, y)
 	collider:moveTo(floorX, floorY)
 	playerHealthbar:moveTo(floorX, floorY - healthbarOffsetY)
 end
-
-
+]]
+--[[
 -- Collision response based on tags
 -- Player Collider
 function collider:collisionResponse(other)
@@ -563,7 +669,7 @@ function collider:collisionResponse(other)
 		return "slide"
 	end
 end
-
+]]
 
 function getPlayerPosition()
 	return vec.new(player.x, player.y)

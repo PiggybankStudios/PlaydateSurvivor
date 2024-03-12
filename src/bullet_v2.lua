@@ -15,22 +15,28 @@
 local gfx <const> = playdate.graphics
 local vec <const> = playdate.geometry.vector2D
 
-local mathFloor <const> = math.floor
-local mathCeil <const> = math.ceil
+local floor <const> = math.floor
+local ceil <const> = math.ceil
+local abs <const> = math.abs
+local max <const> = math.max
+local min <const> = math.min
 local random <const> = math.random
 local newVec <const> = vec.new
 local newPolar <const> = vec.newPolar
 local queryLine <const> = gfx.sprite.querySpritesAlongLine
 local queryRect <const> = gfx.sprite.querySpritesInRect
 
+-- World Reference
+local worldRef
+local cellSizeRef
+
+
+-- +--------------------------------------------------------------+
+-- |                         Bullet Data                          |
+-- +--------------------------------------------------------------+
 
 -- identical to global tags, localized for speed and readability
-local LOCAL_TAGS = {
-	walls = 1,
-	player = 2,
-	weapon = 3,
-	enemy = 4,
-}
+local LOCAL_TAGS = TAGS
 
 -- Bullet Type Variables --
 local BULLET_TYPE = {
@@ -45,6 +51,17 @@ local BULLET_TYPE = {
 	grenadePellet = 9
 }
 
+local BULLET_LIFETIMES = {
+	2000, -- peagun
+	2000, -- cannon
+	2000, -- minigun
+	2000, -- shotgun
+	2000, -- burstgun
+	1000, -- grenade
+	6000, -- ranggun
+	2000, -- wavegun
+	2000 -- grenadePellet
+}
 
 local BULLET_SPAWN_DISTANCE = {
 	25, -- peagun
@@ -73,7 +90,7 @@ local BULLET_SPEEDS = {
 }
 
 local BULLET_ATTACKRATES = {
-	2, -- peagun
+	4, -- peagun
 	5, -- cannon
 	1, -- minigun
 	3, -- shotgun
@@ -85,7 +102,7 @@ local BULLET_ATTACKRATES = {
 }
 
 local BULLET_KNOCKBACKS = {
-	0, 		-- peagun
+	0, --3, 		-- peagun
 	2, 		-- cannon
 	0, 		-- minigun
 	0.3,	-- shotgun
@@ -110,9 +127,74 @@ local BULLET_PEIRCING = {
 	1  		-- grenadePellet
 }
 
+
+-- +--------------------------------------------------------------+
+-- |                          Rendering                           |
+-- +--------------------------------------------------------------+
+
+-- There are 8 images in each bullet image table.
+local imgTable_bulletPeagun = gfx.imagetable.new('Resources/Sheets/BulletPeagun')
+local imgTable_bulletCannon = gfx.imagetable.new('Resources/Sheets/BulletCannon')
+local imgTable_bulletMinigun = gfx.imagetable.new('Resources/Sheets/BulletMinigun')
+local imgTable_bulletShotgun = gfx.imagetable.new('Resources/Sheets/BulletShotgun')
+local imgTable_bulletBurstgun = gfx.imagetable.new('Resources/Sheets/BulletBurst')
+local imgTable_bulletGrenade = gfx.imagetable.new('Resources/Sheets/BulletGrenade')
+local imgTable_bulletRanggun = gfx.imagetable.new('Resources/Sheets/BulletRanggun')
+--local imgTable_bulletWavegun = 
+local imtTable_bulletGrenadePellet = gfx.imagetable.new('Resources/Sheets/BulletGrenadePellet')
+
+local IMAGETABLE_LIST = {
+	imgTable_bulletPeagun,
+	imgTable_bulletCannon,
+	imgTable_bulletMinigun,
+	imgTable_bulletShotgun,
+	imgTable_bulletBurstgun,
+	imgTable_bulletGrenade,
+	imgTable_bulletRanggun,
+	imgTable_bulletPeagun, -- This shouldn't ever be referenced, but filling the table space for ease of mind
+	imtTable_bulletGrenadePellet
+}
+
+-- All images in the image table should be the same size, so get the width/height of the first image in the given image table.
+local IMAGE_WIDTH, IMAGE_HEIGHT = {}, {}
+for i = 1, #IMAGETABLE_LIST do
+	local image = IMAGETABLE_LIST[i]:getImage(1)
+	IMAGE_WIDTH[i], IMAGE_HEIGHT[i] = image:getSize()
+end
+
+local DRAW_TYPE = {
+	1, 		-- peagun
+	2, 		-- cannon
+	1, 		-- minigun
+	1,		-- shotgun
+	1,	 	-- burstgun
+	1, 		-- grenade
+	2,	 	-- ranggun
+	3,		-- wavegun
+	1  		-- grenadePellet
+}
+
+local DRAW_METHOD = {
+	function(image, x, y) image:draw(x, y) end,
+	function(image, x, y, size) image:drawScaled(x, y, size) end
+	-- wavegun function
+}
+
+
+local bulletsImage = gfx.image.new(400, 240) -- screen size draw
+local bulletsSprite = gfx.sprite.new(bulletsImage)	-- drawing image w/ sprite so we can draw via zIndex order
+bulletsSprite:setIgnoresDrawOffset(true)			
+bulletsSprite:setZIndex(ZINDEX.weapon)
+bulletsSprite:moveTo(200, 120)
+
+
+-- +--------------------------------------------------------------+
+-- |                         Bullet Lists                         |
+-- +--------------------------------------------------------------+
+
 -- Bullets
-local bulletLifetime <const> = 	2000
-local maxBullets <const> = 		1000 -- max that can exist in the world at one time
+--local bulletLifetime <const> = 	2000
+local maxBullets <const> = 		10000 -- max that can exist in the world at one time
 local activeBullets = 0
 
 -- Arrays
@@ -130,7 +212,16 @@ local knockback = {}
 local peircing = {}
 local tier = {}
 local mode = {}
+local misc = {}
 local timer = {}
+local bounce = {}
+local rotatedImage = {}
+
+-- GrenadePellet Arrays and Count
+local grenadeX = {}
+local grenadeY = {}
+local grenadeTier = {}
+local grenadeCount = 0
 
 -- Gun Slots
 local theShotTimes = {0, 0, 0, 0} --how long until next shot
@@ -154,7 +245,7 @@ local allowBulletCollisions = true
 
 
 -- +--------------------------------------------------------------+
--- |                           Timers                             |
+-- |                        Timers & Misc                         |
 -- +--------------------------------------------------------------+
 
 
@@ -196,6 +287,28 @@ local function getMinFPS()
 end
 
 
+local function clamp(value, min, max)
+	if value > max then
+		return max
+	elseif value < min then 
+		return min
+	else
+		return value
+	end
+end
+
+
+local function constrain(value, min, max)
+	if value > max then 
+		return value - max
+	elseif value < min then
+		return value + max
+	else
+		return value
+	end
+end
+
+
 -- +--------------------------------------------------------------+
 -- |                Init, Create, Delete, Handle                  |
 -- +--------------------------------------------------------------+
@@ -216,7 +329,15 @@ for i = 1, maxBullets do
 	peircing[i] = 0
 	tier[i] = 0
 	mode[i] = 0
+	misc[i] = 0
 	timer[i] = 0
+	bounce[i] = 0
+	rotatedImage[i] = 0
+
+	-- GrenadePellets
+	grenadeX[i] = 0
+	grenadeY[i] = 0
+	grenadeTier[i] = 0
 end
 
 
@@ -238,7 +359,7 @@ local BULLET_DAMAGE = {
 -- Create a bullet at the end of the list
 local function createBullet(type, spawnX, spawnY, newRotation, newTier, mainLoopTime)
 
-	if activeBullets >= maxBullets then do return end end -- if too many bullets exist, then don't make another bullet
+	if activeBullets >= maxBullets then return end -- if too many bullets exist, then don't make another bullet
 
 
 	activeBullets += 1
@@ -249,28 +370,39 @@ local function createBullet(type, spawnX, spawnY, newRotation, newTier, mainLoop
 	bulletType[total] = type
 	posX[total] = spawnX
 	posY[total] = spawnY
-	rotation[total] = newRotation
+	rotation[total] = floor(newRotation)
 	scale[total] = 1
 	dirX[total] = direction.x
 	dirY[total] = direction.y 
 	speed[total] = BULLET_SPEEDS[type] * getPlayerBulletSpeed()
-	lifeTime[total] = mainLoopTime + bulletLifetime
+	lifeTime[total] = mainLoopTime + BULLET_LIFETIMES[type]
 	knockback[total] = BULLET_KNOCKBACKS[type]
 	peircing[total] = BULLET_PEIRCING[type]
 	tier[total] = newTier
 	--damage[total] = BULLET_DAMAGE[type]()
 	mode[total] = 0
+	misc[total] = 0
 	timer[total] = 0
+	bounce[total] = 0
 
+
+	-- Image from bullet's imageTable, drawn at correct rotation
+	local rot = rotation[total] + 22
+	if rot > 360 then rot -= 360 end
+	local index = max(ceil(rot / 45), 1)
+	rotatedImage[total] = IMAGETABLE_LIST[type]:getImage(index)
+
+
+	-- Special cases for each bullet
 	if type == BULLET_TYPE.cannon then
 		damage[total] = 3 + getPlayerGunDamage() * (1 + newTier)
 		scale[total] = newTier
 
 	elseif type == BULLET_TYPE.minigun then
-		damage[total] = 1 + mathCeil(getPlayerGunDamage() / 2)
+		damage[total] = 1 + ceil(getPlayerGunDamage() / 2)
 
 	elseif type == BULLET_TYPE.shotgun then
-		damage[total] = 1 + mathFloor(getPlayerGunDamage() / 2) --round down
+		damage[total] = 1 + floor(getPlayerGunDamage() / 2) --round down
 
 	elseif type == BULLET_TYPE.burstgun then
 		damage[total] = 1 + getPlayerGunDamage()
@@ -280,15 +412,16 @@ local function createBullet(type, spawnX, spawnY, newRotation, newTier, mainLoop
 		lifeTime[total] = mainLoopTime + 1000
 
 	elseif type == BULLET_TYPE.ranggun then
-		damage[total] = 1 + mathFloor(getPlayerGunDamage() / 3)
+		damage[total] = 1 + floor(getPlayerGunDamage() / 3)
 		lifeTime[total] = mainLoopTime + 6000
 		scale[total] = newTier
+		bounce[total] = 4
 
 	elseif type == BULLET_TYPE.wavegun then
 		damage[total] = 4 + getPlayerGunDamage()
 
 	elseif type == BULLET_TYPE.grenadePellet then
-		damage[total] = 1 + mathFloor(getPlayerGunDamage() / 2)
+		damage[total] = 1 + floor(getPlayerGunDamage() / 2)
 
 	else -- peagun
 		damage[total] = 1 + getPlayerGunDamage()
@@ -318,29 +451,25 @@ local function deleteBullet(index, currentActiveBullets)
 	knockback[i] = knockback[total]
 	tier[i] = tier[total]
 	mode[i] = mode[total]
-	timer[i] = timer[total]
+	misc[i] = misc[total]
+	rotatedImage[i] = rotatedImage[total]
 end
 
 
 -- Grenade Pellet Only
-local function createGrenadePellets(index, gX, gY, totalBullets, mainLoopTime)
-	local grenadeX = gX
-	local grenadeY = gY
-	local grenadeTier = tier[index]
-	local amount = 4 + (4 * grenadeTier)
-	local degree = mathFloor(360/amount)
+local function createGrenadePellets(tier, gX, gY, mainLoopTime)
+	local amount = 4 + (4 * tier)
+	local degree = floor(360/amount)
 	local newRotation = 0
 	for i = 1, amount do
 		newRotation += degree
-		create(BULLET_TYPE.grenadePellet, grenadeX, grenadeY, newRotation, grenadeTier, mainLoopTime)
+		create(BULLET_TYPE.grenadePellet, gX, gY, newRotation, tier, mainLoopTime)
 	end
-
-	return totalBullets + amount
 end
 
 
 -- Determine the bullet that needs to be created
-local function determineBullet(iGunSlot, mainLoopTime, elapsedPauseTime)
+local function determineBullet(iGunSlot, mainLoopTime, elapsedPauseTime, playerPos)
 
 	-- check the bullet that needs to be created - if bullet is 0, then skip creation
 	local currentBullet = theGunSlots[iGunSlot]
@@ -355,7 +484,7 @@ local function determineBullet(iGunSlot, mainLoopTime, elapsedPauseTime)
 	end 	
 
 	-- Spawn the bullet
-	local playerPos = getPlayerPosition()
+	--local playerPos = getPlayerPosition()
 	local playerRot = getCrankAngle()
 	local attackRate = getPlayerAttackRate()
 
@@ -390,7 +519,56 @@ local function determineBullet(iGunSlot, mainLoopTime, elapsedPauseTime)
 	elseif currentBullet == BULLET_TYPE.shotgun then
 		create(currentBullet, spawnX, spawnY, slotAngle - 10, gunTier, spawnTime)
 		create(currentBullet, spawnX, spawnY, slotAngle + 10, gunTier, spawnTime)
-
+		--[[
+		create(currentBullet, spawnX, spawnY, slotAngle - 2, gunTier, spawnTime)
+		create(currentBullet, spawnX, spawnY, slotAngle + 2, gunTier, spawnTime)
+		create(currentBullet, spawnX, spawnY, slotAngle - 4, gunTier, spawnTime)
+		create(currentBullet, spawnX, spawnY, slotAngle + 4, gunTier, spawnTime)
+		create(currentBullet, spawnX, spawnY, slotAngle - 6, gunTier, spawnTime)
+		create(currentBullet, spawnX, spawnY, slotAngle + 6, gunTier, spawnTime)
+		create(currentBullet, spawnX, spawnY, slotAngle - 8, gunTier, spawnTime)
+		create(currentBullet, spawnX, spawnY, slotAngle + 8, gunTier, spawnTime)
+		create(currentBullet, spawnX, spawnY, slotAngle - 12, gunTier, spawnTime)
+		create(currentBullet, spawnX, spawnY, slotAngle + 12, gunTier, spawnTime)
+		create(currentBullet, spawnX, spawnY, slotAngle - 14, gunTier, spawnTime)
+		create(currentBullet, spawnX, spawnY, slotAngle + 14, gunTier, spawnTime)
+		create(currentBullet, spawnX, spawnY, slotAngle - 16, gunTier, spawnTime)
+		create(currentBullet, spawnX, spawnY, slotAngle + 16, gunTier, spawnTime)
+		create(currentBullet, spawnX, spawnY, slotAngle - 18, gunTier, spawnTime)
+		create(currentBullet, spawnX, spawnY, slotAngle + 18, gunTier, spawnTime)
+		create(currentBullet, spawnX, spawnY, slotAngle - 20, gunTier, spawnTime)
+		create(currentBullet, spawnX, spawnY, slotAngle + 20, gunTier, spawnTime)
+		create(currentBullet, spawnX, spawnY, slotAngle - 22, gunTier, spawnTime)
+		create(currentBullet, spawnX, spawnY, slotAngle + 22, gunTier, spawnTime)
+		create(currentBullet, spawnX, spawnY, slotAngle - 24, gunTier, spawnTime)
+		create(currentBullet, spawnX, spawnY, slotAngle + 24, gunTier, spawnTime)
+		create(currentBullet, spawnX, spawnY, slotAngle - 26, gunTier, spawnTime)
+		create(currentBullet, spawnX, spawnY, slotAngle + 26, gunTier, spawnTime)
+		create(currentBullet, spawnX, spawnY, slotAngle - 28, gunTier, spawnTime)
+		create(currentBullet, spawnX, spawnY, slotAngle + 28, gunTier, spawnTime)
+		create(currentBullet, spawnX, spawnY, slotAngle - 30, gunTier, spawnTime)
+		create(currentBullet, spawnX, spawnY, slotAngle + 30, gunTier, spawnTime)
+		create(currentBullet, spawnX, spawnY, slotAngle - 32, gunTier, spawnTime)
+		create(currentBullet, spawnX, spawnY, slotAngle + 32, gunTier, spawnTime)
+		create(currentBullet, spawnX, spawnY, slotAngle - 34, gunTier, spawnTime)
+		create(currentBullet, spawnX, spawnY, slotAngle + 34, gunTier, spawnTime)
+		create(currentBullet, spawnX, spawnY, slotAngle - 36, gunTier, spawnTime)
+		create(currentBullet, spawnX, spawnY, slotAngle + 36, gunTier, spawnTime)
+		create(currentBullet, spawnX, spawnY, slotAngle - 38, gunTier, spawnTime)
+		create(currentBullet, spawnX, spawnY, slotAngle + 38, gunTier, spawnTime)
+		create(currentBullet, spawnX, spawnY, slotAngle - 40, gunTier, spawnTime)
+		create(currentBullet, spawnX, spawnY, slotAngle + 40, gunTier, spawnTime)
+		create(currentBullet, spawnX, spawnY, slotAngle - 42, gunTier, spawnTime)
+		create(currentBullet, spawnX, spawnY, slotAngle + 42, gunTier, spawnTime)
+		create(currentBullet, spawnX, spawnY, slotAngle - 44, gunTier, spawnTime)
+		create(currentBullet, spawnX, spawnY, slotAngle + 44, gunTier, spawnTime)
+		create(currentBullet, spawnX, spawnY, slotAngle - 46, gunTier, spawnTime)
+		create(currentBullet, spawnX, spawnY, slotAngle + 46, gunTier, spawnTime)
+		create(currentBullet, spawnX, spawnY, slotAngle - 48, gunTier, spawnTime)
+		create(currentBullet, spawnX, spawnY, slotAngle + 48, gunTier, spawnTime)
+		create(currentBullet, spawnX, spawnY, slotAngle - 50, gunTier, spawnTime)
+		create(currentBullet, spawnX, spawnY, slotAngle + 50, gunTier, spawnTime)
+		]]
 		if theGunTier[iGunSlot] > 1 then
 			create(currentBullet, spawnX, spawnY, slotAngle, gunTier, spawnTime)
 		end
@@ -447,47 +625,138 @@ end
 
 
 -- Create bullets for each gun slot
-local function handleCreatingBullets(playerGunStats, mainLoopTime, elapsedPauseTime)
+local function handleCreatingBullets(playerGunStats, mainLoopTime, elapsedPauseTime, playerPos)
 
 	local totalGunSlots = #theGunSlots
 	for iGunSlot = 1, totalGunSlots do
-		determineBullet(iGunSlot, playerGunStats, mainLoopTime, elapsedPauseTime)
+		determineBullet(iGunSlot, playerGunStats, mainLoopTime, elapsedPauseTime, playerPos)
 	end
 
 end
 
 
 -- +--------------------------------------------------------------+
--- |                           Movement                           |
+-- |                           Globals                            |
 -- +--------------------------------------------------------------+
 
 
-local function calculateMoveChanges(index)
+function clearBullets()
+	activeBullets = 0
+end
+
+
+function clearGunStats()
+	theShotTimes = {0, 0, 0, 0}
+	theGunSlots = {BULLET_TYPE.peagun, 0, 0, 0}
+	theGunLogic = {0, 0, 0, 0}
+	theGunTier = {1, 0, 0, 0}
+end
+
+
+function toggleBulletCollisions()
+	allowBulletCollisions = not allowBulletCollisions
+	maxUpdateTimer = 0
+	print(" ---- Toggled bullet collision to: " .. tostring(allowBulletCollisions) .. " ---- reset 'Update Timer' ")
+end
+
+
+function getEquippedGun(index)
+	return theGunSlots[index]
+end
+
+
+function getTierForGun(index)
+	return theGunTier[index]
+end
+
+
+function newWeaponChosen(weapon, slot, tier)
+	theGunSlots[slot] = weapon
+	theGunTier[slot] = tier
+	updateMenuWeapon(slot, weapon)
+end
+
+
+-- Equip the next gun in the bullet type list. For testing.
+function equipNextGun()
+	local gun = theGunSlots[1]
+	gun +=1
+	if gun >= 7 then gun = 1 end
+
+	theGunSlots[1] = gun
+end
+
+
+-- To be called after level creation, b/c level start clears the sprite list.
+function addBulletSpriteToList(gameSceneWorld)
+	worldRef = gameSceneWorld
+	cellSizeRef = worldRef.cellSize
+	bulletsSprite:add()
+end
+
+
+-- +--------------------------------------------------------------+
+-- |                          Movement                            |
+-- +--------------------------------------------------------------+
+
+-- Constants for speed
+local lockFocus <const> = gfx.lockFocus
+local unlockFocus <const> = gfx.unlockFocus
+local setColor <const> = gfx.setColor
+local colorBlack <const> = gfx.kColorBlack
+local colorClear <const> = gfx.kColorClear
+local drawOffset <const> = gfx.getDrawOffset
+local delete <const> = deleteBullet
+local hitEnemy <const> = bulletEnemyCollision
+local enemyPos <const> = getEnemyPosition
+
+local BOUNCE_TIMER <const> = 200
+
+
+local function calculateMoveChanges(i, type, playerPos, localCurrentTime)
 	-- Ranggun --
-	if bulletType[index] == BULLET_TYPE.ranggun then
-		local currentMode = mode[index]
+	if type == BULLET_TYPE.ranggun then 
+		local currentMode = mode[i]
+		local life = lifeTime[i]
 
-		-- Move in given direction
-		if currentMode == 0 then 
-			if (lifeTime[index] - 5000) < theCurrTime then mode[index] = 1 end
-
-		-- Rotate over time
-		elseif currentMode == 1 then
-			rotation[index] -= 15
-			local newDirection = newPolar(1, rotation[index])
-			dirX[index] = newDirection.x
-			dirY[index] = newDirection.y
-			if (lifeTime[index] - 3000) < theCurrTime then mode[index] = 2 end
-
-		-- Return to player
-		elseif currentMode == 2 then
-			local vecToPlayer = vec.new(playerPos.x - posX[index], playerPos.y - posY[index])
-			local newDirection = vecToPlayer:normalized()
-			dirX[index] = newDirection.x 
-			dirY[index] = newDirection.y		
-			local playerDistance = vecToPlayer:magnitudeSquared()	-- destroy self when close to player			
-			if playerDistance < 300 then lifeTime[index] = 0 end
+		-- Spin rang image
+		misc[i] -= 40
+		local rot = misc[i]
+		if rot < 0 then 
+			rot += 360 
+			misc[i] = rot
 		end
+		local index = max(ceil(rot / 45), 1)
+		rotatedImage[i] = IMAGETABLE_LIST[type]:getImage(index)
+
+		-- Move rang in a circle
+		if currentMode == 1 then 
+			rotation[i] -= 15
+			local newDirection = newPolar(1, rotation[i])
+			dirX[i], dirY[i] = newDirection.x, newDirection.y
+			if (life - 3000) < localCurrentTime then mode[i] = 2 end
+			return false
+
+		-- Return rang to player and destroy rang
+		else if currentMode == 2 then 
+			local vecToPlayer = newVec(playerPos.x - posX[i], playerPos.y - posY[i])
+			local playerDistance = vecToPlayer:magnitudeSquared()
+			if playerDistance < 300 then
+				return true -- DESTROYED
+			end
+			local newDirection = vecToPlayer:normalized()
+			dirX[i], dirY[i] = newDirection.x, newDirection.y
+			return false
+
+		-- Move rang in original direction
+		else 
+			if (life - 5000) < localCurrentTime then mode[i] = 1
+			return false
+		end
+	end
+
+	return false
+end
 
 	--[[
 	-- Wavegun --
@@ -546,322 +815,149 @@ function bullet:collisionResponse(other)
 	
 end
 
+]]--
 
 
 
-local function handleCollision(index, startX, startY, endX, endY)
-	local tag
-	local enemy
-	local currentBullet = bulletType[index]
-	local collisionSprites = queryLine(startX, startY, endX, endY) -- basically ray casting - doesn't take bullet size into consideration
-	for k = 1, #collisionSprites do
-		enemy = collisionSprites[k]
-		tag = enemy:getTag()
-		if tag == TAGS.enemy then
-			 
-			if peircing[index] > 0 then peircing[index] = math.max(peircing[index] - 1, 0)	
-			elseif peircing[index] == 0 then lifeTime[index] = 0			
+local function getCollisionCheckFromCells(world, x1, y1, x2, y2) --, offsetX, offsetY)
+
+	local cellSize = cellSizeRef
+	local xMin, xMax = floor(x1 / cellSize) + 1, floor(x2 / cellSize) + 1
+	local yMin, yMax = floor(y1 / cellSize) + 1, floor(y2 / cellSize) + 1
+	local totalItems = 0
+
+	-- DEBUGGING
+	--print("xMin: " .. xMin .. ", yMin: " .. yMin .. "  -  xMax: " .. xMax .. ", yMax: " .. yMax)
+	--local width, height = x2 - x1, y2 - y1	
+	--gfx.drawRect(x1 + offsetX, y1 + offsetY, width, height)
+
+	-- If starting position is outside cell bounds, ignore collision.
+	if xMin < 1 or yMin < 1 then 
+		return -1
+	end
+
+	-- Loop through all the cells of this 'rect' of movement and count the first non-player item
+	for i = yMin, yMax do
+		local row = world.rows[i]
+		if row then
+			for j = xMin, xMax do
+				local cell = row[j]
+				if cell then
+
+					-- If this is NOT the player, then allow collisions
+					for item,_ in pairs(cell.items) do
+						if item.tag ~= LOCAL_TAGS.player then 
+							return 1 
+						end
+			        end
+				end
 			end
-
-			enemy:damage(damage[index])
-			enemy:applyKnockback(knockback[index])
-			enemy:potentialStun()
-			do return end
-		elseif tag == TAGS.walls then
-			lifeTime[index] = 0
-			do return end
 		end
 	end
-end
-]]--
 
---[[
-local function moveBullet(i, dt, offX, offY)
-	local bulletSpeed = speed[i]
-
-	local moveX = (dirX[i] * bulletSpeed * dt)
-	local moveY = (dirY[i] * bulletSpeed * dt)
-
-	--local startX = posX[i] - moveX
-	--local startY = posY[i] - moveY
-	--local endX = posX[i] + moveX
-	--local endY = posY[i] + moveY
-
-	--if allowBulletCollisions == true then 
-	--	handleCollision(i, startX, startY, endX, endY)
-	--end
-	
-	posX[i] += moveX
-	posY[i] += moveY
-end
-]]--
-
-
--- Constants for speed
-local colliderBlockWidth <const> = 50
-local colliderBlockHeight <const> = 48
-local blocksHor <const> = 8
-local blocksVer <const> = 5
-local blocksTotal <const> = 40
-
-local colliderBlocks = { 
-	0, 0, 0, 0, 0, 0, 0, 0,	-- 8 x 5
-	0, 0, 0, 0, 0, 0, 0, 0,	-- 40 total
-	0, 0, 0, 0, 0, 0, 0, 0,
-	0, 0, 0, 0, 0, 0, 0, 0,
-	0, 0, 0, 0, 0, 0, 0, 0,
-}
-
-local function queryColliderBlocks(offX, offY)	
-	for i = 1, blocksVer do
-		local blockY = (i - 1) * 8
-
-		for j = 1, blocksHor do
-			local x = (j - 1) * colliderBlockWidth
-			local y = (i - 1) * colliderBlockHeight
-			local sprites = queryRect(x-offX, y-offY, colliderBlockWidth, colliderBlockHeight)
-			local spriteCount = #sprites
-
-			-- Do not count the player collider
-			for k = 1, spriteCount do
-				if sprites[k]:getTag() == TAGS.player then spriteCount -= 1 end
-				break
-			end
-
-			colliderBlocks[j+blockY] = spriteCount
-
-			-- debug drawing
-			--gfx.setColor(gfx.kColorWhite)
-			--gfx.fillRect(x, y, colliderBlockWidth, colliderBlockHeight)
-			--gfx.setColor(gfx.kColorBlack)
-			--gfx.drawRect(x, y, colliderBlockWidth, colliderBlockHeight)			
-			--gfx.drawText(colliderBlocks[j+blockY], x + (colliderBlockWidth/2.5), y + (colliderBlockHeight/3))
-		end
-	end
-end
-
---[[
-local function printColliderBlocks()
-	for index = 0, blocksVer-1 do
-		local i = (index * 8) + 1
-		print(	
-			colliderBlocks[i] .. ", " .. 
-			colliderBlocks[i+1] .. ", " ..
-			colliderBlocks[i+2] .. ", " ..
-			colliderBlocks[i+3] .. ", " ..
-			colliderBlocks[i+4] .. ", " ..
-			colliderBlocks[i+5] .. ", " ..
-			colliderBlocks[i+6] .. ", " ..
-			colliderBlocks[i+7]
-			)
-	end
-end
-]]--
-
-
--- +--------------------------------------------------------------+
--- |                           Management                         |
--- +--------------------------------------------------------------+
-
-local resetDone = false
-function clearBullets()
-	--for i = 1, maxBullets do
-	--	lifeTime[i] = 0
-	--end
-
-	activeBullets = 0
-
-	resetDone = true
+	return 0
 end
 
 
-function clearGunStats()
-	theShotTimes = {0, 0, 0, 0}
-	theGunSlots = {BULLET_TYPE.peagun, 0, 0, 0}
-	theGunLogic = {0, 0, 0, 0}
-	theGunTier = {1, 0, 0, 0}
-end
-
-
--- +--------------------------------------------------------------+
--- |                           Globals                            |
--- +--------------------------------------------------------------+
-
-
-function toggleBulletCollisions()
-	allowBulletCollisions = not allowBulletCollisions
-	maxUpdateTimer = 0
-	print(" ---- Toggled bullet collision to: " .. tostring(allowBulletCollisions) .. " ---- reset 'Update Timer' ")
-end
-
-
-function getEquippedGun(index)
-	return theGunSlots[index]
-end
-
-
-function getTierForGun(index)
-	return theGunTier[index]
-end
-
-
-function newWeaponChosen(weapon, slot, tier)
-	theGunSlots[slot] = weapon
-	theGunTier[slot] = tier
-	updateMenuWeapon(slot, weapon)
-end
-
-
--- Equip the next gun in the bullet type list. For testing.
-function equipNextGun()
-	local gun = theGunSlots[1]
-	gun +=1
-	if gun >= 9 then gun = 1 end
-
-	theGunSlots[1] = gun
-end
-
-
--- +--------------------------------------------------------------+
--- |                            Render                            |
--- +--------------------------------------------------------------+
-
-local img_bulletPeagun = gfx.image.new('Resources/Sprites/bullet/BulletPeagun')
-local img_bulletCannon = gfx.image.new('Resources/Sprites/bullet/BulletCannon')
-local img_bulletMinigun = gfx.image.new('Resources/Sprites/bullet/BulletMinigun')
-local img_bulletShotgun = gfx.image.new('Resources/Sprites/bullet/BulletShotgun')
-local img_bulletBurstGun = gfx.image.new('Resources/Sprites/bullet/BulletBurstgun')
-local img_bulletGrenade = gfx.image.new('Resources/Sprites/bullet/BulletGrenade')
-local img_bulletRanggun = gfx.image.new('Resources/Sprites/bullet/BulletRanggun')
-local img_bulletWavegun = gfx.image.new('Resources/Sprites/bullet/BulletWavegun')
-local img_bulletGrenadePellet = gfx.image.new('Resources/Sprites/bullet/BulletGrenadePellet')
-
-local IMAGE_LIST = {
-	img_bulletPeagun,
-	img_bulletCannon,
-	img_bulletMinigun,
-	img_bulletShotgun,
-	img_bulletBurstGun,
-	img_bulletGrenade,
-	img_bulletRanggun,
-	img_bulletWavegun,
-	img_bulletGrenadePellet	
-}
-
-local bulletsImage = gfx.image.new(400, 240) -- screen size draw
-local bulletsSprite = gfx.sprite.new(bulletsImage)	-- drawing image w/ sprite so we can draw via zIndex order
-bulletsSprite:setIgnoresDrawOffset(true)			
-bulletsSprite:setZIndex(ZINDEX.weapon)
-bulletsSprite:moveTo(200, 120)
-
-
--- GLOBAL -- to be called after level creation, b/c level start clears the sprite list
-function addBulletSpriteToList()
-	bulletsSprite:add()
-end
-
-
--- Constants for speed
-local lockFocus <const> = gfx.lockFocus
-local unlockFocus <const> = gfx.unlockFocus
-local setColor <const> = gfx.setColor
-local colorBlack <const> = gfx.kColorBlack
-local colorClear <const> = gfx.kColorClear
-local drawOffset <const> = gfx.getDrawOffset
-local delete <const> = deleteBullet
-
--- just used within 'collideMove'
-local function localClamp(value, min, max)
-	if value > max then
-		return max
-	elseif value < min then 
-		return min
-	else
-		return value
-	end
-end
-	
 -- enclosed in local function to allow return out at any point while staying inside while loop
-local function collideMove(dt, index, image, offsetX, offsetY)
+local function collideMove(dt, i, type, offsetX, offsetY, playerPos, localCurrentTime)
 
-	local i = index
-	
-	local colStartX = posX[i]
-	local colStartY = posY[i]
-	local startOffsetX = colStartX + offsetX
-	local startOffsetY = colStartY + offsetY	
+	local worldStartX = posX[i]
+	local worldStartY = posY[i]
+	local startOffsetX = worldStartX + offsetX
+	local startOffsetY = worldStartY + offsetY	
 
-	-- out of bounds - checking before movement/collision bc bullet could be deleted from camera movement
+	-- out of camera bounds - checking before movement/collision bc bullet could be deleted from camera movement
 	if startOffsetX < -50 or 450 < startOffsetX or startOffsetY < -50 or 290 < startOffsetY then 
 		lifeTime[i] = 0
-		return colStartX, colStartY
+		return worldStartX, worldStartY
 	end
 
-	--calculateMoveChanges(i)	
+	-- do special direction calcs for certain bullets - if TRUE then this destroyed the bullet
+	if calculateMoveChanges(i, type, playerPos, localCurrentTime) == true then 
+		lifeTime[i] = 0
+		return worldStartX, worldStartY
+	end
+
+	-- movement calcs for every bullet
 	local bulletSpeed = speed[i]
-	local moveX = (dirX[i] * bulletSpeed * dt)
-	local moveY = (dirY[i] * bulletSpeed * dt)
+	posX[i] += (dirX[i] * bulletSpeed * dt)
+	posY[i] += (dirY[i] * bulletSpeed * dt)
+	local endX, endY = posX[i], posY[i]
 	local size = scale[i]
-	local width, height = image:getSize()			
+	local width, height = IMAGE_WIDTH[type], IMAGE_HEIGHT[type]		
 	local halfWidth = width * size * 0.5
-	local halfheight = height * size * 0.5
+	local halfHeight = height * size * 0.5
 
-	-- collision: pre-movement	
-	local blockX = mathFloor(startOffsetX / colliderBlockWidth) + 1
-	local blockY = mathFloor(startOffsetY / colliderBlockHeight) * 8
-	local block = localClamp(blockX + blockY, 1, 40)	
-	if colliderBlocks[block] > 0 then
+	
+	-- If this world cell has NO colliders in it, then only move bullet
+	local x1, x2 = worldStartX - halfWidth, endX + halfWidth
+	local y1, y2 = worldStartY - halfHeight, endY + halfHeight
+	local cellCount = getCollisionCheckFromCells(worldRef, x1, y1, x2, y2) --, offsetX, offsetY)
 
-		-- check current rect position
-		local collider = queryRect(colStartX - halfWidth, colStartY - halfheight, width, height)
-		local sprite = collider[1]
-		if sprite ~= nil then 
-			if sprite:getTag() == LOCAL_TAGS.enemy then
-				sprite:damage(damage[i])
-				sprite:applyKnockback(knockback[i])
-				sprite:potentialStun()
-			end 
+	-- out of bounds - delete
+	if cellCount < 0 then 
+		lifeTime[i] = 0
+		return endX, endY
+	end
 
-			lifeTime[i] = 0
-			return colStartX, colStartY
-		end
+	-- no collision
+	if cellCount < 1 then 
+		return endX, endY, halfWidth, halfHeight, size
+	end
+	
+	-- collision checking:
+	local queryX, queryY = min(x1, x2), min(y1, y2)
+	local queryWidth, queryHeight = abs(x2 - x1), abs(y2 - y1)
+	local rect = worldRef:queryRectFast(queryX, queryY, queryWidth, queryHeight)
+	if rect then 		
+		if rect.tag == LOCAL_TAGS.enemy then
 
-		-- raycast forward to find intersections
-		collider = queryLine(colStartX, colStartY, colStartX + moveX, colStartY + moveY)
-		local sprite = collider[1]
-		if sprite ~= nil then 
-			if sprite:getTag() == LOCAL_TAGS.enemy then
-				sprite:damage(damage[i])
-				sprite:applyKnockback(knockback[i])
-				sprite:potentialStun()
-			end 
+			-- don't allow damage if timer exists
+			--if timer[i] > localCurrentTime then 
+			--	return endX, endY, halfWidth, halfHeight, size
+			--end
 
-			lifeTime[i] = 0
-			return colStartX, colStartY
-		end
+			-- damage enemy
+			local enemyIndex = rect.index
+			hitEnemy(enemyIndex, damage[i], knockback[i], playerPos, localCurrentTime)
 
-	end		
+			--[[
+			-- if allowed to bounce off an enemy, use up a bounce
+			if bounce[i] > 0 then 
+				bounce[i] -= 1
+				timer[i] = localCurrentTime + BOUNCE_TIMER
+				lifeTime[i] = localCurrentTime + BULLET_LIFETIMES[type]
+				mode[i] = 0
+				local enemyX, enemyY = enemyPos(enemyIndex)
+				local newDirection = newVec(worldStartX - enemyX, worldStartY - enemyY):normalized()
+				dirX[i], dirY[i] = newDirection.x, newDirection.y
+				posX[i] = enemyX + (dirX[i] * width * 2)
+				posY[i] = enemyY + (dirY[i] * height * 2)
+
+				return endX, endY, halfWidth, halfHeight, size
+			end
+			]]
+		end 
+
+		lifeTime[i] = 0
+		return endX, endY, halfWidth, halfHeight, size
+	end
+	
 
 	-- move
-	posX[i] += moveX
-	posY[i] += moveY
-	return (posX[i] + offsetX), (posY[i] + offsetY), halfWidth, halfheight, size
+	return endX, endY, halfWidth, halfHeight, size
 end
 
 
 -- Move, Collide, Draw and Delete all bullets
-local function updateBulletLists(dt, mainLoopTime, elapsedPauseTime)
+local function updateBulletLists(dt, mainLoopTime, elapsedPauseTime, playerPos)
 	local localCurrentTime = mainLoopTime
-	local offsetX
-	local offsetY 
-	offsetX, offsetY = drawOffset()
+	local offsetX, offsetY = drawOffset()
 
 
 	bulletsImage:clear(colorClear)	
 	lockFocus(bulletsImage)
-
-		-- Query collider blocks for collision handling
-		queryColliderBlocks(offsetX, offsetY)
 
 		-- set details
 		setColor(colorBlack)
@@ -876,26 +972,33 @@ local function updateBulletLists(dt, mainLoopTime, elapsedPauseTime)
 
 			-- move and collide
 			local type = bulletType[i]
-			local image = IMAGE_LIST[type]
-			local x, y, halfWidth, halfheight, size = collideMove(dt, i, image, offsetX, offsetY)
+			local x, y, halfWidth, halfHeight, size = collideMove(dt, i, type, offsetX, offsetY, playerPos, localCurrentTime)
+			x, y = x + offsetX, y + offsetY
 
 			-- delete
-			if localCurrentTime > lifeTime[i] then
+			if localCurrentTime > lifeTime[i] then			
+				-- spawn grenade pellets
 				if type == BULLET_TYPE.grenade then
 					if halfWidth ~= nil then
 						x -= offsetX
 						y -= offsetY
 					end
-					currentActiveBullets = createGrenadePellets(i, x, y, currentActiveBullets, mainLoopTime) 
+					grenadeCount += 1
+					grenadeX[grenadeCount] = x
+					grenadeY[grenadeCount] = y
+					grenadeTier[grenadeCount] = tier[i]
 				end
+
 				delete(i, currentActiveBullets)
 				currentActiveBullets -= 1
 				i -= 1	
+
 			
 			-- draw, if not deleted
 			else 
-				image:drawScaled(x - halfWidth, y - halfheight, size)
-
+				x -= halfWidth
+				y -= halfHeight
+				DRAW_METHOD[ DRAW_TYPE[type] ](rotatedImage[i], x, y, size)
 			end
 
 			-- increment
@@ -904,6 +1007,13 @@ local function updateBulletLists(dt, mainLoopTime, elapsedPauseTime)
 
 	unlockFocus()
 	activeBullets = currentActiveBullets
+
+	-- Create new grenade pellets
+	if grenadeCount < 1 then return end
+	for i = 1, grenadeCount do
+		createGrenadePellets(grenadeTier[i], grenadeX[i], grenadeY[i], mainLoopTime)
+	end
+	grenadeCount = 0
 end
 
 
@@ -922,15 +1032,15 @@ debugSprite:setZIndex(ZINDEX.uidetails)
 
 function updateBullets(dt, mainTimePassed, mainLoopTime, elapsedPauseTime)
 
-
+	local playerPosRef = getPlayerPosition()
 
 	-- Bullet Handling
 	playdate.resetElapsedTime()
-		handleCreatingBullets(mainLoopTime, elapsedPauseTime)
+		handleCreatingBullets(mainLoopTime, elapsedPauseTime, playerPosRef)
 	getCreateTimer()
 	
 	playdate.resetElapsedTime()	
-		updateBulletLists(dt, mainLoopTime, elapsedPauseTime)
+		updateBulletLists(dt, mainLoopTime, elapsedPauseTime, playerPosRef)
 	getUpdateTimer()
 
 	--[[
@@ -950,5 +1060,5 @@ function updateBullets(dt, mainTimePassed, mainLoopTime, elapsedPauseTime)
 	debugSprite:setImage(debugImage)
 	debugSprite:add()
 	-----
-	]]--
+	]]
 end
