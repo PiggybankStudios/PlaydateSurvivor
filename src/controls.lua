@@ -122,9 +122,9 @@ function pd.BButtonDown()
 		setGameState(GAMESTATE.startscreen)
 		clearStats()
 	else
-		--setRunSpeed(2)
+		setRunSpeed(2)
 		--worldToggleDrawCells()
-		debugSpawnMassEnemy()
+		--debugSpawnMassEnemy()
 		--debugSpawnMassAllEnemies()
 	end
 

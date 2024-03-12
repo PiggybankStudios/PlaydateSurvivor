@@ -218,7 +218,7 @@ local ENEMY_CAMERA_SHAKE = {
 
 
 -- Maxes
-local maxEnemies <const> = 300
+local maxEnemies <const> = 200
 local activeEnemies = 0
 
 

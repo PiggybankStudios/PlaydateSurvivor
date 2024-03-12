@@ -26,7 +26,7 @@ local PARTICLE_LIFETIMES = {
 local minParticleScale <const> = 0.1
 
 -- Particles
-local maxParticles <const> = 500 -- max that can exist in the world at one time
+local maxParticles <const> = 300 -- max that can exist in the world at one time
 local activeParticles = 0
 
 -- Arrays
