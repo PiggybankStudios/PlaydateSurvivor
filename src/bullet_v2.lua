@@ -194,7 +194,7 @@ bulletsSprite:moveTo(200, 120)
 
 -- Bullets
 --local bulletLifetime <const> = 	2000
-local maxBullets <const> = 		500 -- max that can exist in the world at one time
+local maxBullets <const> = 		50 -- max that can exist in the world at one time
 local activeBullets = 0
 
 -- Arrays

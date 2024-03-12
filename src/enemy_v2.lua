@@ -218,7 +218,7 @@ local ENEMY_CAMERA_SHAKE = {
 
 
 -- Maxes
-local maxEnemies <const> = 200
+local maxEnemies <const> = 50
 local activeEnemies = 0
 
 
@@ -1025,8 +1025,8 @@ function debugSpawnMassAllEnemies()
 	for i = 1, maxEnemies do
 		debugEnemyType += 1
 		if debugEnemyType > typeMax then debugEnemyType = 1 end
-		x = math.random(200, 800)
-		y = math.random(200, 800)
+		x = random(200, 800)
+		y = random(200, 800)
 		createEnemy(debugEnemyType, x, y)
 	end
 end
@@ -1035,8 +1035,8 @@ end
 function debugSpawnMassEnemy()
 	local x, y
 	for i = 1, maxEnemies do 
-		x = math.random(200, 800)
-		y = math.random(200, 800)
+		x = random(200, 800)
+		y = random(200, 800)
 		createEnemy(2, x, y)
 	end
 end
