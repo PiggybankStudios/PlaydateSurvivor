@@ -27,7 +27,26 @@ ZINDEX = {
 	enemy = 140,
 	item = 135,
 	particle = 130,
-	default = 100
+	default = 100,
+	map = 50
+}
+
+
+ITEM_TYPE = {
+	health = 	1,
+	weapon = 	2, 
+	shield = 	3,  
+	absorbAll = 4, 
+	exp1 = 		5, 
+	exp2 = 		6,  
+	exp3 = 		7,  
+	exp6 = 		8,  
+	exp9 = 		9,
+	exp16 = 	10,
+	luck = 		11,
+	mun2 = 		12 ,
+	mun10 = 	13 ,
+	mun50 = 	14 
 }
 
 

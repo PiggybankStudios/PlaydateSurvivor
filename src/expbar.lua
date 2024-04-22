@@ -1,3 +1,4 @@
+--[[
 local gfx <const> = playdate.graphics
 
 local screenWidth <const> = playdate.display.getWidth()
@@ -72,7 +73,6 @@ function expbar:gainExp(amount)
 	else
 		self:updateExpbar(self.exp)
 	end
-	updateExp(self.exp)
 	addExpTotal(amount)
 end
 
@@ -108,3 +108,4 @@ function incLevelUpList(amount)
 	levelUpList += amount --updateLevel()  newWeaponGrabbed()
 end
 
+]]

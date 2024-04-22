@@ -208,7 +208,8 @@ local function grid_toWorld(cellSize, cx, cy)
 end
 
 local function grid_toCell(cellSize, x, y)
-  return floor(x / cellSize) + 1, floor(y / cellSize) + 1
+  --return floor(x / cellSize) + 1, floor(y / cellSize) + 1
+  return x // cellSize + 1, y // cellSize + 1 -- this is slightly faster than the above line
 end
 
 -- grid_traverse* functions are based on "A Fast Voxel Traversal Algorithm for Ray Tracing",
@@ -776,34 +777,49 @@ bump.responses = {
 -- |                           CUSTOM                             |
 -- +--------------------------------------------------------------+
 
--- identical to global tags, localized for speed and readability
-local LOCAL_TAGS = {
-  walls = 1,
-  player = 2,
-  weapon = 3,
-  enemy = 4,
-}
 
-function World:queryRectFast(x,y,w,h)
+function addToWorld(self, item, x,y,w,h)
+  local rect = self.rects[item]
+  if rect then
+    error('Item ' .. tostring(item) .. ' added to the world twice.')
+  end
+  assertIsRect(x,y,w,h)
+
+  self.rects[item] = {x=x,y=y,w=w,h=h}
+
+  local cl,ct,cw,ch = grid_toCellRect(self.cellSize, x,y,w,h)
+  for cy = ct, ct+ch-1 do
+    for cx = cl, cl+cw-1 do
+      addItemToCell(self, item, cx, cy)
+    end
+  end
+
+  return item
+end
+
+
+-- identical to global tags, localized for speed and readability
+local PLAYER_TAG <const> = TAGS.player
+local NEXT <const> = next
+
+-- Modified to return the FIRST collider found in a given rect
+function worldQueryRectFast(self, x,y,w,h)
 
   local cl,ct,cw,ch = grid_toCellRect(self.cellSize, x,y,w,h)
   
   for cy=ct,ct+ch-1 do
-    local row = self.rows[cy]
-    if row then
-      for cx=cl,cl+cw-1 do
-        local cell = row[cx]
-        if cell and cell.itemCount > 0 then -- no cell.itemCount > 1 because tunneling
-          for item,_ in pairs(cell.items) do
+    for cx=cl,cl+cw-1 do
+      local cell = self.rows[cy][cx]
+      if cell then -- no cell.itemCount > 1 because tunneling
+        for item,_ in NEXT, cell.items do
 
-            if item.tag ~= LOCAL_TAGS.player then 
-              local rect = self.rects[item]
-              if rect_isIntersecting(x,y,w,h, rect.x, rect.y, rect.w, rect.h) then
-                return item
-              end
+          if item.tag ~= PLAYER_TAG then 
+            local rect = self.rects[item]
+            if rect_isIntersecting(x,y,w,h, rect.x, rect.y, rect.w, rect.h) then
+              return item
             end
-
           end
+
         end
       end
     end
@@ -813,16 +829,47 @@ function World:queryRectFast(x,y,w,h)
 end
 
 
-function World:updateEnemy(item, x2,y2,w2,h2)
-  local x1,y1,w1,h1 = self:getRect(item)
-  w2,h2 = w2 or w1, h2 or h1
-  assertIsRect(x2,y2,w2,h2)
+function worldAddEnemy(self, item, x,y,w,h)
+  local rect = self.rects[item]
+  if rect then
+    error('Item ' .. tostring(item) .. ' added to the world twice.')
+  end
+  assertIsRect(x,y,w,h)
 
-  if x1 ~= x2 or y1 ~= y2 or w1 ~= w2 or h1 ~= h2 then
+  self.rects[item] = {x=x,y=y,w=w,h=h}
+
+  local cl,ct,cw,ch = grid_toCellRect(self.cellSize, x,y,w,h)
+  for cy = ct, ct+ch-1 do
+    for cx = cl, cl+cw-1 do
+      addItemToCell(self, item, cx, cy)
+    end
+  end
+
+  return item
+end
+
+
+function worldRemoveEnemy(self, item)
+  local x,y,w,h = self:getRect(item)
+
+  self.rects[item] = nil
+  local cl,ct,cw,ch = grid_toCellRect(self.cellSize, x,y,w,h)
+  for cy = ct, ct+ch-1 do
+    for cx = cl, cl+cw-1 do
+      removeItemFromCell(self, item, cx, cy)
+    end
+  end
+end
+
+
+function worldUpdateEnemy(self, item, x2,y2)
+  local x1,y1,w1,h1 = self:getRect(item)
+
+  if x1 ~= x2 or y1 ~= y2 then
 
     local cellSize = self.cellSize
     local cl1,ct1,cw1,ch1 = grid_toCellRect(cellSize, x1,y1,w1,h1)
-    local cl2,ct2,cw2,ch2 = grid_toCellRect(cellSize, x2,y2,w2,h2)
+    local cl2,ct2,cw2,ch2 = grid_toCellRect(cellSize, x2,y2,w1,h1)
 
     if cl1 ~= cl2 or ct1 ~= ct2 or cw1 ~= cw2 or ch1 ~= ch2 then
 
@@ -849,16 +896,16 @@ function World:updateEnemy(item, x2,y2,w2,h2)
       end
 
       -- Update this enemy's cell id's so it can check for other enemy's cells.
-      --item.totalCells = (cr2 - cl2) * (cb2 - ct2)
-      --print("Total: " .. item.totalCells .. " - cr2: " .. cr2 .. " - cl2: " .. cl2 .. " - cb2: " .. cb2 .. " - ct2: " .. ct2)
-      item.cellsWide[1], item.cellsWide[2] = cl2, cr2
-      item.cellsHigh[1], item.cellsHigh[2] = ct2, cb2
+      item.cellRange[1] = cl2
+      item.cellRange[2] = cr2
+      item.cellRange[3] = ct2
+      item.cellRange[4] = cb2
+
+      -- Update the self.rect position with the new position
+      local rect = self.rects[item]
+      rect.x, rect.y = x2,y2
 
     end
-
-    local rect = self.rects[item]
-    rect.x, rect.y, rect.w, rect.h = x2,y2,w2,h2
-
   end
 end
 

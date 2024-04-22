@@ -1,47 +1,65 @@
-import "tweening"
 
-local gfx <const> = playdate.graphics
-local dsp <const> = playdate.display
-local vec <const> = playdate.geometry.vector2D
-local mathp <const> = playdate.math
-local mathFloor <const> = math.floor
 
-local currentTime
+-- +--------------------------------------------------------------+
+-- |                          Constants                           |
+-- +--------------------------------------------------------------+
 
--- screen size
-local screenWidth <const> = playdate.display.getWidth()
-local screenHeight <const> = playdate.display.getHeight()
-local halfScreenHeight <const> = screenHeight / 2
-local halfScreenWidth <const> = screenWidth / 2
+-- extensions
+local pd 	<const> = playdate
+local gfx 	<const> = pd.graphics
+local dsp 	<const> = pd.display
 
--- this is the target position the camera is trying to get to
-local cameraPos = {}
-cameraPos["x"] = 0
-cameraPos["y"] = 0
+-- math
+local floor 	<const> = math.floor
+local rad 		<const> = math.rad
+local sin 		<const> = math.sin
+local cos 		<const> = math.cos
+local random 	<const> = math.random
+local max 		<const>	= math.max
+local sqrt 		<const> = math.sqrt
+local MOVE_TOWARDS <const> = moveTowards
 
--- this keeps the camera's current position - only set by the camera
-local currentCameraPos = {}
-currentCameraPos["x"] = 0
-currentCameraPos["y"] = 0
-local speed = 6
-local camDistance = {}
-camDistance.x = 100
-camDistance.y = 40
+-- screen
+local setDrawOffset 	<const> = gfx.setDrawOffset
+local setDspOffset 		<const> = dsp.setOffset
+local setInverted 		<const> = dsp.setInverted
+
+local screenWidth 		<const> = dsp.getWidth()
+local screenHeight 		<const> = dsp.getHeight()
+local halfScreenHeight 	<const> = screenHeight / 2
+local halfScreenWidth 	<const> = screenWidth / 2
+local halfBannerHeight 	<const> = getHalfUIBannerHeight()
+
+
+
+-- +--------------------------------------------------------------+
+-- |                            Init                              |
+-- +--------------------------------------------------------------+
+
+local SPEED 			<const> = 6
+local CAM_DISTANCE_X 	<const> = 100
+local CAM_DISTANCE_Y 	<const> = 40
 
 -- camera shake
-local camAnchor = vec.new(0, 0)
-local camBob = vec.new(0, 0)
-local shakeVelocity = vec.new(0, 0)
-local minCamDifference <const> = 0.02
-local springConstant <const> = 0.5
-local springDampen <const> = 0.85
-local shakeEndDelta = 0.1
-local setShakeTimer = 2000
+local minCamDifference 	<const> = 0.02
+local springConstant 	<const> = 0.5
+local springDampen 		<const> = 0.85
+local setShakeTimer 	<const> = 2000
 local shakeTimer = 0
 
+-- camera position and shake storage
+local cameraPosX, cameraPosY 			= 0, 0
+local camAnchorX, camAnchorY 			= 0, 0
+local camBobX, camBobY 					= 0, 0
+local shakeVelocityX, shakeVelocityY 	= 0, 0
+
 -- screen flash
-local setFlashTimer = 100
-local flashTimer
+local setFlashTimer <const> = 100
+local screenFlashState = false
+local flashTimer = 0
+
+-- time
+local currentTime = 0
 
 
 -- +--------------------------------------------------------------+
@@ -49,22 +67,24 @@ local flashTimer
 -- +--------------------------------------------------------------+
 
 
-function screenFlash()
-	dsp.setInverted(true)
-	flashTimer = currentTime + setFlashTimer
-	--print("flash")
-end
-
-
 local function manageScreenFlash()
-	if dsp.getInverted() == true and flashTimer <= currentTime then
-		dsp.setInverted(false)
+	if screenFlashState == true and flashTimer < currentTime then
+		setInverted(false)
+		screenFlashState = false
 	end
 end
 
 
+function screenFlash()
+	setInverted(true)
+	screenFlashState = true
+	flashTimer = currentTime + setFlashTimer
+end
+
+
 function clearFlash()
-	dsp.setInverted(false)
+	setInverted(false)
+	screenFlashState = false
 end
 
 
@@ -73,115 +93,77 @@ end
 -- +--------------------------------------------------------------+
 
 
-function getCameraPosition()
-	return cameraPos
+local function moveCamera(angle, posX, posY)
+	local rad = rad(angle)
+	local targetPosX = CAM_DISTANCE_X * cos(rad) + posX
+	local targetPosY = CAM_DISTANCE_Y * sin(rad) + posY - halfBannerHeight
+
+	cameraPosX = MOVE_TOWARDS(cameraPosX, targetPosX, SPEED)
+	cameraPosY = MOVE_TOWARDS(cameraPosY, targetPosY, SPEED)
+
+	camAnchorX = floor(halfScreenWidth - cameraPosX)
+	camAnchorY = floor(halfScreenHeight - cameraPosY)
+
+	setDrawOffset(camAnchorX, camAnchorY)
 end
 
 
-local function setCameraPos(angle, posX, posY)
-	rad = math.rad(angle)
-	cameraPos.x = camDistance.x * math.cos(rad) + posX
-	cameraPos.y = camDistance.y * math.sin(rad) + posY - getHalfUIBannerHeight()	
+local function shakeCameraUpdate(time)
+
+	-- If the shake velocity is 0, then don't do anything
+	if shakeVelocityX + shakeVelocityY == 0 then
+		return
+	end
+
+	-- Calculate spring force
+	local timer = setShakeTimer - (shakeTimer - time)
+	timer = max(1 - timer / setShakeTimer, 0)
+
+	if timer == 0 then 
+		shakeVelocityX = 0
+		shakeVelocityY = 0
+	else 
+		local forceX = (camBobX - camAnchorX) * springConstant * -timer
+		local forceY = (camBobY - camAnchorY) * springConstant * -timer
+
+		shakeVelocityX = (shakeVelocityX + forceX) * springDampen
+		shakeVelocityY = (shakeVelocityY + forceY) * springDampen
+
+		camBobX = camBobX + shakeVelocityX
+		camBobY = camBobY + shakeVelocityY
+	end
+
+	-- Set the display offset
+	setDspOffset(shakeVelocityX, shakeVelocityY)
+end
+
+
+
+-- global function to snap the camera to its target position instead of trying to move there
+local crankAngle <const> = getCrankAngle
+function snapCamera(playerX, playerY)
+	cameraPosX = playerX
+	cameraPosY = playerY
+	moveCamera(floor(crankAngle()), playerX, playerY)
 end
 
 
 -- Pass positions for shake direction - global function called to actually shake the camera
-function cameraShake(strength, direction)
-	if direction == nil then
-		local randX, randY
-		randX = math.random() * 2 - 1
-		randY = math.random() * 2 - 1
-		direction = vec.new(randX, randY):normalized()
+function cameraShake(strength, dirX, dirY)
+	if dirX == nil or dirY == nil then
+		local randX = random() * 2 - 1
+		local randY = random() * 2 - 1
+		local mag = randX * randX + randY * randY
+		dirX = randX / mag
+		dirY = randY / mag
 	end
 
-	shakeVelocity = direction * strength
-	camBob = camAnchor + shakeVelocity
+	shakeVelocityX = dirX * strength
+	shakeVelocityY = dirY * strength
+	camBobX = camAnchorX + shakeVelocityX
+	camBobY = camAnchorY + shakeVelocityY
 
 	shakeTimer = currentTime + setShakeTimer
-end
-
---[[
-local function calculateCameraShake()
-	-- If the shake velocity is slow enough, just pass the anchor
-	if shakeVelocity:magnitude() <= minCamDifference then 
-		shakeVelocity = vec.new(0, 0)
-		return camAnchor
-	end
-
-	-- If the shake timer has elapsed, move the shake velocity to 0
-	if shakeTimer <= currentTime then
-		shakeVelocity.x = moveTowards(shakeVelocity.x, 0, shakeEndDelta)
-		shakeVelocity.y = moveTowards(shakeVelocity.y, 0, shakeEndDelta)
-		return camAnchor + shakeVelocity
-	end
-
-	-- Calculate spring force
-	local force = camBob - camAnchor
-	local x = force:magnitude()
-
-	force:normalize()
-	force *= (-1 * springConstant * x)
-	shakeVelocity += force
-	shakeVelocity *= springDampen
-
-	return camBob + shakeVelocity
-end
-]]--
-
-
-local function calculateDisplayShake()
-	-- If the shake velocity is slow enough, then set velocity to 0
-	if shakeVelocity:magnitude() <= minCamDifference then 
-		shakeVelocity = vec.new(0, 0)
-		camBob = camAnchor
-		return shakeVelocity
-	end
-
-	-- Calculate spring force
-	local force = camBob - camAnchor
-	local x = force:magnitude()
-
-	-- Dampen force based on the shake timer
-	local diff = setShakeTimer - (shakeTimer - currentTime)
-	local t = clamp(diff / setShakeTimer, 0, 1)
-	x = mathp.lerp(x, 0, t)
-
-	force:normalize()
-	force *= (-1 * springConstant * x)
-	shakeVelocity += force
-	shakeVelocity *= springDampen
-	camBob += shakeVelocity
-
-	return shakeVelocity
-end
-
-
-local function shakeCameraUpdate()
-	vel = calculateDisplayShake()
-	dsp.setOffset(vel.x, vel.y)
-end
-
-
-local function moveCamera()
-	currentCameraPos.x = moveTowards(currentCameraPos.x, cameraPos.x, speed)
-	currentCameraPos.y = moveTowards(currentCameraPos.y, cameraPos.y, speed)
-
-	camAnchor.x = mathFloor(halfScreenWidth - currentCameraPos.x)
-	camAnchor.y = mathFloor(halfScreenHeight - currentCameraPos.y)
-	--camBob = calculateCameraShake()
-
-	--gfx.setDrawOffset(camBob.x, camBob.y)
-	gfx.setDrawOffset(camAnchor.x, camAnchor.y)
-end
-
-
--- global function to snap the camera to its target position instead of trying to move there
-function snapCamera()
-	playerPos = getPlayerPosition()
-	setCameraPos(getCrankAngle(), playerPos.x, playerPos.y)
-
-	currentCameraPos.x = cameraPos.x
-	currentCameraPos.y = cameraPos.y
 end
 
 
@@ -190,14 +172,13 @@ end
 -- +--------------------------------------------------------------+
 
 
-function updateCamera(dt)
-	currentTime = getRunTime()
-	local crankAngle = getCrankAngle()
-	local playerPos = getPlayerPosition()
+function updateCamera(dt, time, crank, playerX, playerY)
+	currentTime = time
 
-	setCameraPos(getCrankAngle(), playerPos.x, playerPos.y)
-	moveCamera()
-	shakeCameraUpdate()
-
+	moveCamera(crank, playerX, playerY)
+	shakeCameraUpdate(time)
 	manageScreenFlash()
+ 		
+	return 	camAnchorX, camAnchorY, 	-- screen offset
+			cameraPosX, cameraPosY		-- camera position
 end

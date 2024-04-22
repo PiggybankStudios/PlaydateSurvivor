@@ -10,13 +10,8 @@ local inputYD = 0
 local crankAngle = physicalCrankAngle() - 90
 
 
-function handleDeath()
-	setGameState(GAMESTATE.deathscreen)
-	clearAllThings()
-	clearFlash()
-end
 
-function clearAllThings()
+local function clearAllThings()
 	clearItems()
 	clearEnemies()
 	clearBullets()
@@ -27,6 +22,16 @@ function clearAllThings()
 	setWaveOver(false)
 	incWave(1 - getWave())
 end
+
+
+function handleDeath()
+	print("handling death")
+	setGameState(GAMESTATE.deathscreen)
+	clearAllThings()
+	clearFlash()
+end
+
+
 
 function returnToMenuCall()
 	if getGameState() == GAMESTATE.startscreen then
@@ -116,17 +121,15 @@ end
 
 
 function pd.BButtonDown()
-	if getGameState() == GAMESTATE.startscreen then
-		setGameState(GAMESTATE.mainmenu)
-	elseif getGameState() == GAMESTATE.deathscreen then
-		setGameState(GAMESTATE.startscreen)
-		clearStats()
-	else
+	--if getGameState() == GAMESTATE.startscreen then
+	--	setGameState(GAMESTATE.mainmenu)
+	--elseif getGameState() == GAMESTATE.deathscreen then
+	--	setGameState(GAMESTATE.startscreen)
+	--	clearStats()
+	--else
 		setRunSpeed(2)
-		--worldToggleDrawCells()
-		--debugSpawnMassEnemy()
-		--debugSpawnMassAllEnemies()
-	end
+		debugSpawnMassEnemy()
+	--end
 
 end
 

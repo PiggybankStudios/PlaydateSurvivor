@@ -3,32 +3,31 @@ import "CoreLibs/sprites"
 import "CoreLibs/animation"
 import "CoreLibs/math"
 
+import "globals"
+import "tags"
+
 bump = import "bump"
 import "LDtk"
 
-import "tags"
 import "savefile"
---import "bullet"
 
 import "healthbar" -- edit player healthbar so we can get rid of this
 import "uibanner"
 import "pausemenu"
 
 import "expbar"
---import "enemy"
+
 
 import "controls"
 import "player"
 import "camera"
 import "mun"
---import "item"
 import "item_v2"
 import "enemy_v2"
 import "bullet_v2"
 import "particle"
 import "write"
 import "writefunctions"
---import "gameScene"
 import "gameScene_v2"
 import "startmenu"
 import "mainmenu"
@@ -37,47 +36,117 @@ import "levelupmenu"
 import "weaponmenu"
 import "bulletGraphic"
 
-local random <const> = math.random
 
-local gfx <const> = playdate.graphics
+
+
+-- +--------------------------------------------------------------+
+-- |                          Constants                           |
+-- +--------------------------------------------------------------+
+
+-- extensions
+local pd <const> = playdate
+local gfx <const> = pd.graphics
+
+-- time
+local dt <const> = 1/20
+local getMilliseconds <const> = pd.getCurrentTimeMilliseconds
+
+-- math
+local floor 	<const> = math.floor
+local random 	<const> = math.random
+
+-- sprites and color
+local setColor <const> = gfx.setColor
+local colorWhite <const> = gfx.kColorWhite
+local colorBlack <const> = gfx.kColorBlack
+
+-- controls
+local crankAngle <const> = getCrankAngle
+
+
+-- Update Functions
+local c_UpdatePlayer 	<const> = updatePlayer
+local c_UpdateCamera 	<const> = updateCamera
+local c_UpdateBullets 	<const> = updateBullets
+local c_UpdateEnemies	<const> = updateEnemies
+local c_UpdateGameScene <const> = updateGameScene
+
+local c_DrawPlayerUI <const> = drawPlayerUI
+
+-- +--------------------------------------------------------------+
+-- |                        Inits for Main                        |
+-- +--------------------------------------------------------------+
+
 local recycleValue = 0
 local mainLoopTime = 0
 local mainTimePassed = 0
 local elapsedPauseTime = 0
 local startPauseTime = 0
 
-local map
 
-gfx.setColor(gfx.kColorWhite)
-gfx.fillRect(0, 0, 400, 240)
-gfx.setBackgroundColor(gfx.kColorBlack)
-
-local menuCopy = playdate.getSystemMenu()
+local menuCopy = pd.getSystemMenu()
 --local menuItem, error = menuCopy:addMenuItem("Main Menu", returnToMenuCall())
 
 elapsedTime = 0
 currentState = GAMESTATE.startscreen
 lastState = GAMESTATE.nothing
 
+-- Set Background Color
+gfx.setBackgroundColor(colorBlack)
+
+-- +--------------------------------------------------------------+
+-- |                       Tracked Values                         |
+-- +--------------------------------------------------------------+
+
+local shotsFired = 0
 
 -- +--------------------------------------------------------------+
 -- |                         Main Update                          |
 -- +--------------------------------------------------------------+
 
-function recycleGun(value)
-	recycleValue += value
+
+gameScene_init()	-- Testing scene outside of main, will put back into scene loading later
+
+function pd.update()
+
+	local time = getMilliseconds()
+	local crank = floor(crankAngle())
+
+	c_UpdateGameScene()
+
+	--- debugging here ---
+	--gameSceneDebugUpdate()
+	----------------------
+
+	-- Objects
+resetTime()
+	local playerX, playerY = c_UpdatePlayer(dt, time, crank, shotsFired)
+addTotalTime()
+
+	local screenOffsetX, screenOffsetY, cameraPosX, cameraPosY = c_UpdateCamera(dt, time, crank, playerX, playerY)
+
+
+	shotsFired = c_UpdateBullets(time, crank, playerX, playerY, screenOffsetX, screenOffsetY)
+	c_UpdateEnemies(dt, time, playerX, playerY, cameraPosX, cameraPosY, screenOffsetX, screenOffsetY)
+
+	--updateItems(dt, mainTimePassed, mainLoopTime)
+	--updateParticles(dt, mainTimePassed, mainLoopTime, elapsedPauseTime)
+	
+	-- UI
+	c_DrawPlayerUI()
+
+printAndClearTotalTime(time, "player check in main")
+	playdate.drawFPS()
 end
 
-function getRunTime()
-	return mainLoopTime
-end
 
+
+--[[
 function playdate.update()
 	mainLoopTime = playdate.getCurrentTimeMilliseconds()
 
 	dt = 1/20
 	elapsedTime = elapsedTime + dt
-	gfx.sprite.setAlwaysRedraw(true)	-- causes all sprites to always redraw. Should help performance since there are so many moving images on the screen
 
 	-- Start Screen
 	if currentState == GAMESTATE.startscreen then
@@ -240,11 +309,12 @@ function playdate.update()
 	mainTimePassed = getRunTime() - mainLoopTime
 	--playdate.drawFPS()
 end
-
+]]
 
 -- +--------------------------------------------------------------+
 -- |                     Game State Functions                     |
 -- +--------------------------------------------------------------+
+
 
 function getGameState()
 	return currentState
@@ -253,4 +323,9 @@ end
 
 function setGameState(newState)
 	currentState = newState
+end
+
+
+function recycleGun(value)
+	recycleValue += value
 end

@@ -1,40 +1,76 @@
--- playdate screen 400 x 240
-local gfx <const> = playdate.graphics
-local vec <const> = playdate.geometry.vector2D
 
-local mathFloor <const> = math.floor
 
-local healthbarOffsetY <const> = 30
-local setDamageTimer <const> = 200
+-- +--------------------------------------------------------------+
+-- |                          Constants                           |
+-- +--------------------------------------------------------------+
+
+-- extensions
+local pd <const> = playdate
+local gfx <const> = pd.graphics
+local vec <const> = pd.geometry.vector2D
+
+-- math
+local floor <const> = math.floor
+local max <const> = math.max
+local min <const> = math.min
+local random <const> = math.random
+local newVec <const> = vec.new
+
+-- screen
+local SCREEN_WIDTH <const> = pd.display.getWidth()
+local SCREEN_HEIGHT <const> = pd.display.getHeight()
+
+-- drawing
+local pushContext <const> = gfx.pushContext
+local popContext <const> = gfx.popContext
+local lockFocus <const> = gfx.lockFocus
+local unlockFocus <const> = gfx.unlockFocus
+local setColor <const> = gfx.setColor
+local colorBlack <const> = gfx.kColorBlack
+local colorWhite <const> = gfx.kColorWhite
+local colorClear <const> = gfx.kColorClear
+local roundRect <const> = gfx.fillRoundRect
+
+
+-- +--------------------------------------------------------------+
+-- |               World, Sprite, Collider, Healthbar             |
+-- +--------------------------------------------------------------+
 
 -- World Reference
-local world, worldWidth, worldHeight
+local world
 
--- Sprite
+-- Player Image
 --playerSheet = gfx.imagetable.new('Resources/Sheets/player')
 --animationLoop = gfx.animation.loop.new(16, playerSheet)
 local playerImage = gfx.image.new('Resources/Sprites/player')
-local player = gfx.sprite:new()
-player:setZIndex(ZINDEX.player)
-player:setImage(playerImage)
-player:setCenter(0.5, 0.5)
+local playerX, playerY = 0, 0
 
+local playerWidth, playerHeight = playerImage:getSize()
+local PLAYER_IMAGE_WIDTH_HALF <const> = playerWidth * 0.5
+local PLAYER_IMAGE_HEIGHT_HALF <const> = playerHeight * 0.5
 
 -- Collider
 local colliderSize <const> = 25
-local halfCol <const> = mathFloor(colliderSize * 0.5)
+local halfCol <const> = floor(colliderSize * 0.5)
 local playerRect = { x = 150, y = 150, width = colliderSize, height = colliderSize, tag = TAGS.player}
 
--- Collider
---[[
+-- Healthbar
+local HEALTHBAR_OFFSET_X <const> = 2
+local HEALTHBAR_OFFSET_Y <const> = 20
+local HEALTHBAR_MAXWIDTH <const> = 40
+local HEALTHBAR_HEIGHT <const> = 4
+local HEALTHBAR_CORNER_RADIUS <const> = 3
+local maxHealth = 10
+local health = maxHealth
+local healthPercent = 1
+local healthImage = gfx.image.new(42, 6, colorClear)
 
-collider = gfx.sprite:new()
-collider:setTag(TAGS.player)
-collider:setSize(colliderSize, colliderSize)
-collider:setCollideRect(0, 0, colliderSize, colliderSize)
-collider:setGroups(GROUPS.player)
-collider:setCollidesWithGroups( {GROUPS.walls, GROUPS.enemy} )
-]]
+-- Damage
+local SET_DAMAGE_TIMER <const> = 200
+
+-- +--------------------------------------------------------------+
+-- |                         Player Stats                         |
+-- +--------------------------------------------------------------+
 
 -- stattrack
 local damageDealt = 0
@@ -53,22 +89,17 @@ local maxDifficulty = 15
 
 -- Player
 local playerLevel = 0
-local maxHealth = 1
-local health = maxHealth
 local playerSpeed = 50
 local playerVelocity = vec.new(0, 0)
-local playerAttackRate = 100
+local playerAttackRate = 10 --30
 local playerAttackRateMin = 10 --25 --limit
-local playerExp = 0
-local startingExpForLevel = 5
 local playerMagnet = 50
 local playerSlots = 1
-local playerGunDamage = 0
+local playerGunDamage = 5
 local playerReflectDamage = 0
-local playerExpBonus = 0
 local playerLuck = 0
 local playerLuckMax = 100 --limit
-local playerBulletSpeed = 50
+local playerBulletSpeed = 10 --50
 local playerArmor = 0
 local playerDodge = 0
 local playerDodgeMax = 75 --limit
@@ -79,9 +110,15 @@ local playerHealBonus = 0
 local playerStunChance = 0
 local playerStunChanceMax = 75 --limit
 local damageTimer = 0
-local playerHealthbar
-local playerExpbar
 local gameStartTime = 0
+
+-- EXP
+local playerExp = 0
+local maxExpForLevel = 5
+local playerMaxExp = maxExpForLevel
+local playerExpPercent = 0.3
+local playerExpBonus = 0
+
 
 theCharmSlot1 = {0, 0, 0, 0} -- what charm is in column 1 for each gun slot
 theCharmSlot2 = {0, 0, 0, 0} -- what charm is in column 2 for each gun slot
@@ -91,30 +128,166 @@ invincibleTime = 0
 invincible = false
 
 --Menu
-local theCurrTime
+local currentTime
+
+
+
+-- +--------------------------------------------------------------+
+-- |                         Player UI                            |
+-- +--------------------------------------------------------------+
+
+--- UI Banner ---
+
+local uiBannerImage = gfx.image.new('Resources/Sprites/UIBanner')
+local UI_BANNER_WIDTH <const>, UI_BANNER_HEIGHT <const> = uiBannerImage:getSize()
+
+function getBannerHeight()
+	return UI_BANNER_HEIGHT
+end
+
+
+--- EXP ---
+
+-- EXP Bar
+local EXP_MAX_WIDTH <const> = SCREEN_WIDTH * 0.9
+local EXP_HEIGHT <const> = 6
+local EXP_RADIUS <const> = 3
+
+-- EXP Border
+local EXP_BORDER_WIDTH <const> = EXP_MAX_WIDTH + 2
+local EXP_BORDER_HEIGHT <const> = EXP_HEIGHT + 2
+local EXP_BORDER_RADIUS <const> = EXP_RADIUS + 2
+
+-- Position
+local EXP_BORDER_X <const> = floor((SCREEN_WIDTH - EXP_BORDER_WIDTH) / 2)
+local EXP_BORDER_Y <const> = 4
+local EXP_X_OFFSET <const> = floor((EXP_BORDER_WIDTH - EXP_MAX_WIDTH) / 2) + EXP_BORDER_X
+local EXP_Y_OFFSET <const> = floor((EXP_BORDER_HEIGHT - EXP_HEIGHT) / 2) + EXP_BORDER_Y
+
+-- Interaction
+local EXP_GROWTH_FACTOR <const> = 3
+
+
+local function drawPlayerEXPBar()
+
+	local expbarWidth = playerExpPercent * EXP_MAX_WIDTH
+	local height = EXP_HEIGHT
+	local yPosOffset = EXP_Y_OFFSET
+	if expbarWidth < 1 then 
+		expbarWidth += 4
+		height = 4
+		yPosOffset += 1
+	end
+
+	-- Border -- Using lockFocus so the banner image can ignore the draw offset
+	lockFocus(uiBannerImage)
+		setColor(colorWhite)
+		roundRect(EXP_BORDER_X, EXP_BORDER_Y, EXP_BORDER_WIDTH, EXP_BORDER_HEIGHT, EXP_BORDER_RADIUS)
+		-- Fill Bar
+	    setColor(colorBlack)
+		roundRect(EXP_X_OFFSET, yPosOffset, expbarWidth, height, EXP_RADIUS)
+	unlockFocus()
+	uiBannerImage:drawIgnoringOffset(0, 0)	
+end
+
+
+local function resetEXPBar()
+	playerExp = 0
+	playerExpPercent = 0
+end
+
+
+-- TO DO: Need help from Devon to put level-up actions back in place
+function addEXP(amount)
+
+	playerExp += amount
+	experienceGained += amount
+
+	-- Level Up
+	if playerExp >= playerMaxExp then
+		playerExp = (playerExp - playerMaxExp) -- push any overfill exp into next level
+		playerMaxExp += EXP_GROWTH_FACTOR + floor(playerLevel/10)
+		playerLevel += 1
+
+		--levelUpList += 1 -- What is this for?
+		--updateLevel()
+		--newWeaponGrabbed()
+	end
+
+	playerExpPercent = playerExp / playerMaxExp
+end
+
+
+--- Health ---
+
+local function drawPlayerHealthBar()
+	local borderWidth = HEALTHBAR_MAXWIDTH + 2
+	local borderHeight = HEALTHBAR_HEIGHT + 2
+	local borderRadius = HEALTHBAR_CORNER_RADIUS + 2
+
+	local xPosOffset = floor((borderWidth - HEALTHBAR_MAXWIDTH) / 2)
+	local yPosOffset = floor((borderHeight - HEALTHBAR_HEIGHT) / 2)
+	local healthbarWidth = healthPercent * HEALTHBAR_MAXWIDTH
+
+	local x = playerX - PLAYER_IMAGE_WIDTH_HALF - HEALTHBAR_OFFSET_X
+	local y = playerY - PLAYER_IMAGE_HEIGHT_HALF - HEALTHBAR_OFFSET_Y
+
+	-- Border
+	setColor(colorBlack)
+	roundRect(x, y, borderWidth, borderHeight, borderRadius)
+	-- Fill Bar
+	setColor(colorWhite)
+	roundRect(x + xPosOffset, y + yPosOffset, healthbarWidth, HEALTHBAR_HEIGHT, HEALTHBAR_CORNER_RADIUS)
+end
+
+
+local function updateHealthBar()
+	healthPercent = health / maxHealth
+end
+
+
+--- Draw All Player-Based UI ---
+
+function drawPlayerUI()
+	drawPlayerHealthBar()
+	drawPlayerEXPBar()
+end
+
+--------------------------------
 
 -- +--------------------------------------------------------------+
 -- |            Player Sprite and Collider Interaction            |
 -- +--------------------------------------------------------------+
 
--- Add the player sprite and collider back to the drawing list after level load - also sets starting position
-function addPlayerSpritesToList(gameSceneWorld, width, height)
-	player:setRotation(getCrankAngle())
-	player:moveTo(150, 150)
-	player:add()
-	--collider:add()
 
-	-- add player collider to the world
-	world = gameSceneWorld
-	worldWidth = width
-	worldHeight = height
-	world:add(playerRect, 150, 150, colliderSize, colliderSize)
+local function teleportPlayer(x, y)
+	if world == nil then return end
 
-	health = maxHealth
-	playerHealthbar = healthbar(player.x, player.y - healthbarOffsetY, health)
-	playerExpbar = expbar(startingExpForLevel)
-	--movePlayerWithCollider(150,150) -- move to starting location
+	local floorX = floor(x)
+	local floorY = floor(y)
+	playerX, playerY = floorX, floorY
+	playerRect.x, playerRect.y = floorX, floorY
+	world:update(playerRect, floorX, floorY)
+	snapCamera(floorX, floorY)
+
 end
+
+
+function initPlayerInNewWorld(gameSceneWorld, x, y)
+
+	-- setup new world collisions
+	world = gameSceneWorld
+	world:add(playerRect, x, y, colliderSize, colliderSize)
+
+	-- teleport player to position
+	teleportPlayer(x, y)
+
+	-- init player variables
+	health = maxHealth
+	updateHealthBar()
+	resetEXPBar()
+end
+
 
 function addSaveStatsToPlayer()
 	maxHealth = getSaveValue("health")
@@ -123,80 +296,51 @@ function addSaveStatsToPlayer()
 	playerSpeed = getSaveValue("speed")
 end
 
+
+--- Heal and Damage ---
+
 function heal(amount)
 	health += (amount + playerHealBonus)
 	if health > maxHealth then
 		health = maxHealth
 	end
-	playerHealthbar:updateHealth(health)
+	updateHealthBar()
 end
 
-
--- TO DO: delete commented damage code --
-
--- Damage player health - called via enemies
 function damagePlayer(amount, camShakeStrength, enemyX, enemyY)
+	
 	if Unpaused then damageTimer += theLastTime end
 	-- Invincibility
-	if damageTimer > theCurrTime then
+	if damageTimer > currentTime then
 		return
 	elseif invincible then
 		return
-	elseif math.random(0,99) < playerDodge then
+	elseif random(0,99) < playerDodge then
 		screenFlash()
 		return
 	end
 
 	-- Damaging
-	local amountLost = math.max(amount - playerArmor, 1)
-	damageTimer = theCurrTime + setDamageTimer
+	local amountLost = max(amount - playerArmor, 1)
+	damageTimer = currentTime + SET_DAMAGE_TIMER
 	health -= amountLost
 	if health < 0 then
 		amountLost += health
 		health = 0
+		handleDeath()
+		return
 	end
-	playerHealthbar:updateHealth(health)
+	updateHealthBar()
 	addDamageReceived(amountLost)
 
 	-- Camera Shake
-	local direction = vec.new(enemyX - player.x, enemyY - player.y):normalized()
-	cameraShake(camShakeStrength, direction)
-	spawnParticleEffect(PARTICLE_TYPE.playerImpact, player.x, player.y, direction)
+	local direction = vec.new(enemyX - playerX, enemyY - playerY):normalized()
+	cameraShake(camShakeStrength, direction.x, direction.y)
+	spawnParticleEffect(PARTICLE_TYPE.playerImpact, playerX, playerY, direction)
 	screenFlash()
 end
---[[
-function player:damage(amount, camShakeStrength, enemyX, enemyY)
-	if getUnpaused() then damageTimer += theLastTime end
-	-- Invincibility
-	if damageTimer > theCurrTime then
-		return
-	elseif invincible then
-		return
-	elseif math.random(0,99) < playerDodge then
-		screenFlash()
-		return
-	end
-	local newamount = math.floor(amount)
-	-- Damaging
-	local amountLost = math.max(amount - playerArmor, 1)
-	damageTimer = theCurrTime + setDamageTimer
-	health -= amountLost
-	if health < 0 then
-		amountLost += health
-		health = 0
-	end
-	playerHealthbar:updateHealth(health)
-	addDamageReceived(amountLost)
 
-	-- Camera Shake
-	local playerPos = vec.new(player.x, player.y)
-	local enemyPos = vec.new(enemyX, enemyY)
-	local direction = (enemyPos - playerPos):normalized()
-	cameraShake(camShakeStrength, direction)
-	spawnParticleEffect(PARTICLE_TYPE.playerImpact, player.x, player.y, direction)
-	screenFlash()
-end
-]]
+----------------------
 
 
 function getPlayerSlots()
@@ -216,7 +360,7 @@ function updateLevel()
 	if math.floor(playerLevel / 5) == playerSlots then
 		updateSlots()
 	end
-	--if math.min(math.floor(playerLevel / 3) + 1,maxDifficulty) > difficulty then
+	--if min(math.floor(playerLevel / 3) + 1,maxDifficulty) > difficulty then
 	--	difficulty = math.floor(playerLevel / 3)
 		if difficulty > maxDifficulty then 
 			difficulty = maxDifficulty 
@@ -224,9 +368,6 @@ function updateLevel()
 		end
 end
 
-function addShot()
-	shotsFired += 1
-end
 
 function addDamageDealt(amount)
 	damageDealt += amount
@@ -241,40 +382,25 @@ function addKill()
 	enemiesKilled += 1
 	currentCombo += 1
 	if currentCombo > maxCombo then maxCombo = currentCombo end
-	if math.random(0,99) < playerVampire then heal(5) end
-end
-
-function addExpTotal(amount)
-	experienceGained += amount
+	if random(0,99) < playerVampire then heal(5) end
 end
 
 function addItemsGrabbed()
 	itemsGrabbed += 1
 end
 
-function updateExp(currExp)
-	playerExp = currExp
-end
-
-function updateExpfornextlevel(nextExp)
-	startingExpForLevel = nextExp
-end
 
 -- +--------------------------------------------------------------+
--- |            Player get values section            |
+-- |                  Player get values section                   |
 -- +--------------------------------------------------------------+
 
 
 function getPlayerImageSize()
-	return player:getSize()
+	return playerImage:getSize()
 end
 
 function getPlayerLevel()
 	return playerLevel
-end
-
-function getCurrTime()
-	return theCurrTime
 end
 
 function getPlayerGunDamage()
@@ -285,7 +411,11 @@ function getPlayerBulletSpeed()
 	return playerBulletSpeed
 end
 
-function player:getPlayerReflectDamage()
+function getPlayerAttackRate()
+	return playerAttackRate
+end
+
+function getPlayerReflectDamage()
 	return playerReflectDamage
 end
 
@@ -294,7 +424,7 @@ function getDifficulty()
 end
 
 function setDifficulty(amount)
-	difficulty = math.min(amount,maxDifficulty)
+	difficulty = min(amount,maxDifficulty)
 end
 
 function getMaxDifficulty()
@@ -330,14 +460,17 @@ function upgradeStat(stat, bonus)
 	elseif stat == 2 then
 		playerAttackRate -= 5 * bonus
 		if playerAttackRate < playerAttackRateMin then playerAttackRate = playerAttackRateMin end
+		setPlayerAttackRateInBullets(playerAttackRate)
 		print('attack rate increased by ' .. tostring(5 * bonus))
 
 	elseif stat == 3 then
 		playerBulletSpeed += bonus
+		setPlayerBulletSpeedInBullets(playerBulletSpeed)
 		print('bullet speed increased by ' .. tostring(bonus))
 
 	elseif stat == 4 then
 		playerGunDamage += bonus
+		setPlayerGunDamageInBullets(playerGunDamage)
 		print('damage increased by ' .. tostring(2 * bonus))
 
 	elseif stat == 5 then
@@ -354,7 +487,6 @@ function upgradeStat(stat, bonus)
 
 	elseif stat == 8 then
 		maxHealth += 8 * bonus
-		playerHealthbar:updateMaxHealth(maxHealth, health)
 		heal(8 * bonus)
 		print('health increased by ' .. tostring(8 * bonus))
 
@@ -390,9 +522,8 @@ function upgradeStat(stat, bonus)
 	else
 		print('error')
 	end
-	if math.random(0,99) < playerLuck then
-		maxHealth += 5
-		playerHealthbar:updateMaxHealth(maxHealth, health)
+	if random(0,99) < playerLuck then
+		maxHealth += 5		
 		heal(5)
 		print('health increased by 5 bonus')
 	end
@@ -414,7 +545,7 @@ function clearStats()
 	playerLevel = 0
 	playerAttackRate = 100
 	playerExp = 0
-	startingExpForLevel = 5
+	maxExpForLevel = 5
 	playerMagnet = 50
 	setDistanceCheckToPlayerMagnetStat(playerMagnet)
 	playerSlots = 1
@@ -458,7 +589,7 @@ function getPlayerStats()
 	local stats = {}
 	stats[#stats + 1] = playerLevel
 	stats[#stats + 1] = playerExp
-	stats[#stats + 1] = startingExpForLevel
+	stats[#stats + 1] = maxExpForLevel
 	stats[#stats + 1] = health
 	stats[#stats + 1] = maxHealth
 	stats[#stats + 1] = playerSpeed
@@ -497,10 +628,6 @@ function getAvailLevelUpStats()
 	return stats
 end
 
-function addEXP(amount)
-	playerExpbar:gainExp(amount + playerExpBonus)
-end
-
 function incLuck()
 	playerLuck += 5
 	print('luck increased by 5')
@@ -510,7 +637,7 @@ function incLuck()
 end
 
 function shield(amount)
-	invincibleTime = theCurrTime + amount
+	invincibleTime = currentTime + amount
 	invincible = true
 end
 
@@ -525,19 +652,6 @@ end
 
 function incWeaponsGrabbedList(amount)
 	weaponsGrabbedList += amount
-end
-
-
-function changeItemAbsorbRangeBy(value)
-	--itemAbsorberRange += value
-	--itemAbsorber:setSize(itemAbsorberRange, itemAbsorberRange)
-	--itemAbsorber:setCollideRect(0, 0, itemAbsorberRange, itemAbsorberRange)
-end
-
-function setItemAbsorbRange(value)
-	--itemAbsorberRange = value
-	--itemAbsorber:setSize(itemAbsorberRange, itemAbsorberRange)
-	--itemAbsorber:setCollideRect(0, 0, itemAbsorberRange, itemAbsorberRange)
 end
 
 function getPlayerAttackRate()
@@ -561,7 +675,6 @@ end
 
 
 local function movePlayer(dt)
-	if world == nil then return end -- If the world reference hasn't been passed yet, don't do anything
 
 	-- Reset input to 0 if nothing is held
 	--if playdate.getButtonState()
@@ -571,82 +684,17 @@ local function movePlayer(dt)
 	local goalX, goalY = playerRect.x + playerVelocity.x, playerRect.y + playerVelocity.y
 
 	local actualX, actualY, cols, length = world:move(playerRect, goalX, goalY, playerFilter)
-	local floorX, floorY = mathFloor(actualX), mathFloor(actualY)
+	local floorX, floorY = floor(actualX), floor(actualY)
 	playerRect.x, playerRect.y = floorX, floorY
 
 	floorX += halfCol
 	floorY += halfCol
-	player:moveTo(floorX, floorY)
-	playerHealthbar:moveTo(floorX, floorY - healthbarOffsetY)
-
-	local offX, offY = gfx.getDrawOffset()
-	--local itemsInCell = world:getCellItemsCountFromPosition(floorX, floorY)
-	--print("items in cell: " .. itemsInCell)
-
-	-- collision triggers
-	--[[
-	for i = 1, length do
-		local other = cols[i].other
-		if other.tag == localTags.walls then print("wall collision") end
-	end
-	]]
+	playerX, playerY = floorX, floorY
 end
 
-
-local function teleportPlayer(x, y)
-	if world == nil then return end
-
-	local floorX = mathFloor(x)
-	local floorY = mathFloor(y)
-	player:moveTo(floorX + halfCol, floorY + halfCol)
-	world:update(playerRect, floorX, floorY)
-	playerHealthbar:moveTo(floorX, floorY - healthbarOffsetY)
-end
-
---[[
-function movePlayer(dt)
-	if collider == nil then return end	-- If the collider doesn't exist, then don't look for collisions
-
-	-- Reset input to 0 if nothing is held
-	--if playdate.getButtonState() == 0 then resetInputXY() end
-
-	local moveSpeed = playerSpeed * playerRunSpeed * dt
-	playerVelocity.x = getInputX() * moveSpeed
-	playerVelocity.y = getInputY() * moveSpeed
-	local goalX = player.x + playerVelocity.x
-	local goalY = player.y + playerVelocity.y
-
-	-- The actual position is determined via collision response above
-	local actualX, actualY, collisions = collider:checkCollisions(goalX, goalY)
-	movePlayerWithCollider(actualX, actualY)
-end
-]]
---[[
--- Moves both player sprite and collider - flooring stops jittering b/c only integers
-function movePlayerWithCollider(x, y)
-	local floorX = mathFloor(x)
-	local floorY = mathFloor(y)
-	player:moveTo(floorX, floorY)
-	collider:moveTo(floorX, floorY)
-	
-	playerHealthbar:moveTo(floorX, floorY - healthbarOffsetY)
-end
-]]
---[[
--- Collision response based on tags
--- Player Collider
-function collider:collisionResponse(other)
-	local tag = other:getTag()
-	if tag == TAGS.enemy then
-		return "overlap"
-	else -- Any collision that's not set is defaulted to Wall Collision
-		return "slide"
-	end
-end
-]]
 
 function getPlayerPosition()
-	return vec.new(player.x, player.y)
+	return vec.new(playerX, playerY)
 end
 
 
@@ -661,11 +709,11 @@ end
 
 
 function decideWeaponTier()
-	local rndTier = math.random(1,100)
+	local rndTier = random(1,100)
 	local newTier = 1
-	if rndTier > (95 - math.floor(playerLuck / 5)) then
+	if rndTier > (95 - floor(playerLuck / 5)) then
 		newTier = 3
-	elseif rndTier > (50 - math.floor(playerLuck / 4)) then
+	elseif rndTier > (50 - floor(playerLuck / 4)) then
 		newTier = 2
 	end
 	return newTier
@@ -675,18 +723,22 @@ end
 -- +--------------------------------------------------------------+
 -- |                            Update                            |
 -- +--------------------------------------------------------------+
-function updatePlayer(dt)
-	theCurrTime = getRunTime()
+function updatePlayer(dt, time, crank, newShots)
+	
+	currentTime = time
+	shotsFired += newShots
 
-
+	--[[
+	--- TO DO: update pausing ---
 	if getUnpaused() then 
-		theLastTime = theCurrTime - theLastTime 
+		theLastTime = currentTime - theLastTime 
 		invincibleTime += theLastTime
 		gameStartTime += theLastTime
 	end
 	
-	if invincibleTime > theCurrTime then
-		if ((theCurrTime % 500) >= 250 ) then
+	--- TO DO: update invincibility ---
+	if invincibleTime > currentTime then
+		if ((currentTime % 500) >= 250 ) then
 			player:setImageDrawMode(gfx.kDrawModeInverted)
 		else
 			player:setImageDrawMode(gfx.kDrawModeCopy)
@@ -697,16 +749,19 @@ function updatePlayer(dt)
 			player:setImageDrawMode(gfx.kDrawModeCopy)
 		end
 	end
+	]]
 	
 	movePlayer(dt)
-	local crankAngle = getCrankAngle()
-	player:setRotation(crankAngle)
+	playerImage:drawRotated(playerX, playerY, crank)
+
+	--theLastTime = currentTime
+	--setUnpaused(false)
 	
-	theLastTime = theCurrTime
-	setUnpaused(false)
-	
+	--[[
 	if health == 0 then
 		handleDeath()
 	end
+	]]
 
+	return playerX, playerY
 end

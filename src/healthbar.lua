@@ -1,3 +1,4 @@
+--[[
 local gfx <const> = playdate.graphics
 
 class('healthbar').extends(gfx.sprite)
@@ -50,7 +51,7 @@ function healthbar:updateHealth(newHealth)
 end
 
 
---[[
+
 function healthbar:damage(amount)
 	self.health -= amount
 	if self.health <= 0 then

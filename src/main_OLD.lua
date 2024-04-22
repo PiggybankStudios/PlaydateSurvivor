@@ -1,3 +1,4 @@
+--[[
 import "CoreLibs/graphics"
 import "CoreLibs/sprites"
 import "CoreLibs/animation"
@@ -20,11 +21,7 @@ import "expbar"
 import "controls"
 import "player"
 import "camera"
-<<<<<<< HEAD
-=======
-import "gameScene"
 import "mun"
->>>>>>> faaffb1ccff9fabaf162d302322dea1b24826ad3
 --import "item"
 import "item_v2"
 import "enemy_v2"
@@ -140,22 +137,18 @@ function playdate.update()
 				recycleValue = 0
 			end
 		end
-<<<<<<< HEAD
-
-		gameSceneUpdate()
-=======
 		
 		cleanLetters()
 		updateMun()
 		updateWaveTime()
 		updateWaveNumber()
->>>>>>> faaffb1ccff9fabaf162d302322dea1b24826ad3
 		updatePlayer(dt)
 		updateCamera(dt)
 		updateBullets(dt, mainTimePassed, mainLoopTime, elapsedPauseTime)
 		updateEnemies(dt, mainTimePassed, mainLoopTime)
 		updateItems(dt, mainTimePassed, mainLoopTime)
 		updateParticles(dt, mainTimePassed, mainLoopTime, elapsedPauseTime)
+		gameSceneUpdate()
 		startPauseTime = mainLoopTime
 
 		-- clear possible pause time
@@ -262,3 +255,4 @@ end
 function setGameState(newState)
 	currentState = newState
 end
+]]
