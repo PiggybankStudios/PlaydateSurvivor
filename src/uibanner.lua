@@ -22,13 +22,13 @@ local waveOver = false
 local clockImage = gfx.image.new('Resources/Sprites/lClockBox')
 local clockSprite = gfx.sprite.new(clockImage)
 clockSprite:setIgnoresDrawOffset(true)	-- forces sprite to be draw to screen, not world
-clockSprite:setZIndex(ZINDEX.uibanner)
+--clockSprite:setZIndex(ZINDEX.uibanner)
 clockSprite:moveTo(halfScreenWidth, 25)
 
 local bannerImage = gfx.image.new('Resources/Sprites/UIBanner')
 local bannerSprite = gfx.sprite.new(bannerImage)
 bannerSprite:setIgnoresDrawOffset(true)	-- forces sprite to be draw to screen, not world
-bannerSprite:setZIndex(ZINDEX.uibanner)
+--bannerSprite:setZIndex(ZINDEX.uibanner)
 bannerSprite:moveTo(halfScreenWidth, halfBannerHeight)
 
 

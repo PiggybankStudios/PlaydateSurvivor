@@ -1,12 +1,10 @@
 local pd <const> = playdate
 local gfx <const> = pd.graphics
 
-local halfScreenWidth 	<const> = pd.display.getWidth() / 2
-local halfScreenHeight 	<const> = pd.display.getHeight() / 2
+local SCREEN_HALF_WIDTH 	<const> = pd.display.getWidth() / 2
+local SCREEN_HALF_HEIGHT 	<const> = pd.display.getHeight() / 2
 
-local floor 	<const> = math.floor
 local ceil 		<const> = math.ceil
-local abs 		<const> = math.abs
 local min 		<const> = math.min
 local max 		<const> = math.max
 local sqrt 		<const> = math.sqrt
@@ -22,7 +20,7 @@ local MOVE_TOWARDS	<const> = moveTowards
 local worldRef, cellSizeRef
 
 -- Main Data
-local dt = 1
+local dt <const> = getDT()
 
 
 -- Non-Enemy Data
@@ -43,7 +41,7 @@ local CAMERA_SHAKE_STRENGTH = {
 
 -- Player Values
 local stunChance = 0
-local difficulty = 1
+local difficulty = 15
 local reflectDamage = 1
 
 -- Enemy Data
@@ -70,19 +68,14 @@ local IMAGE_LIST = {
 
 local IMAGE_WIDTH, IMAGE_HEIGHT = {}, {}
 local IMAGE_WIDTH_HALF, IMAGE_HEIGHT_HALF = {}, {}
-local IMAGE_COLLISION_DISTANCE = {}
+local BIGGEST_ENEMY_WIDTH, BIGGEST_ENEMY_HEIGHT = 0, 0
 for i = 1, #IMAGE_LIST do
-	IMAGE_WIDTH[i], IMAGE_HEIGHT[i] = GET_SIZE(IMAGE_LIST[i])
-	IMAGE_WIDTH_HALF[i], IMAGE_HEIGHT_HALF[i] = IMAGE_WIDTH[i] * 0.5, IMAGE_HEIGHT[i] * 0.5
+	local width, height = GET_SIZE(IMAGE_LIST[i])
+	IMAGE_WIDTH[i], IMAGE_HEIGHT[i] = width, height
+	IMAGE_WIDTH_HALF[i], IMAGE_HEIGHT_HALF[i] = width * 0.5, height * 0.5
 
-	-- An average collision circle that's a mix between width and height
-	local width, height = IMAGE_WIDTH[i], IMAGE_HEIGHT[i]
-	local diff = abs(width - height)
-	if width < height then 
-		IMAGE_COLLISION_DISTANCE[i] = width + diff
-	else
-		IMAGE_COLLISION_DISTANCE[i] = height + diff
-	end
+	BIGGEST_ENEMY_WIDTH = BIGGEST_ENEMY_WIDTH < width and width or BIGGEST_ENEMY_WIDTH
+	BIGGEST_ENEMY_HEIGHT = BIGGEST_ENEMY_HEIGHT < height and height or BIGGEST_ENEMY_HEIGHT
 end
 
 -------------------
@@ -94,7 +87,7 @@ local TIME_SET_SIZE 			<const> = 50
 local GROUP_TIME_SET			<const> = GROUP_SIZE * TIME_SET_SIZE
 
 local REPEL_FORCE 				<const> = 3
-local PLAYER_COLLISION_DISTANCE <const> = 25
+local PLAYER_COLLISION_DISTANCE <const> = 25 * 25
 local BOUNCE_STRENGTH 		<const> = 6
 local STUN_WIGGLE_AMOUNT 	<const> = 3
 local STUN_TIMER_SET 		<const> = 100
@@ -279,13 +272,13 @@ for i = 1, maxEnemies do
 end
 
 
-local ADD_ENEMY <const> = worldAddEnemy
+local ADD_ENEMY <const> = worldAdd_Fast
 local function createEnemy(type, spawnX, spawnY)
 
-	if activeEnemies >= maxEnemies then return end 	-- if too many enemies exist, don't create another enemy
+	local total = activeEnemies + 1
+	if total > maxEnemies then return end 	-- if too many enemies exist, don't create another enemy
+	activeEnemies = total
 
-	activeEnemies += 1
-	local total = activeEnemies
 
 	-- Arrays
 	enemyType[total] = type
@@ -296,11 +289,11 @@ local function createEnemy(type, spawnX, spawnY)
 	savedDirX[total] = 0
 	savedDirY[total] = 0
 
-	maxSpeed[total] = ENEMY_MAX_SPEEDS[type] + (floor(difficulty / SCALE_SPEED))
+	maxSpeed[total] = difficulty // SCALE_SPEED + ENEMY_MAX_SPEEDS[type]
 	spawnMoveParticle[total] = 0
 	rotation[total] = 0
 
-	health[total] = ENEMY_HEALTH[type] * (1 + floor(difficulty / SCALE_HEALTH))
+	health[total] = ceil(difficulty / SCALE_HEALTH) * ENEMY_HEALTH[type]
 	fullHealth[total] = health[total]
 	healthPercent[total] = 1
 	stunned[total] = 0
@@ -309,7 +302,7 @@ local function createEnemy(type, spawnX, spawnY)
 
 	moveCalcTimer[total] = 0
 	timer[total] = 0
-	damageAmount[total] = ENEMY_DAMAGE[type] * (1 + floor(difficulty / SCALE_DAMAGE))
+	damageAmount[total] = ceil(difficulty / SCALE_DAMAGE) * ENEMY_DAMAGE[type]
 	aiPhase[total] = 0
 
 	-- Image
@@ -401,7 +394,7 @@ function bulletEnemyCollision(i, damage, knockback, playerX, playerY, time)
 end
 
 
-local createItemInstance <const> = spawnItem
+local CREATE_ITEM <const> = createItem
 
 -- Create an instance of an item at the enemy's position -- called on enemy death.
 -- Items are created via percent, 1 - 100
@@ -424,10 +417,10 @@ local function createDroppedItem(enemyIndex, type)
 	--	droppedItem = expModifier(ENEMY_RATING[type])
 	--end
 
-	createItemInstance(	droppedItem, 
-						posX[enemyIndex] + IMAGE_WIDTH_HALF[type], 
-						posY[enemyIndex] + IMAGE_HEIGHT_HALF[type]
-						)
+	CREATE_ITEM(	droppedItem, 
+					posX[enemyIndex] + IMAGE_WIDTH_HALF[type], 
+					posY[enemyIndex] + IMAGE_HEIGHT_HALF[type]
+					)
 end
 
 
@@ -731,9 +724,10 @@ end
 
 
 -- Movement shared by all enemies
-local UPDATE_ENEMY <const> = worldUpdateEnemy
+local UPDATE_ENEMY 		<const> = worldUpdateEnemy
+local DAMAGE_PLAYER 	<const> = damagePlayer
 
-local function moveSingleEnemy(dt, i, type, time, playerX, playerY)
+local function moveSingleEnemy(i, type, time, playerX, playerY)
 
 	local startX, startY = posX[i], posY[i]
 
@@ -755,15 +749,15 @@ local function moveSingleEnemy(dt, i, type, time, playerX, playerY)
 	--- Collide With Player - Bounce, Deal Damage, Take Damage ---
 	local centerX, centerY = startX + IMAGE_WIDTH_HALF[type], startY + IMAGE_HEIGHT_HALF[type]
 
-	if 	abs(centerX - playerX) < PLAYER_COLLISION_DISTANCE and
-		abs(centerY - playerY) < PLAYER_COLLISION_DISTANCE 
-		then
+	local xDiffBounce, yDiffBounce = centerX - playerX, centerY - playerY
+	local collideDist = xDiffBounce * xDiffBounce + yDiffBounce * yDiffBounce
+
+	if collideDist < PLAYER_COLLISION_DISTANCE then
 
 		-- bounce
-		local xDiff, yDiff = startX - playerX, startY - playerY
-		local scaledMagnitude = BOUNCE_STRENGTH / sqrt(xDiff * xDiff + yDiff * yDiff)
-		local bounceX = xDiff * scaledMagnitude
-		local bounceY = yDiff * scaledMagnitude
+		local scaledMagnitude = BOUNCE_STRENGTH / sqrt(collideDist)
+		local bounceX = xDiffBounce * scaledMagnitude
+		local bounceY = yDiffBounce * scaledMagnitude
 
 		-- assignments
 		local pX = startX + bounceX
@@ -774,14 +768,14 @@ local function moveSingleEnemy(dt, i, type, time, playerX, playerY)
 		posY[i] = pY
 
 		-- collision interaction
-		--damagePlayer(damageAmount[i], ENEMY_CAMERA_SHAKE[type], x, y)
+		DAMAGE_PLAYER(damageAmount[i], ENEMY_CAMERA_SHAKE[type], pX, pY)
 
 		-- Moving the enemy and attached UI
 		UPDATE_ENEMY(worldRef, collisionDetails[i], pX, pY)
 
 		return pX, pY
 	end
-
+	
 
 	--- MOVE - No player collision ---
 	local vX, vY
@@ -896,7 +890,7 @@ function debugSpawnMassEnemy()
 	for i = 1, maxEnemies do 
 		x = random(100, 300)
 		y = random(100, 300)
-		randomType = random(1, 1)
+		randomType = random(6, 6)
 		createEnemy(randomType, x, y)
 	end
 end
@@ -906,50 +900,32 @@ end
 -- |                          Management                          |
 -- +--------------------------------------------------------------+
 
--- TO DO: remove newVec
-local newVec <const> = pd.geometry.vector2D.new
-
 
 local function spawnMonsters(cameraX, cameraY, time)
 	-- 
 	--if Unpaused then theSpawnTime += (currentTime - timeFromPause) end
 
-	if currentTime >= theSpawnTime then
-		rndLoc = random(1,8)
-		theSpawnTime = currentTime + 3200 - 200 * difficulty
+	if time >= theSpawnTime then
 
-		-- either -1 or 1
-		flip = {
-			x = (random(0,1) * 2) - 1,
-			y = (random(0,1) * 2) - 1
-		}
+		theSpawnTime = time + 3200 - 200 * difficulty
 
-		-- random on unit circle - protects against randomly getting 0
-		local direction = newVec(0, 0)
-		direction.x = max(0.01, random()) * flip.x
-		direction.y = max(0.01, random()) * flip.y
-		direction:normalize()
-
-		-- elliptical perimeter of spawn region
-		distance = { 	
-			x = halfScreenWidth * 1.5,
-			y = halfScreenHeight * 1.5
-		}		
-
-		local enemyX = cameraX + (direction.x * distance.x)
-		local enemyY = cameraY + (direction.y * distance.y)
+		local enemyX = cameraX + random(-250, 250)
+		local enemyY = cameraY + random(-145, 145)
 
 		local type = random(1, 5)
 		createEnemy(type, enemyX, enemyY)
 
+		-- Sometimes create a second enemy, possibly with higher difficulty
 		spawnInc += random(1, difficulty)
 		if spawnInc > 5 then
 			spawnInc = 0
 			type = random(1, 7)
 			createEnemy(type, enemyX, -enemyY)
 		end
+
 	end
 end
+
 
 --[[
 -- ASK ABOUT:
@@ -989,8 +965,7 @@ local function drawHealthBar(i, type, x, y)
 end
 ]]
 
-local BIGGEST_ENEMY_WIDTH 	<const> = 58 	-- ChunkyArms full width, sprites drawn from top left corner
-local BIGGEST_ENEMY_HEIGHT 	<const> = 50 -- ChunkyArms full height
+
 local SCREEN_MIN_X 			<const> = -BIGGEST_ENEMY_WIDTH
 local SCREEN_MAX_X 			<const> = 400
 local SCREEN_MIN_Y 			<const> = getBannerHeight() - BIGGEST_ENEMY_HEIGHT
@@ -999,7 +974,7 @@ local SCREEN_MAX_Y 			<const> = 240
 local FAST_DRAW <const> = gfx.image.draw
 
 -- Update enemy movement, destruction, item drops, etc.
-local function updateEnemiesLists(dt, time, playerX, playerY, screenOffsetX, screenOffsetY)
+local function updateEnemiesLists(time, playerX, playerY, screenOffsetX, screenOffsetY)
 
 	local i = 1
 	local currentActiveEnemies = activeEnemies
@@ -1009,7 +984,7 @@ local function updateEnemiesLists(dt, time, playerX, playerY, screenOffsetX, scr
 
 		-- draw - only need to increment loop if the enemy was NOT deleted
 		if health[i] > 0 then	
-			local x, y = moveSingleEnemy(dt, i, type, time, playerX, playerY)			
+			local x, y = moveSingleEnemy(i, type, time, playerX, playerY)			
 
 			-- Checking to draw if inside screen space saves enough time in all cases, rather than always drawing at all times
 			local drawX = x + screenOffsetX
@@ -1040,13 +1015,9 @@ end
 -- +--------------------------------------------------------------+
 
 
-function updateEnemies(dt, time, playerX, playerY, cameraPosX, cameraPosY, screenOffsetX, screenOffsetY)
+function updateEnemies(time, playerX, playerY, cameraPosX, cameraPosY, screenOffsetX, screenOffsetY)
 
-	--spawnMonsters(cameraPosX, cameraPosY, time)
-	--playdate.resetElapsedTime()
-		updateEnemiesLists(dt, time, playerX, playerY, screenOffsetX, screenOffsetY)
-	--getUpdateTimer()
-	
-	-- Timing
-	--printAndClearTotalTime(time)
+	spawnMonsters(cameraPosX, cameraPosY, time)
+	updateEnemiesLists(time, playerX, playerY, screenOffsetX, screenOffsetY)
+
 end

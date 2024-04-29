@@ -65,7 +65,7 @@ local function assertIsRect(x,y,w,h)
 end
 
 local defaultFilter = function()
-  return 'slide'
+  return 'cross'
 end
 
 ------------------------------------------
@@ -271,6 +271,7 @@ local touch = function(world, col, x,y,w,h, goalX, goalY, filter)
   return col.touch.x, col.touch.y, {}, 0
 end
 
+--[[
 local cross = function(world, col, x,y,w,h, goalX, goalY, filter)
   local cols, len = world:project(col.item, x,y,w,h, goalX, goalY, filter)
   return goalX, goalY, cols, len
@@ -295,6 +296,7 @@ local slide = function(world, col, x,y,w,h, goalX, goalY, filter)
   local cols, len  = world:project(col.item, x,y,w,h, goalX, goalY, filter)
   return goalX, goalY, cols, len
 end
+]]
 
 local bounce = function(world, col, x,y,w,h, goalX, goalY, filter)
   goalX = goalX or x
@@ -383,6 +385,117 @@ local function getDictItemsInCellRect(self, cl,ct,cw,ch)
 
   return items_dict
 end
+
+
+
+
+---------------
+-- +--------------------------------------------------------------+-------------------------------------------------------
+-- |            Player Move Tweaks - NEEDS to be here             |-------------------------------------------------------
+-- +--------------------------------------------------------------+-------------------------------------------------------
+---------------
+local NEXT <const> = next
+local ENEMY_TAG   <const> = TAGS.enemy
+
+
+local function getDictItemsInCellRect_IgnoreEnemyTag(self, cl,ct,cw,ch)
+  local items_dict = {}
+  for cy=ct,ct+ch-1 do
+    local row = self.rows[cy]
+    if row then
+      for cx=cl,cl+cw-1 do
+        local cell = row[cx]
+        if cell and cell.itemCount > 0 then -- no cell.itemCount > 1 because tunneling
+          for item,_ in NEXT, cell.items do
+            if item.tag ~= ENEMY_TAG then
+              items_dict[item] = true
+            end
+          end
+        end
+      end
+    end
+  end
+
+  return items_dict
+end
+
+
+local function worldGetRect(self, item)
+  local rect = self.rects[item]
+  if not rect then
+    error('Item ' .. tostring(item) .. ' must be added to the world before getting its rect. Use world:add(item, x,y,w,h) to add it first.')
+  end
+  return rect.x, rect.y, rect.w, rect.h
+end
+
+
+local function worldProject(self, item, x,y,w,h, goalX, goalY, filter)
+  local collisions, len = {}, 0
+  local visited = {}
+
+  -- This could probably be done with less cells using a polygon raster over the cells instead of a
+  -- bounding rect of the whole movement. Conditional to building a queryPolygon method
+  local tl, tt = min(goalX, x),       min(goalY, y)
+  local tr, tb = max(goalX + w, x+w), max(goalY + h, y+h)
+  local tw, th = tr-tl, tb-tt
+
+  local cl,ct,cw,ch = grid_toCellRect(self.cellSize, tl,tt,tw,th)
+
+  local dictItemsInCellRect = getDictItemsInCellRect_IgnoreEnemyTag(self, cl,ct,cw,ch)
+
+  for other,_ in NEXT, dictItemsInCellRect do
+    if not visited[other] then
+      visited[other] = true
+
+      local responseName = filter(item, other)
+      if responseName then
+        local ox,oy,ow,oh   = worldGetRect(self, other)
+        local col           = rect_detectCollision(x,y,w,h, ox,oy,ow,oh, goalX, goalY)
+
+        if col then
+          col.other    = other
+          col.item     = item
+          col.type     = responseName
+
+          len = len + 1
+          collisions[len] = col
+        end
+      end
+    end
+  end
+
+  return collisions, len
+end
+
+
+local cross = function(world, col, x,y,w,h, goalX, goalY, filter)
+  local cols, len = worldProject(world, col.item, x,y,w,h, goalX, goalY, filter)
+  return goalX, goalY, cols, len
+end
+
+local slide = function(world, col, x,y,w,h, goalX, goalY, filter)
+  local tch, move  = col.touch, col.move
+  if move.x ~= 0 or move.y ~= 0 then
+    if col.normal.x ~= 0 then
+      goalX = tch.x
+    else
+      goalY = tch.y
+    end
+  end
+
+  local cols, len  = worldProject(world, col.item, tch.x, tch.y,w,h, goalX, goalY, filter)
+  return goalX, goalY, cols, len
+end
+
+---------------
+-- +--------------------------------------------------------------+-------------------------------------------------------
+-- |                         Block End                            |-------------------------------------------------------
+-- +--------------------------------------------------------------+-------------------------------------------------------
+---------------
+
+
+
+
 
 local function getCellsTouchedBySegment(self, x1,y1,x2,y2)
 
@@ -778,6 +891,10 @@ bump.responses = {
 -- +--------------------------------------------------------------+
 
 
+------------------
+-- Enemy Tweaks --
+------------------
+
 function addToWorld(self, item, x,y,w,h)
   local rect = self.rects[item]
   if rect then
@@ -800,7 +917,7 @@ end
 
 -- identical to global tags, localized for speed and readability
 local PLAYER_TAG <const> = TAGS.player
-local NEXT <const> = next
+
 
 -- Modified to return the FIRST collider found in a given rect
 function worldQueryRectFast(self, x,y,w,h)
@@ -829,12 +946,11 @@ function worldQueryRectFast(self, x,y,w,h)
 end
 
 
-function worldAddEnemy(self, item, x,y,w,h)
+function worldAdd_Fast(self, item, x,y,w,h)
   local rect = self.rects[item]
   if rect then
     error('Item ' .. tostring(item) .. ' added to the world twice.')
   end
-  assertIsRect(x,y,w,h)
 
   self.rects[item] = {x=x,y=y,w=w,h=h}
 
@@ -850,7 +966,7 @@ end
 
 
 function worldRemoveEnemy(self, item)
-  local x,y,w,h = self:getRect(item)
+  local x,y,w,h = worldGetRect(self, item)
 
   self.rects[item] = nil
   local cl,ct,cw,ch = grid_toCellRect(self.cellSize, x,y,w,h)
@@ -863,7 +979,7 @@ end
 
 
 function worldUpdateEnemy(self, item, x2,y2)
-  local x1,y1,w1,h1 = self:getRect(item)
+  local x1,y1,w1,h1 = worldGetRect(self, item)
 
   if x1 ~= x2 or y1 ~= y2 then
 
@@ -909,6 +1025,90 @@ function worldUpdateEnemy(self, item, x2,y2)
   end
 end
 
+
+----------------------------
+-- Player Movement Tweaks --
+----------------------------
+
+
+function worldCheckFast(self, item, goalX, goalY, filter)
+
+  local visited = {[item] = true}
+  local visitedFilter = function(itm, other)
+    if visited[other] then return false end
+    return filter(itm, other)
+  end
+
+  local x,y,w,h = item.x, item.y, item.width, item.height
+
+  local projected_cols, projected_len = worldProject(self, item, x,y,w,h, goalX,goalY, visitedFilter)
+
+  while projected_len > 0 do
+    local col = projected_cols[1]
+    visited[col.other] = true
+
+    local response = getResponseByName(self, col.type)
+
+    goalX, goalY, projected_cols, projected_len = response(
+      self,
+      col,
+      x, y, w, h,
+      goalX, goalY,
+      visitedFilter
+    )
+  end
+
+  return floor(goalX), floor(goalY)
+end
+
+--[[
+function worldUpdateFast(self, item, x2,y2)
+  local x1,y1,w1,h1 = worldGetRect(self, item)
+
+  if x1 ~= x2 or y1 ~= y2 then
+
+    local cellSize = self.cellSize
+    local cl1,ct1,cw1,ch1 = grid_toCellRect(cellSize, x1,y1,w1,h1)
+    local cl2,ct2,cw2,ch2 = grid_toCellRect(cellSize, x2,y2,w1,h1)
+
+    if cl1 ~= cl2 or ct1 ~= ct2 or cw1 ~= cw2 or ch1 ~= ch2 then
+
+      local cr1, cb1 = cl1+cw1-1, ct1+ch1-1
+      local cr2, cb2 = cl2+cw2-1, ct2+ch2-1
+      local cyOut
+
+      for cy = ct1, cb1 do
+        cyOut = cy < ct2 or cy > cb2
+        for cx = cl1, cr1 do
+          if cyOut or cx < cl2 or cx > cr2 then
+            removeItemFromCell(self, item, cx, cy)
+          end
+        end
+      end
+
+      for cy = ct2, cb2 do
+        cyOut = cy < ct1 or cy > cb1
+        for cx = cl2, cr2 do
+          if cyOut or cx < cl1 or cx > cr1 then
+            addItemToCell(self, item, cx, cy)
+          end
+        end
+      end
+
+    end
+  end
+end
+local UPDATE_FAST <const> = worldUpdateFast
+
+
+function worldMoveFast(self, item, goalX, goalY, filter)
+  local actualX, actualY = worldCheckFast(self, item, goalX, goalY, filter)
+
+  --UPDATE_FAST(self, item, floor(actualX), floor(actualY))
+
+  return actualX, actualY
+end
+]]
 
 ----------------------------------------------------------------
 ----------------------------------------------------------------

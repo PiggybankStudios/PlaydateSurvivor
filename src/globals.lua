@@ -21,7 +21,7 @@ end
 -- |                            Timers                            |
 -- +--------------------------------------------------------------+
 
-
+--[[
 --local resetTime <const> = pd.resetElapsedTime
 local getTime <const> = pd.getElapsedTime
 
@@ -83,7 +83,7 @@ function printAndClearTotalTime(time, activeNameAsString, activeObject)
 	minTime = 1
 	maxTime = 0
 end
-
+]]
 
 
 -- +--------------------------------------------------------------+

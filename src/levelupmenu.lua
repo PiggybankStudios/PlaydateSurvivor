@@ -15,14 +15,14 @@ local statOptions = {0,0,0,0}
 local levelUpImage = gfx.image.new('Resources/Sprites/menu/levelUpMenu')
 local levelUpSprite = gfx.sprite.new(levelUpImage)
 levelUpSprite:setIgnoresDrawOffset(true)	-- forces sprite to be draw to screen, not world
-levelUpSprite:setZIndex(ZINDEX.ui)
+--levelUpSprite:setZIndex(ZINDEX.ui)
 levelUpSprite:moveTo(halfScreenWidth, halfScreenHeight)
 
 --setup selector
 local selectImage = gfx.image.new('Resources/Sprites/menu/levelUpselect')
 local selectSprite = gfx.sprite.new(selectImage)
 selectSprite:setIgnoresDrawOffset(true)	-- forces sprite to be draw to screen, not world
-selectSprite:setZIndex(ZINDEX.uidetails)
+--selectSprite:setZIndex(ZINDEX.uidetails)
 selectSprite:moveTo(114, 132)
 
 --setup guns
@@ -50,10 +50,10 @@ level1Sprite:setIgnoresDrawOffset(true)	-- forces sprite to be draw to screen, n
 level2Sprite:setIgnoresDrawOffset(true)	-- forces sprite to be draw to screen, not world
 level3Sprite:setIgnoresDrawOffset(true)	-- forces sprite to be draw to screen, not world
 level4Sprite:setIgnoresDrawOffset(true)	-- forces sprite to be draw to screen, not world
-level1Sprite:setZIndex(ZINDEX.uidetails)
-level2Sprite:setZIndex(ZINDEX.uidetails)
-level3Sprite:setZIndex(ZINDEX.uidetails)
-level4Sprite:setZIndex(ZINDEX.uidetails)
+--level1Sprite:setZIndex(ZINDEX.uidetails)
+--level2Sprite:setZIndex(ZINDEX.uidetails)
+--level3Sprite:setZIndex(ZINDEX.uidetails)
+--level4Sprite:setZIndex(ZINDEX.uidetails)
 level1Sprite:moveTo(114, 132)
 level2Sprite:moveTo(174, 132)
 level3Sprite:moveTo(234, 132)

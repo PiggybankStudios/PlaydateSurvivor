@@ -16,14 +16,14 @@ local endWaveText = "none"
 local unpauseImage = gfx.image.new('Resources/Sprites/lTextBox')
 local unpauseSprite = gfx.sprite.new(unpauseImage)
 unpauseSprite:setIgnoresDrawOffset(true)	-- forces sprite to be draw to screen, not world
-unpauseSprite:setZIndex(ZINDEX.uibanner)
+--unpauseSprite:setZIndex(ZINDEX.uibanner)
 unpauseSprite:moveTo(halfScreenWidth, halfScreenHeight)
 
 --setup main menu
 local pauseImage = gfx.image.new('Resources/Sprites/menu/pauseMenu')
 local pauseSprite = gfx.sprite.new(pauseImage)
 pauseSprite:setIgnoresDrawOffset(true)	-- forces sprite to be draw to screen, not world
-pauseSprite:setZIndex(ZINDEX.ui)
+--pauseSprite:setZIndex(ZINDEX.ui)
 pauseSprite:moveTo(halfScreenWidth, halfScreenHeight)
 
 --setup selector
@@ -31,7 +31,7 @@ pauseSprite:moveTo(halfScreenWidth, halfScreenHeight)
 local selectImage = gfx.image.new('Resources/Sprites/menu/mainselect')
 local selectSprite = gfx.sprite.new(selectImage)
 selectSprite:setIgnoresDrawOffset(true)	-- forces sprite to be draw to screen, not world
-selectSprite:setZIndex(ZINDEX.uidetails)
+--selectSprite:setZIndex(ZINDEX.uidetails)
 selectSprite:moveTo(204, 212)
 
 --setup guns
@@ -54,10 +54,10 @@ gun1Sprite:setIgnoresDrawOffset(true)	-- forces sprite to be draw to screen, not
 gun2Sprite:setIgnoresDrawOffset(true)	-- forces sprite to be draw to screen, not world
 gun3Sprite:setIgnoresDrawOffset(true)	-- forces sprite to be draw to screen, not world
 gun4Sprite:setIgnoresDrawOffset(true)	-- forces sprite to be draw to screen, not world
-gun1Sprite:setZIndex(ZINDEX.uidetails)
-gun2Sprite:setZIndex(ZINDEX.uidetails)
-gun3Sprite:setZIndex(ZINDEX.uidetails)
-gun4Sprite:setZIndex(ZINDEX.uidetails)
+--gun1Sprite:setZIndex(ZINDEX.uidetails)
+--gun2Sprite:setZIndex(ZINDEX.uidetails)
+--gun3Sprite:setZIndex(ZINDEX.uidetails)
+--gun4Sprite:setZIndex(ZINDEX.uidetails)
 gun1Sprite:moveTo(346, 40)
 gun2Sprite:moveTo(346, 85)
 gun3Sprite:moveTo(346, 130)

@@ -1,228 +1,34 @@
-local gfx <const> = playdate.graphics
-local vec <const> = playdate.geometry.vector2D
+local pd 	<const> = playdate
+local gfx 	<const> = pd.graphics
+local vec 	<const> = pd.geometry.vector2D
 
-local random <const> = math.random
+local random 	<const> = math.random
+local abs 		<const> = math.abs
+local sqrt		<const> = math.sqrt
 
-local theCurrTime = 0
-local playerPos = vec.new(0, 0)
+local dt 		<const> = getDT()
 
-
--- Item Type Variables --
-local itemMoveSpeed <const> = 120
-local defaultDistanceCheck = getPlayerMagnetStat()
-local playerCollisionDistance <const> = 15	-- distance from player that is close enough to mimic a collision
-
--- Items
-local maxItems <const> = 50 -- max that can exist in the world at one time
-local activeItems = 0
-local absorbAllFlag = false
-
--- Arrays
-local itemType = {}
-local posX = {}
-local posY = {}
-local rotation = {}
-local distanceCheck = {}
-local lifeTime = {} -- NO LIFE TIMES
-
-
------------
--- Debug --
-local maxUpdateTimer = 0
-local currentUpdateTimer = 0
------------
------------
-
--- +--------------------------------------------------------------+
--- |                           Timers                             |
--- +--------------------------------------------------------------+
-
-
-local function getUpdateTimer()
-	currentUpdateTimer = playdate.getElapsedTime()
-	if maxUpdateTimer < currentUpdateTimer then
-		maxUpdateTimer = currentUpdateTimer
-		print("ITEM -- Update: " .. 1000*maxUpdateTimer)
-	end
-end
-
-
--- +--------------------------------------------------------------+
--- |                Init, Create, Delete, Handle                  |
--- +--------------------------------------------------------------+
-
-
---- Init Arrays ---
-for i = 1, maxItems do
-	itemType[i] = 0
-	posX[i] = 0
-	posY[i] = 0
-	rotation[i] = 0
-	distanceCheck[i] = 0
-	lifeTime[i] = 0
-end
-
-
--- LOCAL create
-local function createItem(type, spawnX, spawnY)
-	if activeItems >= maxItems then do return end end -- if too many items exist, then don't make another item
-
-	activeItems += 1
-	local total = activeItems
-
-	itemType[total] = type
-	posX[total] = spawnX
-	posY[total] = spawnY
-	rotation[total] = 0
-	distanceCheck[total] = defaultDistanceCheck
-	lifeTime[total] = -1
-end
-
-
-local function deleteItem(index, currentActiveItems)
-	local i = index
-	local total = currentActiveItems
-
-	-- overwrite the to-be-deleted item with the item at the end
-	itemType[i] = itemType[total]
-	posX[i] = posX[total]
-	posY[i] = posY[total]
-	rotation[i] = rotation[total]
-	distanceCheck[i] = distanceCheck[total]
-	lifeTime[i] = lifeTime[total]
-end
-
-
--- GLOBAL create
-function spawnItem(type, spawnX, spawnY)
-	createItem(type, spawnX, spawnY)
-end
-
-
--- GLOBAL debug create
-local create <const> = createItem
-function debugItemSpawn()
-	local type = 1
-	for i = 1, 10000 do		
-		local x = random(-1000, 1000)
-		local y = random(-1000, 1000)
-		create(type, x, y)
-	end
-	absorbAllFlag = true
-end
-
-
--- +--------------------------------------------------------------+
--- |                       Item Management                        |
--- +--------------------------------------------------------------+
-
-
---GLOBAL adjust distance check
-function setDistanceCheckToPlayerMagnetStat(value)
-	defaultDistanceCheck = value
-end
-
-
--- GLOBAL clear all items
-function clearItems()
-	activeItems = 0
-end
-
-
-local activateItemEffect = {
-	-- Health
-	function()
-		heal(20) 
-		addItemsGrabbed() 
-	end,
-
-	-- Weapon
-	function()
-		newWeaponGrabbed() -- not allowing choice of boomerange or wavegun, until fixed
-		addItemsGrabbed()
-	end,
-
-	-- Shield
-	function()
-		shield(10000)
-		addItemsGrabbed()
-	end,
-
-	--AbsorbAll
-	function()
-		absorbAllFlag = true
-		addItemsGrabbed()
-	end,
-
-	--Exp1
-	function() addEXP(1) end,
-
-	--Exp2
-	function() addEXP(2) end,
-
-	--Exp3
-	function() addEXP(3) end,
-
-	--Exp6
-	function() addEXP(6) end,
-
-	--Exp9
-	function() addEXP(9) end,
-
-	--Exp16
-	function() addEXP(16) end,
-
-	--Luck
-	function() incLuck() end,
-
-	--Mun2
-	function() addMun(2) end,
-
-	--Mun10
-	function() addMun(5) end,
-
-	--Mun50
-	function() addMun(20) end
-}
+local GET_SIZE 	<const> = gfx.image.getSize
 
 
 -- +--------------------------------------------------------------+
 -- |                            Render                            |
 -- +--------------------------------------------------------------+
 
-
---[[
-	health = 1,
-	weapon = 2, 
-	shield = 3, 
-	absorbAll = 4,
-	exp1 = 5, 
-	exp2 = 6, 
-	exp3 = 7, 
-	exp6 = 8, 
-	exp9 = 9, 
-	exp16 = 10, 
-	luck = 11 ,
-	mun2 = 12 ,
-	mun10 = 13 ,
-	mun50 = 14 
-]]--
-
-local img_Health = gfx.image.new('Resources/Sprites/item/iHealth')
-local img_Weapon = gfx.image.new('Resources/Sprites/item/iWeapon')
-local img_Shield = gfx.image.new('Resources/Sprites/item/iShield')
+local img_Health 	= gfx.image.new('Resources/Sprites/item/iHealth')
+local img_Weapon 	= gfx.image.new('Resources/Sprites/item/iWeapon')
+local img_Shield 	= gfx.image.new('Resources/Sprites/item/iShield')
 local img_AbsorbAll = gfx.image.new('Resources/Sprites/item/iAbsorbAll')
-local img_EXP_1 = gfx.image.new('Resources/Sprites/item/iEXP1')
-local img_EXP_2 = gfx.image.new('Resources/Sprites/item/iEXP2')
-local img_EXP_3 = gfx.image.new('Resources/Sprites/item/iEXP3')
-local img_EXP_6 = gfx.image.new('Resources/Sprites/item/iEXP6')
-local img_EXP_9 = gfx.image.new('Resources/Sprites/item/iEXP9')
-local img_EXP_16 = gfx.image.new('Resources/Sprites/item/iEXP16')
-local img_Luck = gfx.image.new('Resources/Sprites/item/iLuck')
-local img_Mun2 = gfx.image.new('Resources/Sprites/item/iMun2')
-local img_Mun10 = gfx.image.new('Resources/Sprites/item/iMun10')
-local img_Mun50 = gfx.image.new('Resources/Sprites/item/iMun50')
-
+local img_EXP_1 	= gfx.image.new('Resources/Sprites/item/iEXP1')
+local img_EXP_2 	= gfx.image.new('Resources/Sprites/item/iEXP2')
+local img_EXP_3 	= gfx.image.new('Resources/Sprites/item/iEXP3')
+local img_EXP_6 	= gfx.image.new('Resources/Sprites/item/iEXP6')
+local img_EXP_9 	= gfx.image.new('Resources/Sprites/item/iEXP9')
+local img_EXP_16 	= gfx.image.new('Resources/Sprites/item/iEXP16')
+local img_Luck		= gfx.image.new('Resources/Sprites/item/iLuck')
+local img_Mun2		= gfx.image.new('Resources/Sprites/item/iMun2')
+local img_Mun10 	= gfx.image.new('Resources/Sprites/item/iMun10')
+local img_Mun50 	= gfx.image.new('Resources/Sprites/item/iMun50')
 
 local IMAGE_LIST = {
 	img_Health,
@@ -241,101 +47,246 @@ local IMAGE_LIST = {
 	img_Mun50	
 }
 
-
-local itemsImage = gfx.image.new(400, 240) -- screen size draw
-local itemsSprite = gfx.sprite.new(itemsImage)
-itemsSprite:setIgnoresDrawOffset(true)
-itemsSprite:setZIndex(ZINDEX.item)
-itemsSprite:moveTo(200, 120)
-
-
--- Global to be called after level creation, b/c level start clears the sprite list
-function addItemSpriteToList()
-	itemsSprite:add()
+-- items should be square images, so checking only width is fine
+local IMAGE_SIZE_HALF = {}
+local BIGGEST_ITEM_SIZE = 0
+for i = 1, #IMAGE_LIST do
+	local width = GET_SIZE(IMAGE_LIST[i])
+	IMAGE_SIZE_HALF[i] = width * 0.5
+	BIGGEST_ITEM_SIZE = BIGGEST_ITEM_SIZE < width and width or BIGGEST_ITEM_SIZE
 end
 
 
--- Constants for speed
-local lockFocus <const> = gfx.lockFocus
-local unlockFocus <const> = gfx.unlockFocus
-local setColor <const> = gfx.setColor
-local colorBlack <const> = gfx.kColorBlack
-local colorClear <const> = gfx.kColorClear
-local newVec <const> = vec.new
-local abs <const> = math.abs
-local drawOffset <const> = gfx.getDrawOffset
+-- +--------------------------------------------------------------+
+-- |                     Variables and Arrays                     |
+-- +--------------------------------------------------------------+
+
+-- Constants
+local ITEM_MOVE_SPEED	 			<const> = 6
+local PLAYER_COLLISION_DISTANCE 	<const> = 20 * 20	-- distance from player (SQUARED) that is close enough to mimic a collision
+
+-- Variables
+local defaultDistanceCheck = getPlayerMagnetStat()
+local absorbAllFlag = false
+
+
+
+-- Items
+local maxItems <const> = 200
+local activeItems = 0
+
+-- Arrays
+local itemType = {}
+local posX = {}
+local posY = {}
+local rotation = {}
+local distanceCheck = {}
+local lifeTime = {}
+
+
+
+-- +--------------------------------------------------------------+
+-- |                    Init, Create, Delete                      |
+-- +--------------------------------------------------------------+
+
+
+--- Init Arrays ---
+for i = 1, maxItems do
+	itemType[i] = 0
+	posX[i] = 0
+	posY[i] = 0
+	rotation[i] = 0
+	distanceCheck[i] = 0
+	lifeTime[i] = 0
+end
+
+
+function createItem(type, spawnX, spawnY)
+	
+	local total = activeItems + 1
+	if total > maxItems then return end
+	activeItems = total
+	
+
+	itemType[total] = type
+	posX[total] = spawnX
+	posY[total] = spawnY
+	rotation[total] = 0
+	distanceCheck[total] = defaultDistanceCheck * defaultDistanceCheck -- This is squared so it can be compared with a squared magnitude as distance
+	lifeTime[total] = -1
+end
+
+
+-- overwrite the to-be-deleted item with the item at the end
+local function deleteItem(i, total)
+	itemType[i] = itemType[total]
+	posX[i] = posX[total]
+	posY[i] = posY[total]
+	rotation[i] = rotation[total]
+	distanceCheck[i] = distanceCheck[total]
+	lifeTime[i] = lifeTime[total]
+end
+
+
+-- GLOBAL debug create
+function debugItemSpawn()
+	local type = 1
+	for i = 1, 100 do		
+		local x = random(180, 220)
+		local y = random(180, 220)
+		createItem(type, x, y)
+	end
+end
+
+-- +--------------------------------------------------------------+
+-- |                           Effects                            |
+-- +--------------------------------------------------------------+
+
+
+--GLOBAL adjust distance check
+function setDistanceCheckToPlayerMagnetStat(value)
+	defaultDistanceCheck = value
+end
+
+
+-- GLOBAL clear all items
+function clearItems()
+	activeItems = 0
+end
+
+
+local HEAL_PLAYER 			<const> = healPlayer
+local NEW_WEAPON_GRABBED 	<const> = newWeaponGrabbed
+local SHIELD_PLAYER 		<const> = shieldPlayer
+local ADD_EXP 				<const> = addPlayerEXP
+local ADD_PLAYER_LUCK 		<const> = addPlayerLuck
+local ADD_MUN 				<const> = addMun
+
+local activateItemEffect = {
+	-- Health
+	function() HEAL_PLAYER(20) 		return 1 end,
+
+	-- Weapon
+	function() NEW_WEAPON_GRABBED() return 1 end,
+
+	-- Shield
+	function() SHIELD_PLAYER(10000) return 1 end,
+
+	--AbsorbAll
+	function() absorbAllFlag = true return 1 end,
+
+	--Exp1
+	function() ADD_EXP(1) 			return 0 end,
+
+	--Exp2
+	function() ADD_EXP(2) 			return 0 end,
+
+	--Exp3
+	function() ADD_EXP(3) 			return 0 end,
+
+	--Exp6
+	function() ADD_EXP(6) 			return 0 end,
+
+	--Exp9
+	function() ADD_EXP(9) 			return 0 end,
+
+	--Exp16
+	function() ADD_EXP(16) 			return 0 end,
+
+	--Luck
+	function() ADD_PLAYER_LUCK() 	return 1 end,
+
+	--Mun2
+	function() ADD_MUN(2) 			return 0 end,
+
+	--Mun10
+	function() ADD_MUN(5) 			return 0 end,
+
+	--Mun50
+	function() ADD_MUN(20) 			return 0 end
+}
+
+
+
+-- +--------------------------------------------------------------+
+-- |                          Management                          |
+-- +--------------------------------------------------------------+
+
+
+local SCREEN_MIN_X 			<const> = -BIGGEST_ITEM_SIZE
+local SCREEN_MAX_X 			<const> = 400
+local SCREEN_MIN_Y 			<const> = getBannerHeight() - BIGGEST_ITEM_SIZE
+local SCREEN_MAX_Y 			<const> = 240
 
 -- update function for moving items and removing from item lists
-local function updateItemLists(dt)
-
-	local deltaTime = dt
-	local removeDistanceCheck = false
-	local playerX = playerPos.x
-	local playerY = playerPos.y
-	local offsetX
-	local offsetY
-	offsetX, offsetY = drawOffset()
+local function updateItemLists(time, playerX, playerY, offsetX, offsetY)
+	
+	-- Items Collected Count
+	local itemsCollected = 0
 
 	-- No matter which item set the ABSORB_ALL flag, make sure all existing items are affected
-	if absorbAllFlag == true then
+	local removeDistanceCheck = false
+	if absorbAllFlag then
 		removeDistanceCheck = true
 		absorbAllFlag = false
 	end
 
-	itemsImage:clear(colorClear)
-	lockFocus(itemsImage)
+	-- Loop over all items
+	local i = 1
+	local currentActiveItems = activeItems
+	while i <= currentActiveItems do
 
-		-- set details
-		setColor(colorBlack)
+		local type = itemType[i]
+		local itemX, itemY = posX[i], posY[i]
 
-		local i = 1
-		local currentActiveItems = activeItems
-		while i <= currentActiveItems do
+		-- Move and Delete
+		local xDiff, yDiff = playerX - itemX, playerY - itemY
+		local magnitudeSquared = xDiff * xDiff + yDiff * yDiff
+		if removeDistanceCheck then distanceCheck[i] = magnitudeSquared + 1000 end  -- absorb all check
 
-			-- Absorb All
-			if removeDistanceCheck == true then distanceCheck[i] = -1 end
+		if 	magnitudeSquared < distanceCheck[i] then
+			local scaledMagnitude = ITEM_MOVE_SPEED / sqrt(magnitudeSquared)
+			itemX = xDiff * scaledMagnitude + itemX
+			itemY = yDiff * scaledMagnitude + itemY
+			posX[i] = itemX
+			posY[i] = itemY
 
-			-- Movement
-			local x = posX[i]
-			local y = posY[i]
-			local distanceX = abs(playerX - x)
-			local distanceY = abs(playerY - y)	
-			local moveTowardsPlayer = distanceCheck[i]	
-			if (distanceX < moveTowardsPlayer and distanceY < moveTowardsPlayer) or moveTowardsPlayer == -1 then
-				local direction = newVec(playerX - x, playerY - y):normalized()
-				posX[i] += (direction.x * itemMoveSpeed * deltaTime)
-				posY[i] += (direction.y * itemMoveSpeed * deltaTime)
-			end		
-
-			-- Draw - only within screen
-			local drawX = abs(x + offsetX + 50)
-			local drawY = abs(y + offsetY + 50)
-			local type = itemType[i]
-			if drawX < 500 and drawY < 290 then 
-				IMAGE_LIST[type]:draw(x + offsetX, y + offsetY) 
-
-				-- If item is close enough to player, then mark it for collision and stop moving item
-				-- Only check collision if item is on-screen
-				if distanceX < playerCollisionDistance and distanceY < playerCollisionDistance then lifeTime[i] = 0 end
-
-				-- Delete
-				local itemLifeTime = lifeTime[i]
-				if theCurrTime >= itemLifeTime and itemLifeTime ~= -1 then -- lifeTime of -1 means it will exist until set to 0
-					activateItemEffect[type]()
-					deleteItem(i, currentActiveItems)
-					currentActiveItems -= 1
-					i -= 1
-				end
+			if magnitudeSquared < PLAYER_COLLISION_DISTANCE then 
+				lifeTime[i] = 0
 			end
+		end		
 
-			-- increment
-			i += 1	
-		end
-	unlockFocus()
+		-- Draw
+		local itemLifeTime = lifeTime[i]
+		if 	itemLifeTime < 0 or 	-- lifeTime is -1, which means it doesn't die by a timer - alive indefinitely.
+			time < itemLifeTime 	-- Any lifeTime greater than -1 will die by a timer.
+			then
+
+			local drawX = itemX + offsetX
+			local drawY = itemY + offsetY		
+			if 	SCREEN_MIN_X < drawX and drawX < SCREEN_MAX_X and 
+				SCREEN_MIN_Y < drawY and drawY < SCREEN_MAX_Y then
+
+				local halfSize = IMAGE_SIZE_HALF[type]
+				IMAGE_LIST[type]:draw(itemX - halfSize, itemY - halfSize) 
+			end
+			i = i + 1
+
+		-- Delete
+		else 
+			itemsCollected = itemsCollected + activateItemEffect[type]()
+			deleteItem(i, currentActiveItems)
+			currentActiveItems = currentActiveItems - 1
+		end 
+	end
+
 
 	-- After all items are changed for absorb distance, reset this flag
 	removeDistanceCheck = false
 	activeItems = currentActiveItems
+
+	-- Return the items collected this frame
+	return itemsCollected
 end
 
 
@@ -345,41 +296,11 @@ end
 -- +--------------------------------------------------------------+
 
 
---- DEBUG TEXT ---
-local debugImage = gfx.image.new(160, 175, gfx.kColorWhite)
-local debugSprite = gfx.sprite.new(debugImage)
-debugSprite:setIgnoresDrawOffset(true)
-debugSprite:moveTo(80, 100)
-debugSprite:setZIndex(ZINDEX.uidetails)
-------------------
 
 
-function updateItems(dt, mainTimePassed, mainLoopTime)
-	-- Get run-time variables
-	theCurrTime = mainLoopTime
-	playerPos = getPlayerPosition()
-
-
-	playdate.resetElapsedTime()
-		updateItemLists(dt)
-	getUpdateTimer()
-
-	--[[
-	-- DEBUGGING
-	debugImage:clear(gfx.kColorWhite)
-	gfx.pushContext(debugImage)
-		gfx.setColor(gfx.kColorWhite)
-		gfx.drawRect(0, 0, 140, 150)
-		gfx.setColor(gfx.kColorBlack)
-		--gfx.drawText(" Cur C: " .. 1000*currentCreateTimer, 0, 0)
-		gfx.drawText(" Update Timer: " .. 1000*currentUpdateTimer, 0, 25)
-		gfx.drawText("Max Items: " .. maxItems, 0, 75)
-		gfx.drawText("Active Items: " .. activeItems, 0, 100)
-		gfx.drawText("FPS: " .. playdate.getFPS(), 0, 125)
-		gfx.drawText("Main Time:" .. mainTimePassed, 0, 150)
-	gfx.popContext()
-	debugSprite:setImage(debugImage)
-	debugSprite:add()
-	-----
-	]]--
+function updateItems(time, playerX, playerY, offsetX, offsetY)
+	
+	-- Returns the items collected this tick, after updating all items
+	return updateItemLists(time, playerX, playerY, offsetX, offsetY)
+	
 end

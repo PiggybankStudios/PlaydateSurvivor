@@ -13,10 +13,8 @@
 
 local pd 		<const> = playdate
 local gfx 		<const> = pd.graphics
-local vec 		<const> = pd.geometry.vector2D
 
 local NEXT 		<const> = next
-local floor 	<const> = math.floor
 local ceil 		<const> = math.ceil
 local abs 		<const> = math.abs
 local max 		<const> = math.max
@@ -159,13 +157,13 @@ local BULLET_ATTACKRATES = {
 
 -- min = 1.0 - slightly pauses enemy speed of 1
 local BULLET_KNOCKBACKS = {
-	1, 		-- peagun
+	0.1, --1, 		-- peagun
 	2, 		-- cannon
 	0, 		-- minigun
 	1,		-- shotgun
 	0.8, 	-- burstgun
 	2, 		-- grenade
-	0.5, 	-- ranggun
+	0.1, --0.5, 	-- ranggun
 	0, 		-- wavegun
 	0  		-- grenadePellet
 }
@@ -311,9 +309,9 @@ local grenadeCount = 0
 
 -- Gun Slots
 local theShotTimes = {0, 0, 0, 0} --how long until next shot
-local theGunSlots = {BULLET_TYPE.ranggun, BULLET_TYPE.ranggun, BULLET_TYPE.ranggun, BULLET_TYPE.ranggun} --what gun in each slot
+local theGunSlots = {BULLET_TYPE.peagun, BULLET_TYPE.peagun, BULLET_TYPE.peagun, BULLET_TYPE.peagun} --what gun in each slot
 local theGunLogic = {0, 0, 0, 0} --what special logic that slotted gun needs
-local theGunTier = {3, 2, 1, 1} -- what tier the gun is at
+local theGunTier = {3, 3, 3, 3} -- what tier the gun is at
 
 
 
@@ -353,11 +351,13 @@ end
 -- Create a bullet at the end of the list
 local function createBullet(type, spawnX, spawnY, newRotation, newTier, time)
 
-	if activeBullets >= maxBullets then return end -- if too many bullets exist, then don't make another bullet
+	local total = activeBullets + 1
+	if total > maxBullets then return end -- if too many bullets exist, then don't make another bullet
+	activeBullets = total
 
 	newShotsFired = newShotsFired + 1
-	activeBullets = activeBullets + 1
-	local total = activeBullets
+
+	
 
 	bulletType[total] = type
 
@@ -413,9 +413,8 @@ end
 
 
 
--- Deleted bullet is swapped with bullet at the ends of all lists
+-- Deleted bullet is replaced with data of bullet at the ends of all lists
 local function deleteBullet(i, total)
-	-- overwrite the to-be-deleted bullet with the bullet at the end
 	bulletType[i] = bulletType[total]
 	posX[i] = posX[total]
 	posY[i] = posY[total]
@@ -437,7 +436,7 @@ end
 
 -- Grenade Pellet Only
 local function createGrenadePellets(tier, gX, gY, mainLoopTime)
-	local amount = 4 + (4 * tier)
+	local amount = 4 * tier + 4
 	local degree = 360 // amount
 	local newRotation = 0
 	for i = 1, amount do
@@ -548,7 +547,7 @@ local function handleCreatingBullets(time, elapsedPauseTime, playerX, playerY, c
 
 		-- setup bullet data
 		local spawnTime = time - elapsedPauseTime
-		local slotAngle = crank + (90 * iGunSlot)
+		local slotAngle = (iGunSlot - 1) * 90 + crank
 		local gunTier = theGunTier[iGunSlot]
 		local gunLogic = theGunLogic[iGunSlot]
 		theShotTimes[iGunSlot] = time + playerAttackRate * BULLET_ATTACKRATES[type]
@@ -965,15 +964,9 @@ function updateBullets(time, crank, playerX, playerY, screenOffsetX, screenOffse
 	newShotsFired = 0
 
 
-	-- Bullet Handling
 	handleCreatingBullets(time, elapsedPauseTime, playerX, playerY, crank)
-
-	--resetTime()
 	updateBulletLists(time, elapsedPauseTime, playerX, playerY, screenOffsetX, screenOffsetY)
-	--addTotalTime()
 
-	-- Debugging
-	--PRINT_TIME(time, activeBullets, "activeBullets")
 	
 	-- Shot bullet tracking for player
 	return newShotsFired

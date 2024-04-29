@@ -201,7 +201,7 @@ local IMAGE_DRAW = {
 local particlesImage = gfx.image.new(400, 240) -- screen size draw
 local particlesSprite = gfx.sprite.new(particlesImage)
 particlesSprite:setIgnoresDrawOffset(true)
-particlesSprite:setZIndex(ZINDEX.particle)
+--particlesSprite:setZIndex(ZINDEX.particle)
 particlesSprite:moveTo(200, 120)
 
 
@@ -304,7 +304,7 @@ local debugImage = gfx.image.new(160, 175, gfx.kColorWhite)
 local debugSprite = gfx.sprite.new(debugImage)
 debugSprite:setIgnoresDrawOffset(true)
 debugSprite:moveTo(80, 100)
-debugSprite:setZIndex(ZINDEX.uidetails)
+--debugSprite:setZIndex(ZINDEX.uidetails)
 ------------------
 
 

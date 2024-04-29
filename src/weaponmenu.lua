@@ -16,20 +16,20 @@ local newWeapon = 1
 local pauseImage = gfx.image.new('Resources/Sprites/menu/weaponMenu')
 local pauseSprite = gfx.sprite.new(pauseImage)
 pauseSprite:setIgnoresDrawOffset(true)	-- forces sprite to be draw to screen, not world
-pauseSprite:setZIndex(ZINDEX.ui)
+--pauseSprite:setZIndex(ZINDEX.ui)
 pauseSprite:moveTo(halfScreenWidth, halfScreenHeight)
 
 --setup selector
 local selectImage = gfx.image.new('Resources/Sprites/menu/levelUpselect')
 local selectSprite = gfx.sprite.new(selectImage)
 selectSprite:setIgnoresDrawOffset(true)	-- forces sprite to be draw to screen, not world
-selectSprite:setZIndex(ZINDEX.uidetails)
+--selectSprite:setZIndex(ZINDEX.uidetails)
 selectSprite:moveTo(346, 40)
 
 --new Weapon
 local gunNewSprite = gfx.sprite.new(selectWeaponImage(1))
 gunNewSprite:setIgnoresDrawOffset(true)	-- forces sprite to be draw to screen, not world
-gunNewSprite:setZIndex(ZINDEX.uidetails)
+--gunNewSprite:setZIndex(ZINDEX.uidetails)
 gunNewSprite:moveTo(150, 110)
 
 function openWeaponMenu(newWeap, tier)

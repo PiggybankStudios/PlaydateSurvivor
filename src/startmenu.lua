@@ -12,14 +12,14 @@ local lastBlink = 0
 local startMenu = gfx.image.new('Resources/Sprites/menu/startMenu')
 local startSprite = gfx.sprite.new(startMenu)
 startSprite:setIgnoresDrawOffset(true)	-- forces sprite to be draw to screen, not world
-startSprite:setZIndex(ZINDEX.ui)
+--startSprite:setZIndex(ZINDEX.ui)
 startSprite:moveTo(halfScreenWidth, halfScreenHeight)
 
 --setup prompt
 local promptImage = gfx.image.new('Resources/Sprites/menu/mainPrompt')
 local promptSprite = gfx.sprite.new(promptImage)
 promptSprite:setIgnoresDrawOffset(true)	-- forces sprite to be draw to screen, not world
-promptSprite:setZIndex(ZINDEX.uidetails)
+--promptSprite:setZIndex(ZINDEX.uidetails)
 promptSprite:moveTo(190, 212)
 
 

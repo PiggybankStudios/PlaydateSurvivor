@@ -11,19 +11,27 @@ local tilemaps = {0, 0, 0, 0} -- room for extra tilemaps in case there's a level
 local totalTilemaps = #tilemaps
 local tilemap_combined = 0
 local world, x, y, width, height = 0, 0, 0, 0, 0
+local offsetWidth, offsetHeight = 0, 0
 
 
 -- +--------------------------------------------------------------+
 -- |                            Render                            |
 -- +--------------------------------------------------------------+
 
-local DRAW <const> = gfx.image.draw
+local DRAW 		<const> = gfx.image.draw
+local CLEAR 	<const> = gfx.clear
 
--- Draws only the tiles that are in-frame
-function updateGameScene()
+-- Draw the level, and clear the frame only when the camera goes outside the level bounds.
+function updateGameScene(screenOffsetX, screenOffsetY)
 	
+	if 	0 < screenOffsetX or screenOffsetX < offsetWidth or 
+		0 < screenOffsetY or screenOffsetY < offsetHeight then
+			CLEAR()
+	end
+
 	DRAW(tilemap_combined, 0, 0)
 	
+
 	--[[
 	-- DEBUG - only draw white background
 	local offX, offY = gfx.getDrawOffset()
@@ -38,8 +46,9 @@ end
 -- |                  Level Loading & Collisions                  |
 -- +--------------------------------------------------------------+
 
-local pushContext 			<const> = gfx.pushContext
-local popContext 			<const> = gfx.popContext
+local lockFocus 			<const> = gfx.lockFocus
+local unlockFocus 			<const> = gfx.unlockFocus
+
 local NEXT 					<const> = next
 
 local newImage				<const> = gfx.image.new
@@ -69,6 +78,9 @@ function gameScene_init()
 	y = levelRect.y
 	width = levelRect.width
 	height = levelRect.height
+
+	offsetWidth = -width + 400
+	offsetHeight = -height + 240
 
 	gameScene_goToLevel(level_name)
 end
@@ -120,23 +132,18 @@ function gameScene_goToLevel(level_name)
 
 	-- combine the separate tilemaps into a single image, based on their zIndex
 	tilemap_combined = newImage(width, height, colorBlack) 
-	pushContext(tilemap_combined)
+	lockFocus(tilemap_combined)
 		for i = 1, totalTilemaps do
 			if tilemaps[i] == 0 then break end
 			drawIgnoringOffset(tilemaps[i], 0, 0)
 		end
-	popContext()
+	unlockFocus()
 
 
 	-- Perform inits at start of level, and pass the new world collision to everything that needs it
 	initPlayerInNewWorld(world, 200, 200)	-- TO DO: make a spawn pos in the level editor, then find it for here
 	worldToBullets(world)
 	worldToEnemies(world)
-	
-	-- TO DO - finish below functions and localize
-	addItemSpriteToList()
-	addParticleSpriteToList()
-	--addUIBanner()
 
 end
 

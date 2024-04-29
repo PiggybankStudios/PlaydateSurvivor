@@ -5,32 +5,37 @@
 -- +--------------------------------------------------------------+
 
 -- extensions
-local pd <const> = playdate
-local gfx <const> = pd.graphics
-local vec <const> = pd.geometry.vector2D
+local pd 	<const> = playdate
+local gfx 	<const> = pd.graphics
+local vec 	<const> = pd.geometry.vector2D
 
 -- math
-local floor <const> = math.floor
-local max <const> = math.max
-local min <const> = math.min
-local random <const> = math.random
-local newVec <const> = vec.new
+local floor 	<const> = math.floor
+local max 		<const> = math.max
+local min 		<const> = math.min
+local sqrt 		<const> = math.sqrt
+local random 	<const> = math.random
+local newVec 	<const> = vec.new
 
 -- screen
-local SCREEN_WIDTH <const> = pd.display.getWidth()
+local SCREEN_WIDTH 	<const> = pd.display.getWidth()
 local SCREEN_HEIGHT <const> = pd.display.getHeight()
 
 -- drawing
-local pushContext <const> = gfx.pushContext
-local popContext <const> = gfx.popContext
-local lockFocus <const> = gfx.lockFocus
-local unlockFocus <const> = gfx.unlockFocus
-local setColor <const> = gfx.setColor
-local colorBlack <const> = gfx.kColorBlack
-local colorWhite <const> = gfx.kColorWhite
-local colorClear <const> = gfx.kColorClear
-local roundRect <const> = gfx.fillRoundRect
+local lockFocus 	<const> = gfx.lockFocus
+local unlockFocus 	<const> = gfx.unlockFocus
+local setColor 		<const> = gfx.setColor
+local colorBlack 	<const> = gfx.kColorBlack
+local colorWhite 	<const> = gfx.kColorWhite
+local colorClear 	<const> = gfx.kColorClear
+local roundRect 	<const> = gfx.fillRoundRect
 
+local GET_IMAGE		<const> = gfx.imagetable.getImage
+local GET_SIZE 		<const> = gfx.image.getSize
+
+
+-- globals
+local dt 			<const> = getDT()
 
 -- +--------------------------------------------------------------+
 -- |               World, Sprite, Collider, Healthbar             |
@@ -38,35 +43,40 @@ local roundRect <const> = gfx.fillRoundRect
 
 -- World Reference
 local world
+local world_Add 	<const> = worldAdd_Fast
+--local world_Update	<const> = worldUpdateFast
+--local world_Move	<const> = worldMoveFast
+local world_Check 	<const> = worldCheckFast
 
 -- Player Image
---playerSheet = gfx.imagetable.new('Resources/Sheets/player')
---animationLoop = gfx.animation.loop.new(16, playerSheet)
-local playerImage = gfx.image.new('Resources/Sprites/player')
-local playerX, playerY = 0, 0
+local playerImageTable = gfx.imagetable.new('Resources/Sheets/player_v3')
+local IMAGE_ANGLE_DIFF 	<const> = 5
+--local playerX, playerY = 0, 0
 
-local playerWidth, playerHeight = playerImage:getSize()
-local PLAYER_IMAGE_WIDTH_HALF <const> = playerWidth * 0.5
-local PLAYER_IMAGE_HEIGHT_HALF <const> = playerHeight * 0.5
+local playerWidth, playerHeight = GET_SIZE( GET_IMAGE(playerImageTable, 1) )
+local PLAYER_IMAGE_WIDTH_HALF 	<const> = playerWidth * 0.5
+local PLAYER_IMAGE_HEIGHT_HALF 	<const> = playerHeight * 0.5
 
 -- Collider
-local colliderSize <const> = 25
-local halfCol <const> = floor(colliderSize * 0.5)
+local colliderSize 	<const> = 25
+local halfCol 		<const> = floor(colliderSize * 0.5)
 local playerRect = { x = 150, y = 150, width = colliderSize, height = colliderSize, tag = TAGS.player}
 
 -- Healthbar
-local HEALTHBAR_OFFSET_X <const> = 2
-local HEALTHBAR_OFFSET_Y <const> = 20
-local HEALTHBAR_MAXWIDTH <const> = 40
-local HEALTHBAR_HEIGHT <const> = 4
-local HEALTHBAR_CORNER_RADIUS <const> = 3
-local maxHealth = 10
-local health = maxHealth
+local HEALTHBAR_OFFSET_X 		<const> = 2
+local HEALTHBAR_OFFSET_Y 		<const> = 20
+local HEALTHBAR_MAXWIDTH 		<const> = 40
+local HEALTHBAR_HEIGHT 			<const> = 4
+local HEALTHBAR_CORNER_RADIUS 	<const> = 3
+
+local maxHealth 	= 10
+local health 		= maxHealth
 local healthPercent = 1
-local healthImage = gfx.image.new(42, 6, colorClear)
+local healthImage 	= gfx.image.new(42, 6, colorClear)
 
 -- Damage
 local SET_DAMAGE_TIMER <const> = 200
+
 
 -- +--------------------------------------------------------------+
 -- |                         Player Stats                         |
@@ -90,7 +100,6 @@ local maxDifficulty = 15
 -- Player
 local playerLevel = 0
 local playerSpeed = 50
-local playerVelocity = vec.new(0, 0)
 local playerAttackRate = 10 --30
 local playerAttackRateMin = 10 --25 --limit
 local playerMagnet = 50
@@ -198,7 +207,7 @@ end
 
 
 -- TO DO: Need help from Devon to put level-up actions back in place
-function addEXP(amount)
+function addPlayerEXP(amount)
 
 	playerExp += amount
 	experienceGained += amount
@@ -229,8 +238,8 @@ local function drawPlayerHealthBar()
 	local yPosOffset = floor((borderHeight - HEALTHBAR_HEIGHT) / 2)
 	local healthbarWidth = healthPercent * HEALTHBAR_MAXWIDTH
 
-	local x = playerX - PLAYER_IMAGE_WIDTH_HALF - HEALTHBAR_OFFSET_X
-	local y = playerY - PLAYER_IMAGE_HEIGHT_HALF - HEALTHBAR_OFFSET_Y
+	local x = playerRect.x + halfCol - PLAYER_IMAGE_WIDTH_HALF - HEALTHBAR_OFFSET_X
+	local y = playerRect.y + halfCol - PLAYER_IMAGE_HEIGHT_HALF - HEALTHBAR_OFFSET_Y
 
 	-- Border
 	setColor(colorBlack)
@@ -265,11 +274,9 @@ local function teleportPlayer(x, y)
 
 	local floorX = floor(x)
 	local floorY = floor(y)
-	playerX, playerY = floorX, floorY
-	playerRect.x, playerRect.y = floorX, floorY
-	world:update(playerRect, floorX, floorY)
-	snapCamera(floorX, floorY)
 
+	playerRect.x, playerRect.y = floorX, floorY
+	snapCamera(floorX, floorY)
 end
 
 
@@ -277,7 +284,7 @@ function initPlayerInNewWorld(gameSceneWorld, x, y)
 
 	-- setup new world collisions
 	world = gameSceneWorld
-	world:add(playerRect, x, y, colliderSize, colliderSize)
+	world_Add(world, playerRect, 0, 0, colliderSize, colliderSize)
 
 	-- teleport player to position
 	teleportPlayer(x, y)
@@ -299,7 +306,7 @@ end
 
 --- Heal and Damage ---
 
-function heal(amount)
+function healPlayer(amount)
 	health += (amount + playerHealBonus)
 	if health > maxHealth then
 		health = maxHealth
@@ -308,7 +315,7 @@ function heal(amount)
 end
 
 function damagePlayer(amount, camShakeStrength, enemyX, enemyY)
-	
+	--[[
 	if Unpaused then damageTimer += theLastTime end
 	-- Invincibility
 	if damageTimer > currentTime then
@@ -319,25 +326,33 @@ function damagePlayer(amount, camShakeStrength, enemyX, enemyY)
 		screenFlash()
 		return
 	end
+	]]
 
 	-- Damaging
 	local amountLost = max(amount - playerArmor, 1)
 	damageTimer = currentTime + SET_DAMAGE_TIMER
-	health -= amountLost
+	health = health - amountLost
 	if health < 0 then
-		amountLost += health
+		print("health below 0")
+		amountLost = amountLost + health
 		health = 0
-		handleDeath()
+		--handleDeath()
 		return
 	end
 	updateHealthBar()
 	addDamageReceived(amountLost)
 
+	
 	-- Camera Shake
-	local direction = vec.new(enemyX - playerX, enemyY - playerY):normalized()
-	cameraShake(camShakeStrength, direction.x, direction.y)
-	spawnParticleEffect(PARTICLE_TYPE.playerImpact, playerX, playerY, direction)
+	local playerX, playerY = playerRect.x, playerRect.y
+	local xDir, yDir = enemyX - playerX, enemyY - playerY
+	local mag = sqrt(xDir * xDir + yDir * yDir)
+	xDir, yDir = xDir / mag, yDir / mag
+	cameraShake(camShakeStrength, xDir, yDir)
 	screenFlash()
+
+	-- Particles
+	--spawnParticleEffect(PARTICLE_TYPE.playerImpact, playerX, playerY, direction)
 end
 
 ----------------------
@@ -385,19 +400,11 @@ function addKill()
 	if random(0,99) < playerVampire then heal(5) end
 end
 
-function addItemsGrabbed()
-	itemsGrabbed += 1
-end
-
 
 -- +--------------------------------------------------------------+
 -- |                  Player get values section                   |
 -- +--------------------------------------------------------------+
 
-
-function getPlayerImageSize()
-	return playerImage:getSize()
-end
 
 function getPlayerLevel()
 	return playerLevel
@@ -435,9 +442,11 @@ function getLuck()
 	return playerLuck
 end
 
+--[[
 function setRunSpeed(value)
 	playerRunSpeed = value
 end
+]]
 
 function getStun()
 	return playerStunChance
@@ -628,7 +637,7 @@ function getAvailLevelUpStats()
 	return stats
 end
 
-function incLuck()
+function addPlayerLuck()
 	playerLuck += 5
 	print('luck increased by 5')
 	if playerLuck > playerLuckMax then 
@@ -636,7 +645,7 @@ function incLuck()
 	end
 end
 
-function shield(amount)
+function shieldPlayer(amount)
 	invincibleTime = currentTime + amount
 	invincible = true
 end
@@ -663,43 +672,87 @@ end
 -- |                          Movement                            |
 -- +--------------------------------------------------------------+
 
-local localTags = TAGS
+---------
+local resetTime <const> = pd.resetElapsedTime
+local getTime <const> = pd.getElapsedTime
+
+local timerWindow = 0
+local totalElapseTime = 0
+local timeInstances = 0
+local TIME_INSTANCE_MAX <const> = 500
+local averageTime = 0
+local maxTime = 0
+local minTime = 1
+
+local function addTotalTime()
+	if timeInstances >= TIME_INSTANCE_MAX then return end
+
+	local elapsed = getTime()
+	totalElapseTime += elapsed
+	timeInstances += 1
+
+	if elapsed < minTime then 
+		minTime = elapsed
+	elseif elapsed > maxTime then 
+		maxTime = elapsed
+	end
+end
+
+local function printAndClearTotalTime(activeNameAsString, activeObject)
+	-- avoid divide by 0
+	if timeInstances == 0 then return end
+
+	-- time instance check
+	if timeInstances < TIME_INSTANCE_MAX then return end 
+
+	-- calc average
+	averageTime = totalElapseTime / timeInstances
+
+	local objectName = activeNameAsString or ""
+	local object = activeObject or ""
+
+	-- print statistics
+	print(	"------------")
+	print(	objectName .. ": " .. object ..
+			" - total time: " .. totalElapseTime .. 
+			" - average time: " .. averageTime .. 
+			" - time instances: " .. timeInstances .. 
+			" - min: " .. minTime .. 
+			" - max: " .. maxTime)
+
+	-- reset values for new data
+	totalElapseTime = 0
+	averageTime = 0
+	timeInstances = 0
+	minTime = 1
+	maxTime = 0
+end
+--------
+
+
+
+
+local TAG_WALLS		<const> = TAGS.walls 
+
 local playerFilter = function(item, other)
 	local tag = other.tag
-	if 		tag == localTags.walls then return 'slide'
-	elseif 	tag == localTags.enemy then return 'cross'
-	elseif  tag == localTags.weapon then return 'cross'
+	if 		tag == TAG_WALLS then return 'slide'
 	end
 	-- else return nil
 end
 
 
-local function movePlayer(dt)
+local function movePlayer(inputX, inputY, inputButtonB)
 
-	-- Reset input to 0 if nothing is held
-	--if playdate.getButtonState()
+	local moveSpeed = playerSpeed * inputButtonB * dt
+	local goalX = inputX * moveSpeed + playerRect.x
+	local goalY = inputY * moveSpeed + playerRect.y
 
-	local moveSpeed = playerSpeed * playerRunSpeed * dt
-	playerVelocity.x, playerVelocity.y = getInputX() * moveSpeed, getInputY() * moveSpeed
-	local goalX, goalY = playerRect.x + playerVelocity.x, playerRect.y + playerVelocity.y
+	local actualX, actualY = world_Check(world, playerRect, goalX, goalY, playerFilter)
 
-	local actualX, actualY, cols, length = world:move(playerRect, goalX, goalY, playerFilter)
-	local floorX, floorY = floor(actualX), floor(actualY)
-	playerRect.x, playerRect.y = floorX, floorY
+	playerRect.x, playerRect.y = actualX, actualY
 
-	floorX += halfCol
-	floorY += halfCol
-	playerX, playerY = floorX, floorY
-end
-
-
-function getPlayerPosition()
-	return vec.new(playerX, playerY)
-end
-
-
-function getPlayerVelocity()
-	return playerVelocity
+	return actualX + halfCol, actualY + halfCol
 end
 
 
@@ -723,10 +776,20 @@ end
 -- +--------------------------------------------------------------+
 -- |                            Update                            |
 -- +--------------------------------------------------------------+
-function updatePlayer(dt, time, crank, newShots)
+
+
+local FAST_DRAW 		<const> = gfx.image.draw
+local UNFLIPPED 		<const> = gfx.kImageUnflipped
+local FLIP_XY 			<const> = gfx.kImageFlippedXY
+
+
+function updatePlayer(time, inputX, inputY, inputButtonB, crank, newShots, newItems)
 	
 	currentTime = time
-	shotsFired += newShots
+
+	-- Update data tracking
+	shotsFired = shotsFired + newShots
+	itemsGrabbed = itemsGrabbed + newItems
 
 	--[[
 	--- TO DO: update pausing ---
@@ -749,10 +812,16 @@ function updatePlayer(dt, time, crank, newShots)
 			player:setImageDrawMode(gfx.kDrawModeCopy)
 		end
 	end
-	]]
+	]] 
 	
-	movePlayer(dt)
-	playerImage:drawRotated(playerX, playerY, crank)
+	local playerX, playerY = movePlayer(inputX, inputY, inputButtonB)
+
+	local imageIndex = crank % 180 // IMAGE_ANGLE_DIFF + 1 	-- 1 to 40
+	local flipState = crank < 180 and UNFLIPPED or FLIP_XY	-- same as   a ? b : c
+	FAST_DRAW(	GET_IMAGE(playerImageTable, imageIndex), 
+				playerX - PLAYER_IMAGE_WIDTH_HALF, 
+				playerY - PLAYER_IMAGE_HEIGHT_HALF, 
+				flipState)
 
 	--theLastTime = currentTime
 	--setUnpaused(false)
@@ -762,6 +831,9 @@ function updatePlayer(dt, time, crank, newShots)
 		handleDeath()
 	end
 	]]
+
+
+	--printAndClearTotalTime()
 
 	return playerX, playerY
 end

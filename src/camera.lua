@@ -36,7 +36,7 @@ local halfBannerHeight 	<const> = getHalfUIBannerHeight()
 -- |                            Init                              |
 -- +--------------------------------------------------------------+
 
-local SPEED 			<const> = 6
+local SPEED 			<const> = 4
 local CAM_DISTANCE_X 	<const> = 100
 local CAM_DISTANCE_Y 	<const> = 40
 
@@ -94,7 +94,7 @@ end
 
 
 local function moveCamera(angle, posX, posY)
-	local rad = rad(angle)
+	local rad = rad(angle - 90)
 	local targetPosX = CAM_DISTANCE_X * cos(rad) + posX
 	local targetPosY = CAM_DISTANCE_Y * sin(rad) + posY - halfBannerHeight
 
@@ -140,11 +140,16 @@ end
 
 
 -- global function to snap the camera to its target position instead of trying to move there
-local crankAngle <const> = getCrankAngle
+local crankAngle <const> = pd.getCrankPosition
 function snapCamera(playerX, playerY)
-	cameraPosX = playerX
-	cameraPosY = playerY
-	moveCamera(floor(crankAngle()), playerX, playerY)
+	local rad = rad(floor(crankAngle()) - 90)
+	cameraPosX = CAM_DISTANCE_X * cos(rad) + playerX
+	cameraPosY = CAM_DISTANCE_Y * sin(rad) + playerY - halfBannerHeight
+
+	camAnchorX = floor(halfScreenWidth - cameraPosX)
+	camAnchorY = floor(halfScreenHeight - cameraPosY)
+
+	setDrawOffset(camAnchorX, camAnchorY)
 end
 
 
@@ -172,7 +177,7 @@ end
 -- +--------------------------------------------------------------+
 
 
-function updateCamera(dt, time, crank, playerX, playerY)
+function updateCamera(time, crank, playerX, playerY)
 	currentTime = time
 
 	moveCamera(crank, playerX, playerY)

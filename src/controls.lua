@@ -1,14 +1,11 @@
 -- playdate screen 400 x 240
 
 local pd <const> = playdate
-local physicalCrankAngle <const> = pd.getCrankPosition
 
 local inputXL = 0
 local inputXR = 0
 local inputYU = 0
 local inputYD = 0
-local crankAngle = physicalCrankAngle() - 90
-
 
 
 local function clearAllThings()
@@ -64,10 +61,7 @@ end
 -- |                            Input                             |
 -- +--------------------------------------------------------------+
 
-function getCrankAngle()
-	return crankAngle
-end
-
+--[[
 function getInputX()
 	--print("x:"..inputXL..","..inputXR)
 	return (inputXR - inputXL)
@@ -138,6 +132,7 @@ function pd.BButtonUp()
 	setRunSpeed(1)
 end
 
+
 function pd.AButtonDown()
 	if getGameState() == GAMESTATE.startscreen then
 		setGameState(GAMESTATE.mainmenu)
@@ -171,9 +166,56 @@ function pd.AButtonDown()
 		clearStats()
 	end
 end
+]]
 
--- constrains crankAngle to 0 - 360 range
-function pd.cranked()
-	crankAngle = physicalCrankAngle() - 90
+-----------------
+------DEBUG------
+-----------------
+
+function pd.BButtonDown()
+	cameraShake(30)
 end
 
+-----------------
+-----------------
+-----------------
+
+
+-- +--------------------------------------------------------------+
+-- |                      Main Gameplay Loop                      |
+-- +--------------------------------------------------------------+
+
+local UP 		<const> = pd.kButtonUp
+local DOWN 		<const> = pd.kButtonDown
+local LEFT 		<const> = pd.kButtonLeft
+local RIGHT 	<const> = pd.kButtonRight
+local A_BUTTON 	<const> = pd.kButtonA
+local B_BUTTON 	<const> = pd.kButtonB
+
+local button_pressed 	<const> = pd.buttonIsPressed
+
+local inputX, inputY = 0
+local inputButtonB = 0
+
+
+function updateControls_DuringGamePlay()
+
+	-- Moving Up and Down
+	if 		button_pressed(UP) 		then 	inputY = -1
+	elseif 	button_pressed(DOWN) 	then 	inputY = 1
+	else 									inputY = 0 	
+	end
+
+	-- Moving Left and Right
+	if 		button_pressed(LEFT) 	then 	inputX = -1
+	elseif 	button_pressed(RIGHT)	then 	inputX = 1
+	else 									inputX = 0
+	end
+
+	-- Toggle Run if held
+	if button_pressed(B_BUTTON) then 	inputButtonB = 2
+	else 								inputButtonB = 1
+	end
+
+	return inputX, inputY, inputButtonB
+end

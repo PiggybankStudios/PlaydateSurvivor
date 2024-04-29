@@ -35,7 +35,7 @@ local wordArrayPauseTimer = {"none", "1 sec", "2 sec", "3 sec", "4 sec", "5 sec"
 local mainImage = gfx.image.new('Resources/Sprites/menu/mainMenu')
 local mainSprite = gfx.sprite.new(mainImage)
 mainSprite:setIgnoresDrawOffset(true)	-- forces sprite to be draw to screen, not world
-mainSprite:setZIndex(ZINDEX.ui)
+--mainSprite:setZIndex(ZINDEX.ui)
 mainSprite:moveTo(halfScreenWidth, halfScreenHeight)
 
 --setup prompt
@@ -43,7 +43,7 @@ local promptImage = gfx.image.new('Resources/Sprites/menu/mainselect')
 local promptImageL = gfx.image.new('Resources/Sprites/menu/mainselectL')
 local promptSprite = gfx.sprite.new(promptImage)
 promptSprite:setIgnoresDrawOffset(true)	-- forces sprite to be draw to screen, not world
-promptSprite:setZIndex(ZINDEX.uidetails)
+--promptSprite:setZIndex(ZINDEX.uidetails)
 promptSprite:moveTo(halfScreenWidth, halfScreenHeight)
 
 function openMainMenu()

@@ -15,7 +15,7 @@ import "healthbar" -- edit player healthbar so we can get rid of this
 import "uibanner"
 import "pausemenu"
 
-import "expbar"
+--import "expbar"
 
 
 import "controls"
@@ -48,7 +48,6 @@ local pd <const> = playdate
 local gfx <const> = pd.graphics
 
 -- time
-local dt <const> = 1/20
 local getMilliseconds <const> = pd.getCurrentTimeMilliseconds
 
 -- math
@@ -61,7 +60,7 @@ local colorWhite <const> = gfx.kColorWhite
 local colorBlack <const> = gfx.kColorBlack
 
 -- controls
-local crankAngle <const> = getCrankAngle
+local crankAngle <const> = pd.getCrankPosition
 
 
 -- Update Functions
@@ -94,48 +93,117 @@ lastState = GAMESTATE.nothing
 -- Set Background Color
 gfx.setBackgroundColor(colorBlack)
 
+-- Lower Garbage Collection time to have more CPU bandwidth - default is 1
+pd.setMinimumGCTime(0.5)
+
+
 -- +--------------------------------------------------------------+
 -- |                       Tracked Values                         |
 -- +--------------------------------------------------------------+
 
 local shotsFired = 0
+local itemsCollected = 0
+local screenOffsetX, screenOffsetY = 0, 0
 
 -- +--------------------------------------------------------------+
 -- |                         Main Update                          |
 -- +--------------------------------------------------------------+
 
+---------
+local resetTime <const> = pd.resetElapsedTime
+local getTime <const> = pd.getElapsedTime
+
+local timerWindow = 0
+local totalElapseTime = 0
+local timeInstances = 0
+local TIME_INSTANCE_MAX <const> = 500
+local averageTime = 0
+local maxTime = 0
+local minTime = 1
+
+local function addTotalTime()
+	if timeInstances >= TIME_INSTANCE_MAX then return end
+
+	local elapsed = getTime()
+	totalElapseTime += elapsed
+	timeInstances += 1
+
+	if elapsed < minTime then 
+		minTime = elapsed
+	elseif elapsed > maxTime then 
+		maxTime = elapsed
+	end
+end
+
+local function printAndClearTotalTime(activeNameAsString, activeObject)
+	-- avoid divide by 0
+	if timeInstances == 0 then return end
+
+	-- time instance check
+	if timeInstances < TIME_INSTANCE_MAX then return end 
+
+	-- calc average
+	averageTime = totalElapseTime / timeInstances
+
+	local objectName = activeNameAsString or ""
+	local object = activeObject or ""
+
+	-- print statistics
+	print(	"------------")
+	print(	objectName .. ": " .. object ..
+			" - total time: " .. totalElapseTime .. 
+			" - average time: " .. averageTime .. 
+			" - time instances: " .. timeInstances .. 
+			" - min: " .. minTime .. 
+			" - max: " .. maxTime)
+
+	-- reset values for new data
+	totalElapseTime = 0
+	averageTime = 0
+	timeInstances = 0
+	minTime = 1
+	maxTime = 0
+end
+--------
+
+
 
 gameScene_init()	-- Testing scene outside of main, will put back into scene loading later
+
+
 
 function pd.update()
 
 	local time = getMilliseconds()
 	local crank = floor(crankAngle())
 
-	c_UpdateGameScene()
+	c_UpdateGameScene(screenOffsetX, screenOffsetY)
 
 	--- debugging here ---
 	--gameSceneDebugUpdate()
 	----------------------
 
-	-- Objects
-resetTime()
-	local playerX, playerY = c_UpdatePlayer(dt, time, crank, shotsFired)
-addTotalTime()
+	-- Controls, Player, Camera
+	local inputX, inputY, inputButtonB = updateControls_DuringGamePlay()
+	local playerX, playerY = c_UpdatePlayer(time, inputX, inputY, inputButtonB, crank, shotsFired, itemsCollected)
 
-	local screenOffsetX, screenOffsetY, cameraPosX, cameraPosY = c_UpdateCamera(dt, time, crank, playerX, playerY)
+	local cameraPosX, cameraPosY
+	screenOffsetX, screenOffsetY, cameraPosX, cameraPosY = c_UpdateCamera(time, crank, playerX, playerY)
 
-
+	-- Bullets, Enemies, Items
 	shotsFired = c_UpdateBullets(time, crank, playerX, playerY, screenOffsetX, screenOffsetY)
-	c_UpdateEnemies(dt, time, playerX, playerY, cameraPosX, cameraPosY, screenOffsetX, screenOffsetY)
+	c_UpdateEnemies(time, playerX, playerY, cameraPosX, cameraPosY, screenOffsetX, screenOffsetY)
+	itemsCollected = updateItems(time, playerX, playerY, screenOffsetX, screenOffsetY)
 
-	--updateItems(dt, mainTimePassed, mainLoopTime)
+	-- Particles, UI
 	--updateParticles(dt, mainTimePassed, mainLoopTime, elapsedPauseTime)
 	
 	-- UI
 	c_DrawPlayerUI()
 
-printAndClearTotalTime(time, "player check in main")
+
+--printAndClearTotalTime("level draw in main")
+
 	playdate.drawFPS()
 end
 
