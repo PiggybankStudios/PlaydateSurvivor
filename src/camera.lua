@@ -41,10 +41,9 @@ local CAM_DISTANCE_X 	<const> = 100
 local CAM_DISTANCE_Y 	<const> = 40
 
 -- camera shake
-local minCamDifference 	<const> = 0.02
-local springConstant 	<const> = 0.5
-local springDampen 		<const> = 0.85
-local setShakeTimer 	<const> = 2000
+local SPRING_CONSTANT 	<const> = 0.5
+local SPRING_DAMPEN 	<const> = 0.85
+local SET_SHAKE_TIMER 	<const> = 2000
 local shakeTimer = 0
 
 -- camera position and shake storage
@@ -54,7 +53,7 @@ local camBobX, camBobY 					= 0, 0
 local shakeVelocityX, shakeVelocityY 	= 0, 0
 
 -- screen flash
-local setFlashTimer <const> = 100
+local SET_FLASH_TIMER	<const> = 100
 local screenFlashState = false
 local flashTimer = 0
 
@@ -78,7 +77,7 @@ end
 function screenFlash()
 	setInverted(true)
 	screenFlashState = true
-	flashTimer = currentTime + setFlashTimer
+	flashTimer = currentTime + SET_FLASH_TIMER
 end
 
 
@@ -116,18 +115,18 @@ local function shakeCameraUpdate(time)
 	end
 
 	-- Calculate spring force
-	local timer = setShakeTimer - (shakeTimer - time)
-	timer = max(1 - timer / setShakeTimer, 0)
+	local timer = SET_SHAKE_TIMER - (shakeTimer - time)
+	timer = max(1 - timer / SET_SHAKE_TIMER, 0)
 
 	if timer == 0 then 
 		shakeVelocityX = 0
 		shakeVelocityY = 0
 	else 
-		local forceX = (camBobX - camAnchorX) * springConstant * -timer
-		local forceY = (camBobY - camAnchorY) * springConstant * -timer
+		local forceX = (camBobX - camAnchorX) * SPRING_CONSTANT * -timer
+		local forceY = (camBobY - camAnchorY) * SPRING_CONSTANT * -timer
 
-		shakeVelocityX = (shakeVelocityX + forceX) * springDampen
-		shakeVelocityY = (shakeVelocityY + forceY) * springDampen
+		shakeVelocityX = (shakeVelocityX + forceX) * SPRING_DAMPEN
+		shakeVelocityY = (shakeVelocityY + forceY) * SPRING_DAMPEN
 
 		camBobX = camBobX + shakeVelocityX
 		camBobY = camBobY + shakeVelocityY
@@ -168,7 +167,15 @@ function cameraShake(strength, dirX, dirY)
 	camBobX = camAnchorX + shakeVelocityX
 	camBobY = camAnchorY + shakeVelocityY
 
-	shakeTimer = currentTime + setShakeTimer
+	shakeTimer = currentTime + SET_SHAKE_TIMER
+end
+
+
+-- To be called at the end of the pause animation.
+function getPauseTime_Camera(pauseTime)
+	shakeTimer = shakeTimer + pauseTime
+	flashTimer = flashTimer + pauseTime
+	currentTime = currentTime + pauseTime
 end
 
 
@@ -183,7 +190,7 @@ function updateCamera(time, crank, playerX, playerY)
 	moveCamera(crank, playerX, playerY)
 	shakeCameraUpdate(time)
 	manageScreenFlash()
- 		
+
 	return 	camAnchorX, camAnchorY, 	-- screen offset
 			cameraPosX, cameraPosY		-- camera position
 end

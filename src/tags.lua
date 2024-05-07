@@ -41,6 +41,18 @@ ITEM_TYPE = {
 
 
 GAMESTATE = {
+	maingame 		= 1,
+	pausemenu 		= 2,
+	levelupmenu 	= 3,
+	newweaponmenu 	= 4,
+	wavescreen 		= 5,
+	deathscreen 	= 6,
+	startscreen 	= 7,
+	mainmenu 		= 8
+}
+
+--[[
+GAMESTATE = {
 	nothing = 0,
 	startscreen = 1,
 	maingame = 2,
@@ -52,6 +64,7 @@ GAMESTATE = {
 	unpaused = 8,
 	wavescreen = 9
 }
+]]
 
 
 PLAYER_STATS = {

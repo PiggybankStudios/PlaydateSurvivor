@@ -44,14 +44,11 @@ local dt 			<const> = getDT()
 -- World Reference
 local world
 local world_Add 	<const> = worldAdd_Fast
---local world_Update	<const> = worldUpdateFast
---local world_Move	<const> = worldMoveFast
 local world_Check 	<const> = worldCheckFast
 
 -- Player Image
 local playerImageTable = gfx.imagetable.new('Resources/Sheets/player_v3')
 local IMAGE_ANGLE_DIFF 	<const> = 5
---local playerX, playerY = 0, 0
 
 local playerWidth, playerHeight = GET_SIZE( GET_IMAGE(playerImageTable, 1) )
 local PLAYER_IMAGE_WIDTH_HALF 	<const> = playerWidth * 0.5
@@ -69,7 +66,7 @@ local HEALTHBAR_MAXWIDTH 		<const> = 40
 local HEALTHBAR_HEIGHT 			<const> = 4
 local HEALTHBAR_CORNER_RADIUS 	<const> = 3
 
-local maxHealth 	= 10
+local maxHealth 	= 30 --10
 local health 		= maxHealth
 local healthPercent = 1
 local healthImage 	= gfx.image.new(42, 6, colorClear)
@@ -100,16 +97,16 @@ local maxDifficulty = 15
 -- Player
 local playerLevel = 0
 local playerSpeed = 50
-local playerAttackRate = 10 --30
+local playerAttackRate = 100 --30
 local playerAttackRateMin = 10 --25 --limit
 local playerMagnet = 50
 local playerSlots = 1
-local playerGunDamage = 5
+local playerGunDamage = 10 -- 1
 local playerReflectDamage = 0
 local playerLuck = 0
 local playerLuckMax = 100 --limit
-local playerBulletSpeed = 10 --50
-local playerArmor = 0
+local playerBulletSpeed = 20 --50
+local playerArmor = 5 --0
 local playerDodge = 0
 local playerDodgeMax = 75 --limit
 local playerRunSpeed = 1
@@ -315,18 +312,18 @@ function healPlayer(amount)
 end
 
 function damagePlayer(amount, camShakeStrength, enemyX, enemyY)
-	--[[
-	if Unpaused then damageTimer += theLastTime end
+
 	-- Invincibility
 	if damageTimer > currentTime then
 		return
 	elseif invincible then
 		return
 	elseif random(0,99) < playerDodge then
-		screenFlash()
+		--screenFlash()
+		print("dodged damage!")
 		return
 	end
-	]]
+
 
 	-- Damaging
 	local amountLost = max(amount - playerArmor, 1)
@@ -357,7 +354,7 @@ end
 
 ----------------------
 
-
+--[[
 function getPlayerSlots()
 	return playerSlots
 end
@@ -368,6 +365,7 @@ function updateSlots()
 	else updateMenuWeapon(playerSlots,0)
 	end
 end
+]]
 
 function updateLevel()
 	playerLevel += 1
@@ -594,6 +592,7 @@ function getFinalStats()
 	return stats
 end
 
+--[[
 function getPlayerStats()
 	local stats = {}
 	stats[#stats + 1] = playerLevel
@@ -617,6 +616,22 @@ function getPlayerStats()
 	stats[#stats + 1] = playerStunChance
 	return stats
 end
+]]
+
+function getPlayerStats()
+	local stats = {}
+	stats[#stats + 1] = playerLevel
+	stats[#stats + 1] = playerSpeed
+	stats[#stats + 1] = playerMagnet
+	stats[#stats + 1] = playerReflectDamage
+	stats[#stats + 1] = playerExpBonus
+	stats[#stats + 1] = playerLuck
+	stats[#stats + 1] = playerArmor
+	stats[#stats + 1] = playerDodge
+	stats[#stats + 1] = playerHealBonus
+	return stats
+end
+
 
 function getAvailLevelUpStats()
 	local stats = {}
@@ -761,6 +776,14 @@ end
 -- +--------------------------------------------------------------+
 
 
+-- To be called at the end of the pause animation.
+function getPauseTime_Player(pauseTime)
+	currentTime = currentTime + pauseTime
+	damageTimer = damageTimer + pauseTime
+	invincibleTime = invincibleTime + pauseTime
+end
+
+
 function decideWeaponTier()
 	local rndTier = random(1,100)
 	local newTier = 1
@@ -782,6 +805,27 @@ local FAST_DRAW 		<const> = gfx.image.draw
 local UNFLIPPED 		<const> = gfx.kImageUnflipped
 local FLIP_XY 			<const> = gfx.kImageFlippedXY
 
+local SET_DRAW_MODE 	<const> = gfx.setImageDrawMode
+local INVERTED 			<const> = gfx.kDrawModeInverted
+local COPY 				<const> = gfx.kDrawModeCopy
+
+
+local function drawInvincible(time, image, x, y, flipState)
+	if invincibleTime > time then
+		if time % 500 > 250 then
+			SET_DRAW_MODE(INVERTED)
+			FAST_DRAW(image, x, y, flipState)
+			SET_DRAW_MODE(COPY)
+
+		else 
+			FAST_DRAW(image, x, y, flipState)
+		end
+	else
+		invincible = false
+		FAST_DRAW(image, x, y, flipState)
+	end
+end
+
 
 function updatePlayer(time, inputX, inputY, inputButtonB, crank, newShots, newItems)
 	
@@ -791,46 +835,28 @@ function updatePlayer(time, inputX, inputY, inputButtonB, crank, newShots, newIt
 	shotsFired = shotsFired + newShots
 	itemsGrabbed = itemsGrabbed + newItems
 
-	--[[
-	--- TO DO: update pausing ---
-	if getUnpaused() then 
-		theLastTime = currentTime - theLastTime 
-		invincibleTime += theLastTime
-		gameStartTime += theLastTime
-	end
-	
-	--- TO DO: update invincibility ---
-	if invincibleTime > currentTime then
-		if ((currentTime % 500) >= 250 ) then
-			player:setImageDrawMode(gfx.kDrawModeInverted)
-		else
-			player:setImageDrawMode(gfx.kDrawModeCopy)
-		end
-	else
-		if invincible then
-			invincible = false
-			player:setImageDrawMode(gfx.kDrawModeCopy)
-		end
-	end
-	]] 
 	
 	local playerX, playerY = movePlayer(inputX, inputY, inputButtonB)
 
 	local imageIndex = crank % 180 // IMAGE_ANGLE_DIFF + 1 	-- 1 to 40
 	local flipState = crank < 180 and UNFLIPPED or FLIP_XY	-- same as   a ? b : c
-	FAST_DRAW(	GET_IMAGE(playerImageTable, imageIndex), 
-				playerX - PLAYER_IMAGE_WIDTH_HALF, 
-				playerY - PLAYER_IMAGE_HEIGHT_HALF, 
-				flipState)
+	local image = GET_IMAGE(playerImageTable, imageIndex)
 
-	--theLastTime = currentTime
-	--setUnpaused(false)
-	
-	--[[
-	if health == 0 then
-		handleDeath()
+	if invincible then 
+		drawInvincible(	time, 
+						image,
+						playerX - PLAYER_IMAGE_WIDTH_HALF, 
+						playerY - PLAYER_IMAGE_HEIGHT_HALF, 
+						flipState)
+	else
+		FAST_DRAW(	image, 
+					playerX - PLAYER_IMAGE_WIDTH_HALF, 
+					playerY - PLAYER_IMAGE_HEIGHT_HALF, 
+					flipState)
 	end
-	]]
+
+	
+
 
 
 	--printAndClearTotalTime()

@@ -1,3 +1,4 @@
+--[[
 local gfx <const> = playdate.graphics
 
 local screenWidth <const> = playdate.display.getWidth()
@@ -285,3 +286,4 @@ function updateUnPaused()
 		unpauseSprite:remove()
 	end
 end
+]]

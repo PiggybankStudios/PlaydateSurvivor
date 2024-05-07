@@ -230,8 +230,6 @@ local collisionDetails = {}
 
 local spawnInc = 0
 local theSpawnTime = 0
-local timeFromPause = 0
-local pauseDiff = 0
 
 
 
@@ -854,8 +852,21 @@ function setEnemyDifficulty(value)
 end
 
 
-function setSpawnTime(value)
-	theSpawnTime = value
+function clearEnemies()
+	activeEnemies = 0
+end
+
+
+-- To be called at the end of the pause animation.
+function getPauseTime_Enemies(pauseTime)
+	
+	theSpawnTime = theSpawnTime + pauseTime
+
+	for i = 1, activeEnemies do
+		moveCalcTimer[i] 	= moveCalcTimer[i] + pauseTime
+		timer[i] 			= timer[i] + pauseTime
+		stunned[i]			= stunned[i] + pauseTime
+	end
 end
 
 
@@ -866,9 +877,7 @@ function sendWorldCollidersToEnemies(gameSceneWorld)
 end
 
 
-function clearEnemies()
-	activeEnemies = 0
-end
+
 
 
 local typeMax = 5
@@ -902,9 +911,6 @@ end
 
 
 local function spawnMonsters(cameraX, cameraY, time)
-	-- 
-	--if Unpaused then theSpawnTime += (currentTime - timeFromPause) end
-
 	if time >= theSpawnTime then
 
 		theSpawnTime = time + 3200 - 200 * difficulty
@@ -922,7 +928,6 @@ local function spawnMonsters(cameraX, cameraY, time)
 			type = random(1, 7)
 			createEnemy(type, enemyX, -enemyY)
 		end
-
 	end
 end
 

@@ -138,6 +138,22 @@ function debugItemSpawn()
 	end
 end
 
+function spawnShieldItem()
+	createItem(ITEM_TYPE.shield, 100, 100)
+end
+
+
+-- To be called at the end of the pause animation.
+function getPauseTime_Items(pauseTime)
+	for i = 1, activeItems do
+		local life = lifeTime[i]
+		if life > -1 then
+			lifeTime[i] = life + pauseTime
+		end
+	end
+end
+
+
 -- +--------------------------------------------------------------+
 -- |                           Effects                            |
 -- +--------------------------------------------------------------+

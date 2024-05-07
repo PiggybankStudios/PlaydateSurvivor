@@ -173,7 +173,7 @@ end
 -----------------
 
 function pd.BButtonDown()
-	cameraShake(30)
+	spawnShieldItem()
 end
 
 -----------------
@@ -182,7 +182,7 @@ end
 
 
 -- +--------------------------------------------------------------+
--- |                      Main Gameplay Loop                      |
+-- |                       General Controls                       |
 -- +--------------------------------------------------------------+
 
 local UP 		<const> = pd.kButtonUp
@@ -192,13 +192,26 @@ local RIGHT 	<const> = pd.kButtonRight
 local A_BUTTON 	<const> = pd.kButtonA
 local B_BUTTON 	<const> = pd.kButtonB
 
-local button_pressed 	<const> = pd.buttonIsPressed
+local button_pressed 		<const> = pd.buttonIsPressed
+local button_just_pressed 	<const> = pd.buttonJustPressed
 
 local inputX, inputY = 0
 local inputButtonB = 0
+local inputButtonA = false
 
 
-function updateControls_DuringGamePlay()
+function resetInput()
+	inputX, inputY = 0
+	inputButtonB = 0
+	inputButtonA = false
+end
+
+
+-- +--------------------------------------------------------------+
+-- |                      Main Gameplay Loop                      |
+-- +--------------------------------------------------------------+
+
+function updateControls_MainGame()
 
 	-- Moving Up and Down
 	if 		button_pressed(UP) 		then 	inputY = -1
@@ -213,9 +226,14 @@ function updateControls_DuringGamePlay()
 	end
 
 	-- Toggle Run if held
-	if button_pressed(B_BUTTON) then 	inputButtonB = 2
-	else 								inputButtonB = 1
+	if 		button_pressed(B_BUTTON) then 	inputButtonB = 2
+	else 									inputButtonB = 1
 	end
 
 	return inputX, inputY, inputButtonB
 end
+
+
+-- +--------------------------------------------------------------+
+-- |                          ----------                          |
+-- +--------------------------------------------------------------+

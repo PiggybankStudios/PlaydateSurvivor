@@ -309,9 +309,9 @@ local grenadeCount = 0
 
 -- Gun Slots
 local theShotTimes = {0, 0, 0, 0} --how long until next shot
-local theGunSlots = {BULLET_TYPE.peagun, BULLET_TYPE.peagun, BULLET_TYPE.peagun, BULLET_TYPE.peagun} --what gun in each slot
+local theGunSlots = {BULLET_TYPE.shotgun, BULLET_TYPE.ranggun, 0, BULLET_TYPE.minigun} --what gun in each slot
 local theGunLogic = {0, 0, 0, 0} --what special logic that slotted gun needs
-local theGunTier = {3, 3, 3, 3} -- what tier the gun is at
+local theGunTier = {3, 2, 2, 2} -- what tier the gun is at
 
 
 
@@ -531,29 +531,22 @@ local BULLET_CREATE = {
 
 
 -- Create bullets for each gun slot
-local function handleCreatingBullets(time, elapsedPauseTime, playerX, playerY, crank)
+local function handleCreatingBullets(time, playerX, playerY, crank)
 	for iGunSlot = 1, 4 do
 		-- check the bullet that needs to be created - if bullet is 0, then skip creation
 		local type = theGunSlots[iGunSlot]
-		if type < 1 then 
-			return
+		if type > 0 and theShotTimes[iGunSlot] < time then 
+			
+			-- setup bullet data
+			local spawnTime = time -- - elapsedPauseTime
+			local slotAngle = (iGunSlot - 1) * 90 + crank
+			local gunTier = theGunTier[iGunSlot]
+			local gunLogic = theGunLogic[iGunSlot]
+			theShotTimes[iGunSlot] = time + playerAttackRate * BULLET_ATTACKRATES[type]
+
+			-- spawn the bullet
+			BULLET_CREATE[type](type, playerX, playerY, slotAngle, gunTier, spawnTime, gunLogic, iGunSlot)
 		end
-
-		-- check if it's the right time to spawn this bullet
-		theShotTimes[iGunSlot] += elapsedPauseTime 		-- add possible pause time
-		if theShotTimes[iGunSlot] > time then 
-			return
-		end 	
-
-		-- setup bullet data
-		local spawnTime = time - elapsedPauseTime
-		local slotAngle = (iGunSlot - 1) * 90 + crank
-		local gunTier = theGunTier[iGunSlot]
-		local gunLogic = theGunLogic[iGunSlot]
-		theShotTimes[iGunSlot] = time + playerAttackRate * BULLET_ATTACKRATES[type]
-
-		-- spawn the bullet
-		BULLET_CREATE[type](type, playerX, playerY, slotAngle, gunTier, spawnTime, gunLogic, iGunSlot)
 	end
 end
 
@@ -588,6 +581,10 @@ function clearGunStats()
 	theGunTier = {1, 0, 0, 0}
 end
 
+function getEquippedGunData()
+	return 	theGunSlots[1], theGunSlots[2], theGunSlots[3], theGunSlots[4],
+	 		theGunTier[1], theGunTier[2], theGunTier[3], theGunTier[4]
+end
 
 function getEquippedGun(index)
 	return theGunSlots[index]
@@ -629,6 +626,23 @@ end
 function sendWorldCollidersToBullets(gameSceneWorld)
 	worldRef = gameSceneWorld
 	cellSizeRef = worldRef.cellSize
+end
+
+
+-- To be called at the end of the pause animation.
+function getPauseTime_Bullets(pauseTime)
+	
+	-- shot timers for all gun slots
+	for i = 1, 4 do
+		theShotTimes[i] = theShotTimes[i] + pauseTime
+	end
+
+	-- timers for all bullets
+	for j = 1, activeBullets do
+		lifeTime[j] 		= lifeTime[j] + pauseTime
+		timer[j] 			= timer[j] + pauseTime
+		moveCalcTimer[j] 	= moveCalcTimer[j] + pauseTime
+	end
 end
 
 
@@ -907,15 +921,12 @@ end
 local FAST_DRAW <const> = gfx.image.draw
 
 -- Move, Collide, Draw and Delete all bullets
-local function updateBulletLists(time, elapsedPauseTime, playerX, playerY, screenOffsetX, screenOffsetY)
+local function updateBulletLists(time, playerX, playerY, screenOffsetX, screenOffsetY)
 
 	-- LOOP
 	local i = 1
 	local currentActiveBullets = activeBullets
 	while i <= currentActiveBullets do	
-
-		-- adjust pause time
-		--lifeTime[i] += elapsedPauseTime
 
 		-- move and collide
 		local type = bulletType[i]
@@ -960,12 +971,11 @@ end
 function updateBullets(time, crank, playerX, playerY, screenOffsetX, screenOffsetY)
 
 	-- Variable setup for this tick
-	local elapsedPauseTime = 0
 	newShotsFired = 0
 
 
-	handleCreatingBullets(time, elapsedPauseTime, playerX, playerY, crank)
-	updateBulletLists(time, elapsedPauseTime, playerX, playerY, screenOffsetX, screenOffsetY)
+	handleCreatingBullets(time, playerX, playerY, crank)
+	updateBulletLists(time, playerX, playerY, screenOffsetX, screenOffsetY)
 
 	
 	-- Shot bullet tracking for player
