@@ -14,7 +14,6 @@ local random 	<const> = math.random
 local GET_IMAGE <const> = gfx.imagetable.getImage
 local GET_SIZE 	<const> = gfx.image.getSize
 
-local MOVE_TOWARDS	<const> = moveTowards
 
 -- World Data
 local worldRef, cellSizeRef
@@ -41,7 +40,7 @@ local CAMERA_SHAKE_STRENGTH = {
 
 -- Player Values
 local stunChance = 0
-local difficulty = 15
+local difficulty = 10
 local reflectDamage = 1
 
 -- Enemy Data
@@ -56,6 +55,8 @@ local img_enemyMunBag = 		gfx.image.new('Resources/Sprites/enemy/Enemy16')
 local imgTable_bulletBill = 	gfx.imagetable.new('Resources/Sheets/Enemies/bulletBill-table-22-22')
 local imgTable_chunkyArms = 	gfx.imagetable.new('Resources/Sheets/Enemies/chunkyArms-table-58-50')
 
+local imgTable_enemy_A 			= gfx.imagetable.new('Resources/Sheets/Enemies/enemy_A')
+
 local IMAGE_LIST = {
 	img_enemyFastBall,
 	img_enemyNormalSquare,
@@ -63,16 +64,32 @@ local IMAGE_LIST = {
 	img_enemyMedic,
 	GET_IMAGE(imgTable_bulletBill, 1),
 	GET_IMAGE(imgTable_chunkyArms, 1),
-	img_enemyMunBag
+	img_enemyMunBag,
+	GET_IMAGE(imgTable_enemy_A, 1)
+}
+
+local COLLISION_BOX_SCALING = {
+	1, 		-- fastBall
+	1, 		-- normalSquare
+	1, 		-- bat
+	1, 		-- medic
+	1, 		-- bulletBill
+	1, 		-- chunkyArms
+	1, 		-- munBag
+	0.2 	-- enemy_A
 } 
 
 local IMAGE_WIDTH, IMAGE_HEIGHT = {}, {}
 local IMAGE_WIDTH_HALF, IMAGE_HEIGHT_HALF = {}, {}
+local COLLISION_OFFSET_X, COLLISION_OFFSET_Y = {}, {}
 local BIGGEST_ENEMY_WIDTH, BIGGEST_ENEMY_HEIGHT = 0, 0
 for i = 1, #IMAGE_LIST do
 	local width, height = GET_SIZE(IMAGE_LIST[i])
 	IMAGE_WIDTH[i], IMAGE_HEIGHT[i] = width, height
 	IMAGE_WIDTH_HALF[i], IMAGE_HEIGHT_HALF[i] = width * 0.5, height * 0.5
+
+	local c_offset_x, c_offset_y = width * COLLISION_BOX_SCALING[i] * 0.5, height * COLLISION_BOX_SCALING[i] * 0.5
+	COLLISION_OFFSET_X[i], COLLISION_OFFSET_Y[i] = IMAGE_WIDTH_HALF[i] - c_offset_x, IMAGE_HEIGHT_HALF[i] - c_offset_y
 
 	BIGGEST_ENEMY_WIDTH = BIGGEST_ENEMY_WIDTH < width and width or BIGGEST_ENEMY_WIDTH
 	BIGGEST_ENEMY_HEIGHT = BIGGEST_ENEMY_HEIGHT < height and height or BIGGEST_ENEMY_HEIGHT
@@ -80,7 +97,7 @@ end
 
 -------------------
 
-local BASE_ACCEL				<const> = 15
+local BASE_ACCEL				<const> = 100 --15
 local SPEED_DAMPEN 				<const> = 0.96
 local GROUP_SIZE 				<const> = 5
 local TIME_SET_SIZE 			<const> = 50
@@ -106,7 +123,8 @@ local ENEMY_TYPE = {
 	medic = 4,
 	bulletBill = 5,
 	chunkyArms = 6,
-	munBag = 7
+	munBag = 7,
+	enemy_A = 8
 }
 
 local ENEMY_DROP = {
@@ -116,7 +134,8 @@ local ENEMY_DROP = {
 	{ LOCAL_ITEM_TYPE.exp1,		LOCAL_ITEM_TYPE.health, 	LOCAL_ITEM_TYPE.absorbAll 	},	-- medic
 	{ LOCAL_ITEM_TYPE.exp1,		LOCAL_ITEM_TYPE.health, 	LOCAL_ITEM_TYPE.luck 		},	-- bulletBill
 	{ LOCAL_ITEM_TYPE.exp16,	LOCAL_ITEM_TYPE.luck 									},	-- chunkyArms
-	{ LOCAL_ITEM_TYPE.mun2,		LOCAL_ITEM_TYPE.mun10, 		LOCAL_ITEM_TYPE.mun50 		}	-- munBag
+	{ LOCAL_ITEM_TYPE.mun2,		LOCAL_ITEM_TYPE.mun10, 		LOCAL_ITEM_TYPE.mun50 		},	-- munBag
+	{ LOCAL_ITEM_TYPE.exp1, 	LOCAL_ITEM_TYPE.exp16 									}	-- enemy_A
 }
 
 -- Percents need to total 100
@@ -128,7 +147,8 @@ local ENEMY_DROP_PERCENT = {
 	{ 60, 35, 5 },		-- medic
 	{ 80, 19, 1 },		-- bulletBill
 	{ 95, 5 },			-- chunkyArms
-	{ 85, 10, 5}		-- munBag -- temp numbers --{ (90 - tLuck1 - tLuck2), (10 + tLuck1), tLuck2}
+	{ 85, 10, 5},		-- munBag -- temp numbers --{ (90 - tLuck1 - tLuck2), (10 + tLuck1), tLuck2}
+	{ 96, 4 }			-- enemy_A
 }
 
 local ENEMY_RATING = {
@@ -138,7 +158,8 @@ local ENEMY_RATING = {
 	3, 		-- medic
 	2, 		-- bulletBill
 	3, 		-- chunkyArms
-	1  		-- munBag
+	1, 		-- munBag
+	1 		-- enemy_A
 }
 
 local ENEMY_MAX_SPEEDS = {
@@ -148,7 +169,8 @@ local ENEMY_MAX_SPEEDS = {
 	2,		-- medic
 	10,		-- bulletBill
 	2,		-- chunkyArms
-	1 		-- munBag
+	1, 		-- munBag
+	0 		-- enemy_A
 }
 
 local ENEMY_REPEL_FORCE = {
@@ -158,7 +180,8 @@ local ENEMY_REPEL_FORCE = {
 	4,		-- medic
 	5,		-- bulletBill
 	7,		-- chunkyArms
-	2 		-- munBag
+	2, 		-- munBag
+	5, 		-- enemy_A
 }
 
 local ENEMY_HEALTH = {
@@ -168,7 +191,8 @@ local ENEMY_HEALTH = {
 	20,		-- medic
 	6,		-- bulletBill
 	66,		-- chunkyArms
-	1 		-- munBag
+	1, 		-- munBag
+	6 		-- enemy_A
 }
 
 local ENEMY_DAMAGE = {
@@ -178,7 +202,8 @@ local ENEMY_DAMAGE = {
 	2,		-- medic
 	4,		-- bulletBill
 	10,		-- chunkyArms
-	1 		-- munBag
+	1, 		-- munBag
+	4  		-- enemy_A
 }
 
 local ENEMY_CAMERA_SHAKE = {
@@ -188,7 +213,8 @@ local ENEMY_CAMERA_SHAKE = {
 	CAMERA_SHAKE_STRENGTH.large, 	-- medic
 	CAMERA_SHAKE_STRENGTH.large, 	-- bulletBill
 	CAMERA_SHAKE_STRENGTH.large, 	-- chunkyArms
-	CAMERA_SHAKE_STRENGTH.tiny   	-- munBag
+	CAMERA_SHAKE_STRENGTH.tiny,   	-- munBag
+	CAMERA_SHAKE_STRENGTH.large 	-- enemy_A
 }
 
 
@@ -230,6 +256,69 @@ local collisionDetails = {}
 
 local spawnInc = 0
 local theSpawnTime = 0
+
+
+
+
+-- +--------------------------------------------------------------+
+-- |                            Timing                            |
+-- +--------------------------------------------------------------+
+
+local resetTime <const> = pd.resetElapsedTime
+local getTime <const> = pd.getElapsedTime
+
+local timerWindow = 0
+local totalElapseTime = 0
+local timeInstances = 0
+local TIME_INSTANCE_MAX <const> = 100
+local averageTime = 0
+local maxTime = 0
+local minTime = 1
+
+local function addTotalTime()
+	if timeInstances >= TIME_INSTANCE_MAX then return end
+
+	local elapsed = getTime()
+	totalElapseTime += elapsed
+	timeInstances += 1
+
+	if elapsed < minTime then 
+		minTime = elapsed
+	elseif elapsed > maxTime then 
+		maxTime = elapsed
+	end
+end
+
+local function printAndClearTotalTime(activeNameAsString, activeObject)
+	-- avoid divide by 0
+	if timeInstances == 0 then return end
+
+	-- time instance check
+	if timeInstances < TIME_INSTANCE_MAX then return end 
+
+	-- calc average
+	averageTime = totalElapseTime / timeInstances
+
+	local objectName = activeNameAsString or ""
+	local object = activeObject or ""
+
+	-- print statistics
+	print(	"------------")
+	print(	objectName .. ": " .. object ..
+			" - total time: " .. totalElapseTime .. 
+			" - average time: " .. averageTime .. 
+			" - time instances: " .. timeInstances .. 
+			" - min: " .. minTime .. 
+			" - max: " .. maxTime)
+
+	-- reset values for new data
+	totalElapseTime = 0
+	averageTime = 0
+	timeInstances = 0
+	minTime = 1
+	maxTime = 0
+end
+
 
 
 
@@ -277,11 +366,10 @@ local function createEnemy(type, spawnX, spawnY)
 	if total > maxEnemies then return end 	-- if too many enemies exist, don't create another enemy
 	activeEnemies = total
 
-
 	-- Arrays
 	enemyType[total] = type
-	posX[total] = spawnX
-	posY[total] = spawnY
+	posX[total] = spawnX - COLLISION_OFFSET_X[type] -- centers the collision box on enemy when created
+	posY[total] = spawnY - COLLISION_OFFSET_Y[type]
 	velX[total] = 0
 	velY[total] = 0
 	savedDirX[total] = 0
@@ -311,7 +399,12 @@ local function createEnemy(type, spawnX, spawnY)
 								index = total, 
 								cellRange = {0, 0, 0, 0}
 								}
-	ADD_ENEMY(worldRef, collisionDetails[total], spawnX, spawnY, IMAGE_WIDTH[type], IMAGE_HEIGHT[type])
+	ADD_ENEMY(	worldRef, 
+				collisionDetails[total], 
+				spawnX, 
+				spawnY, 
+				IMAGE_WIDTH[type] * COLLISION_BOX_SCALING[type], 
+				IMAGE_HEIGHT[type] * COLLISION_BOX_SCALING[type])
 end
 
 
@@ -472,7 +565,36 @@ end
 -- |                   Movement for Enemy Types                   |
 -- +--------------------------------------------------------------+
 
+local abs <const> = math.abs
+
+local function sign(x)
+	if x > 0 then 	return 1
+	else 			return -1
+	end
+end
+
+function moveTowards(current, target, maxDelta)
+	if abs(target - current) <= maxDelta then
+		return target
+	else
+		return current + sign(target - current) * maxDelta
+	end
+end
+
+function clamp(value, min, max)
+	if value > max then
+		return max
+	elseif value < min then 
+		return min
+	else
+		return value
+	end
+end
+
+
 -- Movement Calc Constants
+local ACCEL_DELTA 						<const> = BASE_ACCEL * dt * dt * 0.5
+
 local BAT_PHASE_MOVE_TOWARD 			<const> = 2500
 local BAT_PHASE_MOVE_AWAY 				<const> = 2000
 
@@ -483,7 +605,6 @@ local BULLETBILL_ROTATE_TIMER_SET 		<const> = 1000
 local BULLETBILL_MOVE_TIMER_SET 		<const> = 2000
 local BULLET_ROTATE_SPEED 				<const> = 30
 local M_180_PI 							<const> = 57.295779
-local BULLET_BILL_MAX_SPEED 			<const> = ENEMY_MAX_SPEEDS[ENEMY_TYPE.bulletBill]
 
 local CHUNKYARMS_HEALTH_THRESHOLD 		<const> = 0.5
 local CHUNKYARMS_NEW_DAMAGEAMOUNT 		<const> = 10
@@ -493,6 +614,8 @@ local CHUNKYARMS_HEALING_TIMER 			<const> = 1500
 local MUNBAG_TIMER_SET 					<const> = 1000
 local MUNBAG_HEALTH_THRESHOLD 			<const> = 0.5
 
+local ENEMY_A_BURST_SPEED 				<const> = 90
+
 
 -- Movement Calc Table
 -- Having functions written out in this table is faster than having a table of local functions, b/c of local scope
@@ -501,7 +624,8 @@ local ENEMY_MOVE_CALC = {
 	--- FastBall ---
 	function(i, enemyX, enemyY, targetX, targetY)
 		return 	targetX - enemyX, 
-				targetY - enemyY
+				targetY - enemyY,
+				maxSpeed[i]
 	end
 	,
 
@@ -509,7 +633,8 @@ local ENEMY_MOVE_CALC = {
 	--- Normal Square ---
 	function(i, enemyX, enemyY, targetX, targetY)
 		return 	targetX - enemyX, 
-				targetY - enemyY
+				targetY - enemyY,
+				maxSpeed[i]
 	end
 	,
 
@@ -523,7 +648,8 @@ local ENEMY_MOVE_CALC = {
 				aiPhase[i] = 1
 			end
 			return 	targetX - enemyX,
-					targetY - enemyY
+					targetY - enemyY,
+					maxSpeed[i]
 		end
 
 		-- move away from player for some time
@@ -534,7 +660,8 @@ local ENEMY_MOVE_CALC = {
 			randX, randY = random(1, 12), random(1, 12)
 		end
 		return 	enemyX - targetX + randX,
-				enemyY - targetY + randY
+				enemyY - targetY + randY,
+				maxSpeed[i]
 	end
 	,
 
@@ -549,7 +676,8 @@ local ENEMY_MOVE_CALC = {
 				velY[i] = 0
 			end
 			return 	targetX - enemyX,
-					targetY - enemyY	
+					targetY - enemyY,
+					maxSpeed[i]	
 		end
 
 		-- move away from player and heal
@@ -561,7 +689,8 @@ local ENEMY_MOVE_CALC = {
 			end
 		end
 		return 	enemyX - targetX,
-				enemyY - targetY
+				enemyY - targetY,
+				maxSpeed[i]
 	end
 	,
 
@@ -571,7 +700,7 @@ local ENEMY_MOVE_CALC = {
 		-- Smoothly rotate image towards player
 		if aiPhase[i] < 1 then 			
 			local calcRot = M_180_PI * atan2(enemyY - targetY, enemyX - targetX) + 180
-			local newRot = MOVE_TOWARDS(rotation[i], calcRot, BULLET_ROTATE_SPEED)
+			local newRot = moveTowards(rotation[i], calcRot, BULLET_ROTATE_SPEED)
 			rotation[i] = newRot
 			local imageIndex = ceil(newRot / 30)
 			if savedDirX[i] ~= imageIndex then
@@ -585,7 +714,7 @@ local ENEMY_MOVE_CALC = {
 				timer[i] = time + BULLETBILL_MOVE_TIMER_SET
 			end
 
-			return 1, 1 	-- Returning 1's prevents movement and avoids div by 0.
+			return 1, 1, 0 	-- Returning 1's prevents movement and avoids div by 0.
 
 		-- Set Precise Rotation
 		elseif aiPhase[i] < 2 then
@@ -601,9 +730,8 @@ local ENEMY_MOVE_CALC = {
 			local yDiff = targetY - enemyY
 			savedDirX[i] = xDiff
 			savedDirY[i] = yDiff
-			maxSpeed[i] = BULLET_BILL_MAX_SPEED
 
-			return xDiff, yDiff
+			return xDiff, yDiff, maxSpeed[i]
 		end
 		
 		-- Stop bullet to find new rotation
@@ -612,12 +740,11 @@ local ENEMY_MOVE_CALC = {
 			timer[i] = time + BULLETBILL_ROTATE_TIMER_SET
 			velX[i] = 0 
 			velY[i] = 0
-			maxSpeed[i] = 0 -- Setting velocity and maxSpeed to 0 stops this enemy from moving.
-			return 1, 1		-- Returning 1's prevents movement and avoids div by 0.
+			return 1, 1, 0		-- Returning 1's prevents movement and avoids div by 0.
 		end
 
 		-- Move Bullet in saved direction
-		return savedDirX[i], savedDirY[i]
+		return savedDirX[i], savedDirY[i], maxSpeed[i]
 	end
 	,
 
@@ -642,7 +769,8 @@ local ENEMY_MOVE_CALC = {
 
 		-- always move towards the player
 		return 	targetX - enemyX,
-				targetY - enemyY		
+				targetY - enemyY,
+				maxSpeed[i]	
 	end
 	,
 
@@ -667,8 +795,77 @@ local ENEMY_MOVE_CALC = {
 
 		-- Move away from the player
 		return 	enemyX - targetX,
-				enemyY - targetY
+				enemyY - targetY,
+				maxSpeed[i]
 	end
+	,
+
+
+	--- Enemy_A ---
+	function(i, enemyX, enemyY, targetX, targetY, time)
+		
+		-- Smoothly rotate image towards player
+		if aiPhase[i] < 1 then 		
+			local calcRot = M_180_PI * atan2(enemyY - targetY, enemyX - targetX) + 180
+			local oldRot = rotation[i]
+
+			local rotDiff = calcRot - oldRot			
+			local rotSign = rotDiff > 0 and 1 or -1
+			local rotFlipAround = rotDiff * rotSign > 180 and -1 or 1
+			local rotAmount = rotDiff * rotSign > BULLET_ROTATE_SPEED
+					and BULLET_ROTATE_SPEED * rotSign * rotFlipAround
+					or 0
+
+			local newRot = oldRot + rotAmount
+			if 		newRot > 359 then newRot = 0 
+			elseif  newRot < 0   then newRot = 330
+			end
+
+			rotation[i] = newRot
+			local imageIndex = newRot // 30 + 1
+
+			-- Set 'prepare' frame - Update timer for movement phase
+			if timer[i] < time then 
+				aiPhase[i] = 1
+				timer[i] = time + BULLETBILL_MOVE_TIMER_SET
+				images[i] = GET_IMAGE(imgTable_enemy_A, imageIndex * 3 - 1)
+
+			-- Rotate 'idle' frame
+			elseif savedDirX[i] ~= imageIndex then
+				savedDirX[i] = imageIndex
+				images[i] = GET_IMAGE(imgTable_enemy_A, imageIndex * 3 - 2)
+			end		
+
+			return 1, 1, 0 	-- Returning 1's prevents movement and avoids div by 0. Passing maxSpeed of 0.
+
+		-- Set Precise Rotation
+		elseif aiPhase[i] < 2 then
+			-- Set image towards player
+			local calcRot = M_180_PI * atan2(enemyY - targetY, enemyX - targetX) + 180
+			rotation[i] = calcRot
+			images[i] = GET_IMAGE(imgTable_enemy_A, (calcRot // 30 + 1) * 3)
+
+			-- Set rotation towards player
+			aiPhase[i] = 2
+			local xDiff = targetX - enemyX
+			local yDiff = targetY - enemyY
+			savedDirX[i] = xDiff
+			savedDirY[i] = yDiff
+
+			return xDiff, yDiff, ENEMY_A_BURST_SPEED -- Set the saved direction, and set speed burst in that direction.
+		end
+		
+		-- Stop enemy to find new rotation
+		if timer[i] < time then 
+			aiPhase[i] = 0
+			timer[i] = time + BULLETBILL_ROTATE_TIMER_SET
+			return 1, 1, 0		-- Returning 1's prevents movement and avoids div by 0. Passing maxSpeed of 0.
+		end
+
+		-- Move Bullet in saved direction
+		return savedDirX[i], savedDirY[i], maxSpeed[i]
+	end
+	
 }
 
 
@@ -769,7 +966,7 @@ local function moveSingleEnemy(i, type, time, playerX, playerY)
 		DAMAGE_PLAYER(damageAmount[i], ENEMY_CAMERA_SHAKE[type], pX, pY)
 
 		-- Moving the enemy and attached UI
-		UPDATE_ENEMY(worldRef, collisionDetails[i], pX, pY)
+		UPDATE_ENEMY(worldRef, collisionDetails[i], pX + COLLISION_OFFSET_X[type], pY + COLLISION_OFFSET_Y[type])
 
 		return pX, pY
 	end
@@ -791,12 +988,10 @@ local function moveSingleEnemy(i, type, time, playerX, playerY)
 		vX, vY = repelFromEnemies(i, type, centerX, centerY, velX[i], velY[i])
 
 		-- calculate new movement velocity for this enemy
-		local xDiff, yDiff = ENEMY_MOVE_CALC[type](i, centerX, centerY, playerX, playerY, time)	
-
-		local scaledMagnitude = maxSpeed[i] / sqrt(xDiff * xDiff + yDiff * yDiff)
-		local maxSpeedChange = BASE_ACCEL * dt	
-		vX = MOVE_TOWARDS(vX, xDiff * scaledMagnitude, maxSpeedChange)
-		vY = MOVE_TOWARDS(vY, yDiff * scaledMagnitude, maxSpeedChange)
+		local xDiff, yDiff, speed = ENEMY_MOVE_CALC[type](i, centerX, centerY, playerX, playerY, time)	
+		local scaledMagnitude = speed / sqrt(xDiff * xDiff + yDiff * yDiff)	
+		vX = xDiff * scaledMagnitude * ACCEL_DELTA + vX
+		vY = yDiff * scaledMagnitude * ACCEL_DELTA + vY
 	end
 
 	local pX = startX + vX 
@@ -810,7 +1005,7 @@ local function moveSingleEnemy(i, type, time, playerX, playerY)
 	-- TO DO --
 
 	-- Moving the enemy and attached UI
-	UPDATE_ENEMY(worldRef, collisionDetails[i], pX, pY)
+	UPDATE_ENEMY(worldRef, collisionDetails[i], pX + COLLISION_OFFSET_X[type], pY + COLLISION_OFFSET_Y[type])
 
 	return pX, pY
 end
@@ -897,11 +1092,16 @@ function debugSpawnMassEnemy()
 	local x, y
 	local randomType
 	for i = 1, maxEnemies do 
-		x = random(100, 300)
-		y = random(100, 300)
-		randomType = random(6, 6)
+		x = random(100, 201)
+		y = random(100, 201)
+		randomType = random(1, 8)
 		createEnemy(randomType, x, y)
 	end
+end
+
+function spawnTwoEnemies()
+	createEnemy(8, 250, 200)
+	--createEnemy(2, 250, 250)
 end
 
 
@@ -918,7 +1118,7 @@ local function spawnMonsters(cameraX, cameraY, time)
 		local enemyX = cameraX + random(-250, 250)
 		local enemyY = cameraY + random(-145, 145)
 
-		local type = random(1, 5)
+		local type = random(1, 8)
 		createEnemy(type, enemyX, enemyY)
 
 		-- Sometimes create a second enemy, possibly with higher difficulty
@@ -1015,6 +1215,23 @@ local function updateEnemiesLists(time, playerX, playerY, screenOffsetX, screenO
 end
 
 
+
+-- used for the post-pause screen countdown to redraw the screen
+function redrawEnemies(screenOffsetX, screenOffsetY)
+	local currentActiveEnemies = activeEnemies
+	for i = 1, currentActiveEnemies do	
+
+		local x, y = posX[i], posY[i]
+		local drawX = x + screenOffsetX
+		local drawY = y + screenOffsetY
+		if 	SCREEN_MIN_X < drawX and drawX < SCREEN_MAX_X and 
+			SCREEN_MIN_Y < drawY and drawY < SCREEN_MAX_Y then
+				FAST_DRAW(images[i], x, y)
+		end
+	end
+end
+
+
 -- +--------------------------------------------------------------+
 -- |                            Update                            |
 -- +--------------------------------------------------------------+
@@ -1025,4 +1242,6 @@ function updateEnemies(time, playerX, playerY, cameraPosX, cameraPosY, screenOff
 	spawnMonsters(cameraPosX, cameraPosY, time)
 	updateEnemiesLists(time, playerX, playerY, screenOffsetX, screenOffsetY)
 
+
+	--printAndClearTotalTime("enemy move timing")
 end

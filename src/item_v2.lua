@@ -234,6 +234,8 @@ local SCREEN_MAX_X 			<const> = 400
 local SCREEN_MIN_Y 			<const> = getBannerHeight() - BIGGEST_ITEM_SIZE
 local SCREEN_MAX_Y 			<const> = 240
 
+local FAST_DRAW <const> = gfx.image.draw
+
 -- update function for moving items and removing from item lists
 local function updateItemLists(time, playerX, playerY, offsetX, offsetY)
 	
@@ -284,7 +286,7 @@ local function updateItemLists(time, playerX, playerY, offsetX, offsetY)
 				SCREEN_MIN_Y < drawY and drawY < SCREEN_MAX_Y then
 
 				local halfSize = IMAGE_SIZE_HALF[type]
-				IMAGE_LIST[type]:draw(itemX - halfSize, itemY - halfSize) 
+				FAST_DRAW(IMAGE_LIST[type], itemX - halfSize, itemY - halfSize) 
 			end
 			i = i + 1
 
@@ -307,11 +309,30 @@ end
 
 
 
+-- used for the post-pause screen countdown to redraw the screen
+function redrawItems(offsetX, offsetY)
+	local currentActiveItems = activeItems
+	for i = 1, currentActiveItems do	
+
+		local x, y = posX[i], posY[i]
+		local drawX = x + offsetX
+		local drawY = y + offsetY		
+		if 	SCREEN_MIN_X < drawX and drawX < SCREEN_MAX_X and 
+			SCREEN_MIN_Y < drawY and drawY < SCREEN_MAX_Y then
+
+			local type = itemType[i]
+			local halfSize = IMAGE_SIZE_HALF[type]
+			FAST_DRAW(IMAGE_LIST[type], x - halfSize, y - halfSize) 
+		end
+
+	end
+end
+
+
+
 -- +--------------------------------------------------------------+
 -- |                            Update                            |
 -- +--------------------------------------------------------------+
-
-
 
 
 function updateItems(time, playerX, playerY, offsetX, offsetY)

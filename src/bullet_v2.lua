@@ -963,6 +963,19 @@ local function updateBulletLists(time, playerX, playerY, screenOffsetX, screenOf
 end
 
 
+
+-- used for the post-pause screen countdown to redraw the screen
+function redrawBullets()
+	local currentActiveBullets = activeBullets
+	for i = 1, currentActiveBullets do	
+
+		local halfSize = imageHalfSize[i]
+		FAST_DRAW(rotatedImage[i], posX[i] - halfSize, posY[i] - halfSize)
+
+	end
+end
+
+
 -- +--------------------------------------------------------------+
 -- |                            Update                            |
 -- +--------------------------------------------------------------+

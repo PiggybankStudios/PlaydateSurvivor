@@ -83,13 +83,16 @@ local c_UpdateItems 				<const> = updateItems
 local c_DrawPlayerUI 				<const> = drawPlayerUI
 
 -- Pause Menu
-local c_OpenPauseMenu 				<const> = openPauseMenu
-local c_UpdateControls_PauseMenu	<const> = updateControls_PauseMenu
 local c_GetPauseTime_Player 		<const> = getPauseTime_Player
 local c_GetPauseTime_Camera 		<const> = getPauseTime_Camera
 local c_GetPauseTime_Bullets 		<const> = getPauseTime_Bullets
 local c_GetPauseTime_Enemies 		<const> = getPauseTime_Enemies
 local c_GetPauseTime_Items	 		<const> = getPauseTime_Items
+
+local c_RedrawPlayer 				<const> = redrawPlayer
+local c_RedrawBullets 				<const> = redrawBullets
+local c_RedrawEnemies 				<const> = redrawEnemies
+local c_RedrawItems 				<const> = redrawItems
 
 
 -- +--------------------------------------------------------------+
@@ -309,6 +312,16 @@ function pd.update()
 	---- Pause Menu ----
 	elseif currentState < 3 then 
 
+		-- Redraw all components of Main Game screen so camera can rotate during countdown
+		c_UpdateGameScene(screenOffsetX, screenOffsetY)
+		local playerX, playerY = c_RedrawPlayer(time, crank)
+		screenOffsetX, screenOffsetY, cameraPosX, cameraPosY = c_UpdateCamera(time, crank, playerX, playerY)
+		c_RedrawBullets()
+		c_RedrawEnemies(screenOffsetX, screenOffsetY)
+		c_RedrawItems(screenOffsetX, screenOffsetY)
+		-- draw particles
+		c_DrawPlayerUI()
+
 		-- 'Ready' phase
 		if readyGoPhase < 2 then
 			local timePassed = (countdownTimer - time)
@@ -379,7 +392,7 @@ function pd.update()
 	end
 
 
-	printAndClearTotalTime("GS loop in main")
+	--printAndClearTotalTime("GS loop in main")
 	playdate.drawFPS()
 end
 

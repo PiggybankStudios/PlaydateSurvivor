@@ -173,7 +173,8 @@ end
 -----------------
 
 function pd.BButtonDown()
-	spawnShieldItem()
+	--spawnTwoEnemies()
+	--debugSpawnMassEnemy()
 end
 
 -----------------

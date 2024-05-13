@@ -10,12 +10,12 @@ end
 
 function updateMun()
 	local totalMun = "mun:" .. playerMun
-	writeTextToScreen(25, 16, totalMun, false, true)
+	--writeTextToScreen(25, 16, totalMun, false, true)
 end
 
 function updateTotalMun()
 	local totalMun = "mun:" .. playerTotalMun
-	writeTextToScreen(15, 25, totalMun, false, false)
+	--writeTextToScreen(15, 25, totalMun, false, false)
 end
 
 function addMun(amount)
@@ -26,8 +26,8 @@ end
 
 function addTotalMun(amount)
 	playerTotalMun = getSaveValue("mun") + amount
-	setSaveValue("mun", playerTotalMun)
-	writeSaveFile(getConfigValue("Default_Save"))
+	--setSaveValue("mun", playerTotalMun)
+	--writeSaveFile(getConfigValue("Default_Save"))
 end
 
 function getMun()

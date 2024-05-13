@@ -330,7 +330,7 @@ function damagePlayer(amount, camShakeStrength, enemyX, enemyY)
 	damageTimer = currentTime + SET_DAMAGE_TIMER
 	health = health - amountLost
 	if health < 0 then
-		print("health below 0")
+		--print("health below 0")
 		amountLost = amountLost + health
 		health = 0
 		--handleDeath()
@@ -855,11 +855,35 @@ function updatePlayer(time, inputX, inputY, inputButtonB, crank, newShots, newIt
 					flipState)
 	end
 
-	
-
-
 
 	--printAndClearTotalTime()
 
 	return playerX, playerY
 end
+
+
+
+-- used for the post-pause screen countdown to redraw the screen
+function redrawPlayer(time, crank)
+
+	local playerX, playerY = playerRect.x + halfCol, playerRect.y + halfCol
+
+	local imageIndex = crank % 180 // IMAGE_ANGLE_DIFF + 1 	-- 1 to 40
+	local flipState = crank < 180 and UNFLIPPED or FLIP_XY	-- same as   a ? b : c
+	local image = GET_IMAGE(playerImageTable, imageIndex)
+
+	if invincible then 
+		drawInvincible(	time, 
+						image,
+						playerX - PLAYER_IMAGE_WIDTH_HALF, 
+						playerY - PLAYER_IMAGE_HEIGHT_HALF, 
+						flipState)
+	else
+		FAST_DRAW(	image, 
+					playerX - PLAYER_IMAGE_WIDTH_HALF, 
+					playerY - PLAYER_IMAGE_HEIGHT_HALF, 
+					flipState)
+	end
+
+	return playerX, playerY
+end	

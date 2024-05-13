@@ -28,7 +28,6 @@ function updateGameScene(screenOffsetX, screenOffsetY)
 		0 < screenOffsetY or screenOffsetY < offsetHeight then
 			CLEAR()
 	end
-
 	DRAW(tilemap_combined, 0, 0)
 	
 
@@ -178,7 +177,7 @@ end
 
 
 local drawCells 		= false
-local drawColliders 	= false
+local drawColliders 	= true
 local drawCellCount 	= false
 local drawRectCoords 	= false
 
