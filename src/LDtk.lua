@@ -67,6 +67,12 @@ local _use_lua_levels = false
 
 local _ = {} -- for private functions
 
+
+-- CUSTOM --
+local custom_level_names = {}
+------------
+
+
 -- @use_lua_levels(optional)
 --	true: will load lua precomputed levels
 --	false: will load .ldtk files (slower)
@@ -201,9 +207,13 @@ function LDtk.load( ldtk_file, use_lua_levels )
 	end
 
 	-- we list the level names (the complete list needs to be ready before calling LDtk.load_level())
+	local custom_index = 1
 	for level_index, level_data in ipairs(data.levels) do
 		_level_names[ level_data.iid ] = level_data.identifier
 		_level_rects[ level_data.identifier ] = { x=level_data.worldX, y=level_data.worldY, width=level_data.pxWid, height=level_data.pxHei }
+		
+		custom_level_names[custom_index] = level_data.identifier
+		custom_index = custom_index + 1
 	end
 
 	-- we load the levels
@@ -549,6 +559,16 @@ end
 function LDtk.get_level_name(levelIid)
 	return _level_names[levelIid]
 end
+
+
+
+-- CUSTOM - return all the level names in a list --
+function LDtk.get_level_list()
+	return custom_level_names
+end
+---------------------------------------------------
+
+
 
 -- Generate an image from a section of a tileset
 -- https://ldtk.io/json/#ldtk-TilesetRect

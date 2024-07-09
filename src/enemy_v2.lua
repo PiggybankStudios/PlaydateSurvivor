@@ -24,18 +24,8 @@ local dt <const> = getDT()
 
 -- Non-Enemy Data
 local LOCAL_ITEM_TYPE = ITEM_TYPE
-local LOCAL_TAGS = TAGS
 
-local CAMERA_SHAKE_STRENGTH = {
-	tiny = 2,
-	small = 4, 
-	medium = 10,
-	large = 24,
-	massive = 48
-}
-
--- identical to global tags, localized for speed and readability
-
+local CAMERA_SHAKE = CAMERA_SHAKE_STRENGTH
 
 
 -- Player Values
@@ -207,14 +197,14 @@ local ENEMY_DAMAGE = {
 }
 
 local ENEMY_CAMERA_SHAKE = {
-	CAMERA_SHAKE_STRENGTH.tiny,  	-- fastBall
-	CAMERA_SHAKE_STRENGTH.medium,	-- normalSquare
-	CAMERA_SHAKE_STRENGTH.tiny,  	-- bat
-	CAMERA_SHAKE_STRENGTH.large, 	-- medic
-	CAMERA_SHAKE_STRENGTH.large, 	-- bulletBill
-	CAMERA_SHAKE_STRENGTH.large, 	-- chunkyArms
-	CAMERA_SHAKE_STRENGTH.tiny,   	-- munBag
-	CAMERA_SHAKE_STRENGTH.large 	-- enemy_A
+	CAMERA_SHAKE.tiny,  	-- fastBall
+	CAMERA_SHAKE.medium,	-- normalSquare
+	CAMERA_SHAKE.tiny,  	-- bat
+	CAMERA_SHAKE.large, 	-- medic
+	CAMERA_SHAKE.large, 	-- bulletBill
+	CAMERA_SHAKE.large, 	-- chunkyArms
+	CAMERA_SHAKE.tiny,   	-- munBag
+	CAMERA_SHAKE.large 		-- enemy_A
 }
 
 
@@ -352,15 +342,13 @@ for i = 1, maxEnemies do
 	aiPhase[i] = 0
 
 	images[i] = 0
-	collisionDetails[i] = { tag = TAGS.enemy, 
-							index = 0, 
-							cellRange = {0, 0, 0, 0}
-							}
+	collisionDetails[i] = 0
 end
 
 
 local ADD_ENEMY <const> = worldAdd_Fast
-local function createEnemy(type, spawnX, spawnY)
+local ENEMY_TAG <const> = TAGS.enemy
+function createEnemy(type, spawnX, spawnY, velocityX, velocityY)
 
 	local total = activeEnemies + 1
 	if total > maxEnemies then return end 	-- if too many enemies exist, don't create another enemy
@@ -368,10 +356,10 @@ local function createEnemy(type, spawnX, spawnY)
 
 	-- Arrays
 	enemyType[total] = type
-	posX[total] = spawnX - COLLISION_OFFSET_X[type] -- centers the collision box on enemy when created
-	posY[total] = spawnY - COLLISION_OFFSET_Y[type]
-	velX[total] = 0
-	velY[total] = 0
+	posX[total] = spawnX - IMAGE_WIDTH_HALF[type] -- - COLLISION_OFFSET_X[type] -- centers the collision box on enemy when created
+	posY[total] = spawnY - IMAGE_HEIGHT_HALF[type] -- - COLLISION_OFFSET_Y[type]
+	velX[total] = velocityX ~= nil and velocityX or 0  	-- a ? b : c
+	velY[total] = velocityY ~= nil and velocityY or 0 
 	savedDirX[total] = 0
 	savedDirY[total] = 0
 
@@ -395,7 +383,7 @@ local function createEnemy(type, spawnX, spawnY)
 	images[total] = IMAGE_LIST[type]
 
 	-- Collider
-	collisionDetails[total] = { tag = TAGS.enemy, 
+	collisionDetails[total] = { tag = ENEMY_TAG, 
 								index = total, 
 								cellRange = {0, 0, 0, 0}
 								}
@@ -408,8 +396,9 @@ local function createEnemy(type, spawnX, spawnY)
 end
 
 
+
 -- Deleted enemy data is overwitten with enemy at the ends of all lists
-local REMOVE_ENEMY <const> = worldRemoveEnemy
+local REMOVE_ENEMY <const> = worldRemove_Fast
 local function deleteEnemy(i, total)
 	enemyType[i] = enemyType[total]
 	posX[i] = posX[total]
@@ -455,7 +444,7 @@ local function healEnemy(i, amount)
 end
 
 
-local trackDamageDealt <const> = addDamageDealt
+local TRACK_DAMAGE_DEALT <const> = addDamageDealt
 
 -- Must be global, called from bullets
 function bulletEnemyCollision(i, damage, knockback, playerX, playerY, time)
@@ -465,7 +454,7 @@ function bulletEnemyCollision(i, damage, knockback, playerX, playerY, time)
 	health[i] = h
 	healthPercent[i] = h / fullHealth[i]
 	if h < 0 then damage = damage + h end -- adjusts damage to only track what brought health to 0
-	trackDamageDealt(damage)
+	TRACK_DAMAGE_DEALT(damage)
 
 	-- Stun
 	if stunChance > 0 then 
@@ -963,7 +952,7 @@ local function moveSingleEnemy(i, type, time, playerX, playerY)
 		posY[i] = pY
 
 		-- collision interaction
-		DAMAGE_PLAYER(damageAmount[i], ENEMY_CAMERA_SHAKE[type], pX, pY)
+		DAMAGE_PLAYER(time, damageAmount[i], ENEMY_CAMERA_SHAKE[type], pX, pY)
 
 		-- Moving the enemy and attached UI
 		UPDATE_ENEMY(worldRef, collisionDetails[i], pX + COLLISION_OFFSET_X[type], pY + COLLISION_OFFSET_Y[type])
@@ -1068,7 +1057,7 @@ end
 -- To be called after level creation, so enemies have access to world collision cells
 function sendWorldCollidersToEnemies(gameSceneWorld)
 	worldRef = gameSceneWorld
-	cellSizeRef = worldRef.cellSize
+	--cellSizeRef = worldRef.cellSize
 end
 
 
@@ -1239,7 +1228,7 @@ end
 
 function updateEnemies(time, playerX, playerY, cameraPosX, cameraPosY, screenOffsetX, screenOffsetY)
 
-	spawnMonsters(cameraPosX, cameraPosY, time)
+	--spawnMonsters(cameraPosX, cameraPosY, time)
 	updateEnemiesLists(time, playerX, playerY, screenOffsetX, screenOffsetY)
 
 

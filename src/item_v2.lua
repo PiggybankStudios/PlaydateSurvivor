@@ -1,9 +1,7 @@
 local pd 	<const> = playdate
 local gfx 	<const> = pd.graphics
-local vec 	<const> = pd.geometry.vector2D
 
 local random 	<const> = math.random
-local abs 		<const> = math.abs
 local sqrt		<const> = math.sqrt
 
 local dt 		<const> = getDT()
@@ -186,7 +184,7 @@ local activateItemEffect = {
 	function() NEW_WEAPON_GRABBED() return 1 end,
 
 	-- Shield
-	function() SHIELD_PLAYER(10000) return 1 end,
+	function(time) SHIELD_PLAYER(time + 10000) return 1 end,
 
 	--AbsorbAll
 	function() absorbAllFlag = true return 1 end,
@@ -292,7 +290,7 @@ local function updateItemLists(time, playerX, playerY, offsetX, offsetY)
 
 		-- Delete
 		else 
-			itemsCollected = itemsCollected + activateItemEffect[type]()
+			itemsCollected = itemsCollected + activateItemEffect[type](time)
 			deleteItem(i, currentActiveItems)
 			currentActiveItems = currentActiveItems - 1
 		end 

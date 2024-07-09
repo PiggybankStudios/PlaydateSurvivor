@@ -58,6 +58,11 @@ local PLAYER_IMAGE_HEIGHT_HALF 	<const> = playerHeight * 0.5
 local colliderSize 	<const> = 25
 local halfCol 		<const> = floor(colliderSize * 0.5)
 local playerRect = { x = 150, y = 150, width = colliderSize, height = colliderSize, tag = TAGS.player}
+local velX, velY = 0, 0
+
+-- Movement
+local ACCEL 			<const> = 30
+local MAX_SPEED_CHANGE 	<const> = ACCEL * dt 
 
 -- Healthbar
 local HEALTHBAR_OFFSET_X 		<const> = 2
@@ -72,7 +77,15 @@ local healthPercent = 1
 local healthImage 	= gfx.image.new(42, 6, colorClear)
 
 -- Damage
-local SET_DAMAGE_TIMER <const> = 200
+local damageTimer = 0
+local SET_DAMAGE_TIMER 		<const> = 300
+
+-- Spike Damage Instance Data
+local performSpikeDamage = false
+local spikeX, spikeY = 0, 0
+local spikeVelX, spikeVelY = 0, 0
+local SPIKE_BOUNCE_SPEED 	<const> = 15
+
 
 
 -- +--------------------------------------------------------------+
@@ -101,7 +114,7 @@ local playerAttackRate = 100 --30
 local playerAttackRateMin = 10 --25 --limit
 local playerMagnet = 50
 local playerSlots = 1
-local playerGunDamage = 10 -- 1
+local playerGunDamage = 4 --1
 local playerReflectDamage = 0
 local playerLuck = 0
 local playerLuckMax = 100 --limit
@@ -115,7 +128,7 @@ local playerVampireMax = 100 --limit
 local playerHealBonus = 0
 local playerStunChance = 0
 local playerStunChanceMax = 75 --limit
-local damageTimer = 0
+
 local gameStartTime = 0
 
 -- EXP
@@ -134,7 +147,7 @@ invincibleTime = 0
 invincible = false
 
 --Menu
-local currentTime
+--local currentTime
 
 
 
@@ -311,10 +324,10 @@ function healPlayer(amount)
 	updateHealthBar()
 end
 
-function damagePlayer(amount, camShakeStrength, enemyX, enemyY)
+function damagePlayer(time, amount, camShakeStrength, enemyX, enemyY)
 
 	-- Invincibility
-	if damageTimer > currentTime then
+	if damageTimer > time then
 		return
 	elseif invincible then
 		return
@@ -327,7 +340,7 @@ function damagePlayer(amount, camShakeStrength, enemyX, enemyY)
 
 	-- Damaging
 	local amountLost = max(amount - playerArmor, 1)
-	damageTimer = currentTime + SET_DAMAGE_TIMER
+	damageTimer = time + SET_DAMAGE_TIMER
 	health = health - amountLost
 	if health < 0 then
 		--print("health below 0")
@@ -661,7 +674,7 @@ function addPlayerLuck()
 end
 
 function shieldPlayer(amount)
-	invincibleTime = currentTime + amount
+	invincibleTime = amount
 	invincible = true
 end
 
@@ -745,26 +758,74 @@ end
 --------
 
 
+function damageBouncePlayer(otherX, otherY, xDiff, yDiff)
+
+	if performSpikeDamage then return end 	-- if a damage instance already exists, then abort.
+
+	local mag = SPIKE_BOUNCE_SPEED / sqrt(xDiff * xDiff + yDiff * yDiff)
+	spikeVelX, spikeVelY = xDiff * mag, yDiff * mag
+	spikeX, spikeY = otherX, otherY
+	performSpikeDamage = true
+end
+
+
+local function wallSpikeDamagePlayer()
+
+	if performSpikeDamage then return end 	-- if a damage instance already exists, then abort.
+
+	-- Bounce player in opposite velocity; doesn't matter position of tile now.
+	local vX, vY = -velX, -velY
+	local mag = SPIKE_BOUNCE_SPEED / sqrt(vX * vX + vY * vY)
+	spikeVelX, spikeVelY = vX * mag, vY * mag
+	spikeX, spikeY = playerRect.x + vX, playerRect.y + vY
+
+	performSpikeDamage = true
+end
 
 
 local TAG_WALLS		<const> = TAGS.walls 
+local TAG_DAMAGE 	<const> = TAGS.damage
 
 local playerFilter = function(item, other)
 	local tag = other.tag
 	if 		tag == TAG_WALLS then return 'slide'
+	elseif  tag == TAG_DAMAGE then
+		wallSpikeDamagePlayer()
+		return 'slide'
 	end
 	-- else return nil
 end
 
 
+
+local abs <const> = math.abs
+
+local function sign(x)
+	if x > 0 then 	return 1
+	else 			return -1
+	end
+end
+
+local function move_towards(current, target, maxDelta)
+	if abs(target - current) <= maxDelta then
+		return target
+	else
+		return current + sign(target - current) * maxDelta
+	end
+end
+
+
 local function movePlayer(inputX, inputY, inputButtonB)
 
-	local moveSpeed = playerSpeed * inputButtonB * dt
-	local goalX = inputX * moveSpeed + playerRect.x
-	local goalY = inputY * moveSpeed + playerRect.y
+	local maxSpeed = playerSpeed * inputButtonB * dt
+	local desiredVelX = maxSpeed * inputX
+	local desiredVelY = maxSpeed * inputY
+	local vX = move_towards(velX, desiredVelX, MAX_SPEED_CHANGE)
+	local vY = move_towards(velY, desiredVelY, MAX_SPEED_CHANGE)
 
+	velX, velY = vX, vY
+	local goalX, goalY = vX + playerRect.x, vY + playerRect.y
 	local actualX, actualY = world_Check(world, playerRect, goalX, goalY, playerFilter)
-
 	playerRect.x, playerRect.y = actualX, actualY
 
 	return actualX + halfCol, actualY + halfCol
@@ -778,7 +839,7 @@ end
 
 -- To be called at the end of the pause animation.
 function getPauseTime_Player(pauseTime)
-	currentTime = currentTime + pauseTime
+	--currentTime = currentTime + pauseTime
 	damageTimer = damageTimer + pauseTime
 	invincibleTime = invincibleTime + pauseTime
 end
@@ -809,6 +870,9 @@ local SET_DRAW_MODE 	<const> = gfx.setImageDrawMode
 local INVERTED 			<const> = gfx.kDrawModeInverted
 local COPY 				<const> = gfx.kDrawModeCopy
 
+local DAMAGE_PLAYER 		<const> = damagePlayer
+local CAMERA_SHAKE_MEDIUM 	<const> = CAMERA_SHAKE_STRENGTH.medium
+
 
 local function drawInvincible(time, image, x, y, flipState)
 	if invincibleTime > time then
@@ -829,12 +893,20 @@ end
 
 function updatePlayer(time, inputX, inputY, inputButtonB, crank, newShots, newItems)
 	
-	currentTime = time
+	--currentTime = time
 
 	-- Update data tracking
 	shotsFired = shotsFired + newShots
 	itemsGrabbed = itemsGrabbed + newItems
 
+	-- Damage Instances
+	if performSpikeDamage then 				-- bool check makes sure first damage instance is caught
+		if damageTimer < time then 	-- timer check makes sure future damage instances are ignored			
+			velX, velY = spikeVelX, spikeVelY
+			DAMAGE_PLAYER(time, difficulty, CAMERA_SHAKE_MEDIUM, spikeX, spikeY)
+		end
+		performSpikeDamage = false  		-- always set to false, will ignore future damage instances
+	end
 	
 	local playerX, playerY = movePlayer(inputX, inputY, inputButtonB)
 

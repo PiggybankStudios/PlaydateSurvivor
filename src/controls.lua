@@ -200,6 +200,8 @@ local inputX, inputY = 0
 local inputButtonB = 0
 local inputButtonA = false
 
+local inputLock = false
+
 
 function resetInput()
 	inputX, inputY = 0
@@ -212,7 +214,14 @@ end
 -- |                      Main Gameplay Loop                      |
 -- +--------------------------------------------------------------+
 
+function updateControls_SetInputLockForMainGameControls(value)
+	inputLock = value
+end
+
+
 function updateControls_MainGame()
+
+	if inputLock then return 0, 0, 0 end
 
 	-- Moving Up and Down
 	if 		button_pressed(UP) 		then 	inputY = -1

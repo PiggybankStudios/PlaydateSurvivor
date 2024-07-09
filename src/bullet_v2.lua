@@ -71,7 +71,7 @@ local BULLET_MOVE_CALC_TIMER_START = {
 -- identical to global tags, localized for speed and readability
 local LOCAL_TAGS = TAGS
 
-local PLAYER_TAG 	<const> = LOCAL_TAGS.player
+--local PLAYER_TAG 	<const> = LOCAL_TAGS.player
 local ENEMY_TAG 	<const> = LOCAL_TAGS.enemy
 
 -- Bullet Type Variables --
@@ -309,7 +309,7 @@ local grenadeCount = 0
 
 -- Gun Slots
 local theShotTimes = {0, 0, 0, 0} --how long until next shot
-local theGunSlots = {BULLET_TYPE.shotgun, BULLET_TYPE.ranggun, 0, BULLET_TYPE.minigun} --what gun in each slot
+local theGunSlots = {BULLET_TYPE.peagun, 0, 0, 0} --what gun in each slot
 local theGunLogic = {0, 0, 0, 0} --what special logic that slotted gun needs
 local theGunTier = {3, 2, 2, 2} -- what tier the gun is at
 
@@ -672,9 +672,9 @@ local function countCollidersInOccupiedCells(world, x1, y1, x2, y2)
 			if cell then
 				-- If this is NOT the player, then allow collisions
 				for item,_ in NEXT, cell.items do
-					if item.tag ~= PLAYER_TAG then 
+					--if item.tag ~= PLAYER_TAG then 
 						return 1 
-					end
+					--end
 		        end
 			end
 		end
@@ -905,8 +905,14 @@ local function collideMove(i, type, halfSize, bTier, offsetX, offsetY, playerX, 
 			lifeTime[i] = 0
 			return endX, endY
 
-		-- a wall rect - delete bullet on this collision
+
+		-- a wall OR object rect - delete bullet on this collision
 		else
+			-- Damage objects within an assigned index
+			local objectIndex = rect.objectIndex
+			if objectIndex then damageObject(objectIndex, damage[i]) end
+
+			-- Delete this bullet via lifeTime
 			lifeTime[i] = 0
 			return endX, endY
 		end

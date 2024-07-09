@@ -42,7 +42,7 @@ local CAM_DISTANCE_Y 	<const> = 40
 
 -- camera shake
 local SPRING_CONSTANT 	<const> = 0.5
-local SPRING_DAMPEN 	<const> = 0.85
+local SPRING_DAMPEN 	<const> = 0.7
 local SET_SHAKE_TIMER 	<const> = 2000
 local shakeTimer = 0
 

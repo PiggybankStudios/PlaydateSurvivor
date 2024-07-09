@@ -4,6 +4,8 @@ TAGS = {
 	player = 2,
 	weapon = 3,
 	enemy = 4,
+	damage = 5,
+	breakable = 6
 }
 
 --[[
@@ -21,6 +23,15 @@ ZINDEX = {
 	map = 50
 }
 ]]
+
+CAMERA_SHAKE_STRENGTH = {
+	tiny = 2,
+	small = 4, 
+	medium = 10,
+	large = 24,
+	massive = 48
+}
+
 
 ITEM_TYPE = {
 	health = 	1,
@@ -40,15 +51,27 @@ ITEM_TYPE = {
 }
 
 
+OBJECT_TYPE = {
+	teleporter = 1,
+	spikeball = 2
+}
+
+
+TRANSITION_TYPE = {
+	growingCircles = 1
+}
+
+
 GAMESTATE = {
-	maingame 		= 1,
-	pausemenu 		= 2,
-	levelupmenu 	= 3,
-	newweaponmenu 	= 4,
-	wavescreen 		= 5,
-	deathscreen 	= 6,
-	startscreen 	= 7,
-	mainmenu 		= 8
+	maingame 			= 1,
+	pauseMenu 			= 2,
+	flowerMinigame		= 3,
+	newWeaponMenu 		= 4,
+	playerUpgradeMenu	= 5,
+	levelModifierMenu 	= 6,
+	deathscreen 		= 7,
+	startscreen 		= 8,
+	mainmenu 			= 9
 }
 
 --[[

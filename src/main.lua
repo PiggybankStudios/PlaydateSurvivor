@@ -11,7 +11,7 @@ import "LDtk"
 
 import "savefile"
 
-import "healthbar" -- edit player healthbar so we can get rid of this
+--import "healthbar" -- edit player healthbar so we can get rid of this
 import "uibanner"
 
 --import "expbar"
@@ -25,17 +25,27 @@ import "item_v2"
 import "enemy_v2"
 import "bullet_v2"
 import "particle"
+import "objects"
 import "write"
 import "writefunctions"
 import "gameScene_v2"
+
+import "flowerMinigame"
+import "newWeaponMenu"
+import "playerUpgradeMenu"
+import "levelModifierMenu"
 import "startmenu"
 import "mainmenu"
 import "deathmenu"
+
 import "levelupmenu"
 import "weaponmenu"
 import "bulletGraphic"
 
 import "pausemenu_v2"
+
+--- TEMPORARY - remove from final builds ---
+import "transitions" 	-- code from transition animations, used in export process for transition image tables
 
 
 -- +--------------------------------------------------------------+
@@ -54,19 +64,26 @@ local COLLECT_GARBAGE 	<const> = collectgarbage
 
 -- math
 local floor 	<const> = math.floor
+local ceil 		<const> = math.ceil
 local random 	<const> = math.random
+local min 		<const> = math.min
 local max 		<const> = math.max
 local sqrt 		<const> = math.sqrt
 
 -- drawing
+local GET_DRAW_OFFSET 		<const> = gfx.getDrawOffset
 local SET_COLOR 			<const> = gfx.setColor
 local COLOR_WHITE 			<const> = gfx.kColorWhite
 local COLOR_BLACK 			<const> = gfx.kColorBlack
 local SET_DITHER_PATTERN 	<const> = gfx.setDitherPattern
 local DITHER_DIAGONAL 		<const> = gfx.image.kDitherTypeDiagonalLine
 local FILL_RECT 			<const> = gfx.fillRect
+local FILL_CIRCLE 			<const> = gfx.fillCircleAtPoint
 local GET_IMAGE 			<const> = gfx.imagetable.getImage
+local GET_LENGTH 			<const> = gfx.imagetable.getLength
 local DRAW_IMAGE 			<const> = gfx.image.draw
+local DRAW_IMAGE_STATIC		<const> = gfx.image.drawIgnoringOffset
+local FLIP_XY 				<const> = gfx.kImageFlippedXY
 
 -- controls
 local crankAngle 	<const> = pd.getCrankPosition
@@ -80,6 +97,7 @@ local c_UpdateCamera 				<const> = updateCamera
 local c_UpdateBullets 				<const> = updateBullets
 local c_UpdateEnemies				<const> = updateEnemies
 local c_UpdateItems 				<const> = updateItems
+local c_UpdateObjects				<const> = updateObjects
 local c_DrawPlayerUI 				<const> = drawPlayerUI
 
 -- Pause Menu
@@ -88,11 +106,16 @@ local c_GetPauseTime_Camera 		<const> = getPauseTime_Camera
 local c_GetPauseTime_Bullets 		<const> = getPauseTime_Bullets
 local c_GetPauseTime_Enemies 		<const> = getPauseTime_Enemies
 local c_GetPauseTime_Items	 		<const> = getPauseTime_Items
+local c_GetPauseTime_Objects 		<const> = getPauseTime_Objects
 
 local c_RedrawPlayer 				<const> = redrawPlayer
 local c_RedrawBullets 				<const> = redrawBullets
 local c_RedrawEnemies 				<const> = redrawEnemies
 local c_RedrawItems 				<const> = redrawItems
+local c_RedrawObjects				<const> = redrawObjects
+
+-- Transitions
+local c_UpdateControls_SetInputLockForMainGameControls <const> = updateControls_SetInputLockForMainGameControls
 
 
 -- +--------------------------------------------------------------+
@@ -101,13 +124,14 @@ local c_RedrawItems 				<const> = redrawItems
 
 
 local GS_MAIN_GAME 					<const> = GAMESTATE.maingame
-local GS_PAUSE_MENU					<const> = GAMESTATE.pausemenu
-local GS_LEVEL_UP_MENU				<const> = GAMESTATE.levelupmenu
-local GS_NEW_WEAPON_MENU			<const> = GAMESTATE.newweaponmenu
-local GS_WAVE_SCREEN 				<const> = GAMESTATE.wavescreen
+local GS_PAUSE_MENU					<const> = GAMESTATE.pauseMenu
+local GS_FLOWER_MINIGAME 			<const> = GAMESTATE.flowerMinigame
+local GS_NEW_WEAPON_MENU			<const> = GAMESTATE.newWeaponMenu
+local GS_PLAYER_UPGRADE_MENU		<const> = GAMESTATE.playerUpgradeMenu
+local GS_LEVEL_MODIFIER_MENU		<const> = GAMESTATE.levelModifierMenu
 local GS_DEATH_SCREEN				<const> = GAMESTATE.deathscreen
 local GS_STARTSCREEN				<const> = GAMESTATE.startscreen
-local GS_MAIN_MENU 					<const> = GAMESTATE.mainmenu
+local GS_MAIN_MENU 					<const> = GAMESTATE.mainmenu	
 
 
 -- +--------------------------------------------------------------+
@@ -120,7 +144,7 @@ local getTime <const> = pd.getElapsedTime
 local timerWindow = 0
 local totalElapseTime = 0
 local timeInstances = 0
-local TIME_INSTANCE_MAX <const> = 500
+local TIME_INSTANCE_MAX <const> = 250
 local averageTime = 0
 local maxTime = 0
 local minTime = 1
@@ -199,18 +223,21 @@ gfx.setBackgroundColor(COLOR_BLACK)
 -- |                       Tracked Values                         |
 -- +--------------------------------------------------------------+
 
--- Shared
+--------------
+--- Shared ---
 local currentState = GS_MAIN_GAME	--GAMESTATE.startscreen
-local lastState = 0
+local lastState = currentState
 
 
--- Main Game
+-----------------
+--- Main Game ---
 local shotsFired = 0
 local itemsCollected = 0
-local screenOffsetX, screenOffsetY, cameraPosX, cameraPosY = 0, 0, 0, 0
+local playerX, playerY = 0, 0 -- need this for camera updates, before player pos is updated
 
 
--- Pause Menu
+------------------
+--- Pause Menu ---
 local readyGo_imageTable 		= gfx.imagetable.new('Resources/Sprites/menu/readyGO')
 local countdownImageTable 		= gfx.imagetable.new('Resources/Sprites/menu/countdown_v3')
 local countdownDitherPattern 	= gfx.image.new('Resources/Sprites/menu/ditherPattern_Dashed')
@@ -218,7 +245,7 @@ local pauseBackground 		= GET_IMAGE(readyGo_imageTable, 1)
 local readyImage 			= GET_IMAGE(readyGo_imageTable, 2)
 local goImage 				= GET_IMAGE(readyGo_imageTable, 3)
 
-local COUNTDOWN_TIMER_SET 	<const> = 1000
+local COUNTDOWN_TIMER_SET 	<const> = 1500
 local GO_TIMER_SET 			<const> = 500
 local COUNTDOWN_TOTAL 		<const> = 3
 local COUNTDOWN_PHASES 		<const> = COUNTDOWN_TIMER_SET // COUNTDOWN_TOTAL
@@ -242,10 +269,18 @@ local function sendPauseTimer(endTime)
 	c_GetPauseTime_Bullets(finalTime) 	-- bullets
 	c_GetPauseTime_Enemies(finalTime) 	-- enemies
 	c_GetPauseTime_Items(finalTime) 	-- items
+	c_GetPauseTime_Objects(finalTime) 	-- objects
 end
 
 -- called from pd.gameWillResume in pauseMenu_v2.lua
 function gameState_SwitchToPauseMenu()
+
+	-- if coming from a menu state, then don't perform countdown timer.
+	if currentState ~= GS_MAIN_GAME then
+		return
+	end
+
+	-- else perform countdown timer
 	if currentState ~= GS_PAUSE_MENU then
 		lastState = currentState
 	end
@@ -254,6 +289,83 @@ function gameState_SwitchToPauseMenu()
 	countdownTimer = pauseTimer + COUNTDOWN_TIMER_SET
 	readyGoPhase = 1
 end
+
+
+
+-- +--------------------------------------------------------------+
+-- |                         Transitions                          |
+-- +--------------------------------------------------------------+
+
+local performTransition = false
+local transitionStart = false
+local transitionEnd = false
+
+local transition_PassedFunction = 0
+local transition_nextState = currentState
+
+local TRANSITION_TIME_PER_FRAME_SET <const> = 30
+local transition_frameTimer = 0
+local transition_index = 0
+local transition_anim = 0
+local transition_frames = 0
+local transition_previousAnimType = 1
+
+-- Transition Animations
+local imgTable_transition_growingCircles 	= gfx.imagetable.new('Resources/Sheets/Transitions/Transition_GrowingCircles_v2')
+
+local TRANSITION_ANIM = {
+	imgTable_transition_growingCircles 		-- growing circles
+}
+
+local TRANSITION_TABLE_LENGTH = {
+	GET_LENGTH(imgTable_transition_growingCircles) 	-- growing circles
+}
+
+
+-- fades screen TO black
+-- The passedFunction needs to have 'runTransitionEnd' called by it.
+function runTransitionStart(nextState, animType, passedFunction)
+
+	-- If a transition was already started, then abort. We don't want to restart it.
+	if performTransition then return end 
+
+	performTransition = true
+	transitionStart = true
+	transitionEnd = false
+	c_UpdateControls_SetInputLockForMainGameControls(true) -- lock player controls during animation - unlocked at end of TransitionEnd check.
+
+	transition_nextState = nextState
+	transition_PassedFunction = passedFunction
+
+	transition_previousAnimType = animType
+	transition_anim = TRANSITION_ANIM[animType]
+	transition_frames = TRANSITION_TABLE_LENGTH[animType]
+
+	transition_frameTimer = 0
+	transition_index = 0
+end
+
+-- fades screen FROM black
+function runTransitionEnd(animType)
+
+	-- default animType to what TransitionStart used if nothing passed
+	if not animType then animType = transition_previousAnimType end
+
+	performTransition = true 
+	transitionStart = false
+	transitionEnd = true
+
+	currentState = transition_nextState			
+	transition_nextState = 0
+	transition_PassedFunction = 0
+
+	transition_anim = TRANSITION_ANIM[animType]
+	transition_frames = TRANSITION_TABLE_LENGTH[animType]
+
+	transition_frameTimer = 0
+	transition_index = transition_frames
+end
+
 
 
 -- +--------------------------------------------------------------+
@@ -284,23 +396,24 @@ function pd.update()
 
 	---- Main Game ----
 	if checkState < 2 then
+		
+		-- Camera
+		local screenOffsetX, screenOffsetY, cameraPosX, cameraPosY = c_UpdateCamera(time, crank, playerX, playerY)
+
+		-- Draw World, Objects
 		c_UpdateGameScene(screenOffsetX, screenOffsetY)
+		--gameSceneDebugUpdate() --- visual debugging over game scene here ---
+		c_UpdateObjects(time, playerX, playerY, screenOffsetX, screenOffsetY)
 
-		--- debugging here ---
-		--gameSceneDebugUpdate()
-		----------------------
-
-		-- Input
+		-- Input, Player
 		local inputX, inputY, inputButtonB = updateControls_MainGame()
-
-		-- Player, Camera
-		local playerX, playerY = c_UpdatePlayer(time, inputX, inputY, inputButtonB, crank, shotsFired, itemsCollected)
-		screenOffsetX, screenOffsetY, cameraPosX, cameraPosY = c_UpdateCamera(time, crank, playerX, playerY)
-
+		playerX, playerY = c_UpdatePlayer(time, inputX, inputY, inputButtonB, crank, shotsFired, itemsCollected)
+		
 		-- Bullets, Enemies, Items
 		shotsFired = c_UpdateBullets(time, crank, playerX, playerY, screenOffsetX, screenOffsetY)
 		c_UpdateEnemies(time, playerX, playerY, cameraPosX, cameraPosY, screenOffsetX, screenOffsetY)
 		itemsCollected = c_UpdateItems(time, playerX, playerY, screenOffsetX, screenOffsetY)
+		
 
 		-- Particles, UI
 		--updateParticles(dt, mainTimePassed, mainLoopTime, elapsedPauseTime)
@@ -308,17 +421,17 @@ function pd.update()
 		-- UI
 		c_DrawPlayerUI()
 
-
 	---- Pause Menu ----
-	elseif currentState < 3 then 
+	elseif checkState < 3 then 
 
 		-- Redraw all components of Main Game screen so camera can rotate during countdown
+		local screenOffsetX, screenOffsetY, cameraPosX, cameraPosY = c_UpdateCamera(time, crank, playerX, playerY)
 		c_UpdateGameScene(screenOffsetX, screenOffsetY)
-		local playerX, playerY = c_RedrawPlayer(time, crank)
-		screenOffsetX, screenOffsetY, cameraPosX, cameraPosY = c_UpdateCamera(time, crank, playerX, playerY)
+		playerX, playerY = c_RedrawPlayer(time, crank)
 		c_RedrawBullets()
 		c_RedrawEnemies(screenOffsetX, screenOffsetY)
 		c_RedrawItems(screenOffsetX, screenOffsetY)
+		c_RedrawObjects(screenOffsetX, screenOffsetY)
 		-- draw particles
 		c_DrawPlayerUI()
 
@@ -370,24 +483,77 @@ function pd.update()
 			sendPauseTimer(time)
 		end
 
-
-	---- Level Up Menu ----
-	elseif currentState < 4 then 
-
+	---- Flower Minigame ----
+	elseif checkState < 4 then 
+		updateFlowerMinigame(time)
+	
 	---- New Weapon Menu ----
-	elseif currentState < 5 then
+	elseif checkState < 5 then 
+		updateNewWeaponMenu(time)
 
-	---- Wave Screen ----
-	elseif currentState < 6 then
+	---- Player Upgrade Menu ----
+	elseif checkState < 6 then
+		updatePlayerUpgradeMenu(time)
+
+	---- Level Modifier Menu ----
+	elseif checkState < 7 then
+		updateLevelModifierMenu(time)
 
 	---- Death Screen ----
-	elseif currentState < 7 then
+	elseif checkState < 8 then
 
 	---- Start Screen ----
-	elseif currentState < 8 then
+	elseif checkState < 9 then
 
 	---- Main Menu ----
-	elseif currentState < 9 then
+	elseif checkState < 10 then
+
+	end
+
+
+	-- Transition Overlay
+	if performTransition then 
+	
+		if transitionStart then 
+			-- Increment frame
+			if transition_frameTimer < time then 
+				transition_frameTimer = time + TRANSITION_TIME_PER_FRAME_SET
+				transition_index = transition_index + 1 
+			end
+
+			-- Check end condition
+			if transition_index > transition_frames then 
+				performTransition = false
+				transitionStart = false						
+				SET_COLOR(COLOR_BLACK)
+				local xOffset, yOffset = GET_DRAW_OFFSET()
+				FILL_RECT(-xOffset, -yOffset, 400, 240) -- This covers the last frame of the transition.	
+				transition_PassedFunction() -- at then end of the transition, perform the function that was passed.
+
+			-- Else draw frame
+			else
+				DRAW_IMAGE_STATIC( GET_IMAGE(transition_anim, transition_index), 0, 0)
+				--doTransition_GrowingCircles(timePercent) -- functions for creating animations - comment out after the imageTable is created.
+			end
+
+		elseif transitionEnd then 
+			-- Decrement frame
+			if transition_frameTimer < time then 
+				transition_frameTimer = time + TRANSITION_TIME_PER_FRAME_SET
+				transition_index = transition_index - 1 
+			end
+
+			-- Check end condition
+			if transition_index < 1 then 
+				performTransition = false 
+				transitionEnd = false
+				c_UpdateControls_SetInputLockForMainGameControls(false) -- unlock player controls
+
+			-- Else draw frame, flipped on both X and Y.
+			else
+				DRAW_IMAGE_STATIC( GET_IMAGE(transition_anim, transition_index), 0, 0, FLIP_XY)
+			end
+		end
 
 	end
 
@@ -395,6 +561,8 @@ function pd.update()
 	--printAndClearTotalTime("GS loop in main")
 	playdate.drawFPS()
 end
+
+
 
 
 --[[

@@ -916,7 +916,7 @@ end
 
 
 -- identical to global tags, localized for speed and readability
-local PLAYER_TAG <const> = TAGS.player
+--local PLAYER_TAG <const> = TAGS.player
 
 
 -- Modified to return the FIRST collider found in a given rect
@@ -930,12 +930,12 @@ function worldQueryRectFast(self, x,y,w,h)
       if cell then -- no cell.itemCount > 1 because tunneling
         for item,_ in NEXT, cell.items do
 
-          if item.tag ~= PLAYER_TAG then 
+          --if item.tag ~= PLAYER_TAG then 
             local rect = self.rects[item]
             if rect_isIntersecting(x,y,w,h, rect.x, rect.y, rect.w, rect.h) then
               return item
             end
-          end
+          --end
 
         end
       end
@@ -965,7 +965,7 @@ function worldAdd_Fast(self, item, x,y,w,h)
 end
 
 
-function worldRemoveEnemy(self, item)
+function worldRemove_Fast(self, item)
   local x,y,w,h = worldGetRect(self, item)
 
   self.rects[item] = nil
@@ -1042,8 +1042,9 @@ function worldCheckFast(self, item, goalX, goalY, filter)
   local x,y,w,h = item.x, item.y, item.width, item.height
 
   local projected_cols, projected_len = worldProject(self, item, x,y,w,h, goalX,goalY, visitedFilter)
-
+  
   while projected_len > 0 do
+
     local col = projected_cols[1]
     visited[col.other] = true
 
