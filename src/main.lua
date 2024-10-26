@@ -2,6 +2,9 @@ import "CoreLibs/graphics"
 import "CoreLibs/sprites"
 import "CoreLibs/animation"
 import "CoreLibs/math"
+import "CoreLibs/ui"
+import "CoreLibs/easing"
+
 
 import "globals"
 import "tags"
@@ -9,6 +12,7 @@ import "tags"
 bump = import "bump"
 import "LDtk"
 
+import "fonts"
 import "savefile"
 
 --import "healthbar" -- edit player healthbar so we can get rid of this
@@ -30,12 +34,16 @@ import "write"
 import "writefunctions"
 import "gameScene_v2"
 
+import "selectionBubble" -- multiple menus use the selection bubble for navigation
+import "flowerMinigame_CountdownTimer"
+import "flowerMiniGame_ValidWordList"
 import "flowerMinigame"
 import "newWeaponMenu"
 import "playerUpgradeMenu"
 import "levelModifierMenu"
 import "startmenu"
-import "mainmenu"
+import "mainmenu_v2"
+--import "mainmenu"
 import "deathmenu"
 
 import "levelupmenu"
@@ -113,6 +121,15 @@ local c_RedrawBullets 				<const> = redrawBullets
 local c_RedrawEnemies 				<const> = redrawEnemies
 local c_RedrawItems 				<const> = redrawItems
 local c_RedrawObjects				<const> = redrawObjects
+
+-- Other State Updates
+local c_UpdateFlowerMinigame 		<const> = updateFlowerMinigame
+local c_UpdateNewWeaponMenu			<const> = updateNewWeaponMenu 
+local c_UpdatePlayerUpgradeMenu		<const> = updatePlayerUpgradeMenu
+local c_UpdateLevelModifierMenu		<const> = updateLevelModifierMenu
+-- death screen
+local c_UpdateStartScreen			<const> = updateStartScreen
+local c_UpdateMainMenu				<const> = updateMainMenu
 
 -- Transitions
 local c_UpdateControls_SetInputLockForMainGameControls <const> = updateControls_SetInputLockForMainGameControls
@@ -225,7 +242,7 @@ gfx.setBackgroundColor(COLOR_BLACK)
 
 --------------
 --- Shared ---
-local currentState = GS_MAIN_GAME	--GAMESTATE.startscreen
+local currentState = GS_FLOWER_MINIGAME --GS_STARTSCREEN
 local lastState = currentState
 
 
@@ -238,9 +255,9 @@ local playerX, playerY = 0, 0 -- need this for camera updates, before player pos
 
 ------------------
 --- Pause Menu ---
-local readyGo_imageTable 		= gfx.imagetable.new('Resources/Sprites/menu/readyGO')
-local countdownImageTable 		= gfx.imagetable.new('Resources/Sprites/menu/countdown_v3')
-local countdownDitherPattern 	= gfx.image.new('Resources/Sprites/menu/ditherPattern_Dashed')
+local readyGo_imageTable 		= gfx.imagetable.new('Resources/Sprites/menu/PauseMenu/readyGO')
+local countdownImageTable 		= gfx.imagetable.new('Resources/Sprites/menu/PauseMenu/countdown_v3')
+--local countdownDitherPattern 	= gfx.image.new('Resources/Sprites/menu/ditherPattern_Dashed')
 local pauseBackground 		= GET_IMAGE(readyGo_imageTable, 1)
 local readyImage 			= GET_IMAGE(readyGo_imageTable, 2)
 local goImage 				= GET_IMAGE(readyGo_imageTable, 3)
@@ -261,6 +278,8 @@ local pauseTimer = 0
 local countdownTimer = 0
 local readyGoPhase = 0
 
+local skip_countdown = false
+
 -- send the final elapsed pause time to all files that need it
 local function sendPauseTimer(endTime)
 	local finalTime = endTime - pauseTimer
@@ -272,6 +291,8 @@ local function sendPauseTimer(endTime)
 	c_GetPauseTime_Objects(finalTime) 	-- objects
 end
 
+
+-- switching from Pause Menu back to previous menu 
 -- called from pd.gameWillResume in pauseMenu_v2.lua
 function gameState_SwitchToPauseMenu()
 
@@ -291,6 +312,11 @@ function gameState_SwitchToPauseMenu()
 end
 
 
+-- cancels the countdown timer after pausing for the main game
+function gameState_CancelCountdownTimer()
+	readyGoPhase = 4
+end
+
 
 -- +--------------------------------------------------------------+
 -- |                         Transitions                          |
@@ -301,6 +327,7 @@ local transitionStart = false
 local transitionEnd = false
 
 local transition_PassedFunction = 0
+local transition_ClearFunction = 0
 local transition_nextState = currentState
 
 local TRANSITION_TIME_PER_FRAME_SET <const> = 30
@@ -324,10 +351,11 @@ local TRANSITION_TABLE_LENGTH = {
 
 -- fades screen TO black
 -- The passedFunction needs to have 'runTransitionEnd' called by it.
-function runTransitionStart(nextState, animType, passedFunction)
+function runTransitionStart(nextState, animType, passedFunction, clearFunction, override)
 
 	-- If a transition was already started, then abort. We don't want to restart it.
-	if performTransition then return end 
+	-- BUT if this transition is overriding the previous, then allow the new transition.
+	if performTransition and not override then return end 		
 
 	performTransition = true
 	transitionStart = true
@@ -335,7 +363,17 @@ function runTransitionStart(nextState, animType, passedFunction)
 	c_UpdateControls_SetInputLockForMainGameControls(true) -- lock player controls during animation - unlocked at end of TransitionEnd check.
 
 	transition_nextState = nextState
-	transition_PassedFunction = passedFunction
+	if passedFunction ~= nil then
+		transition_PassedFunction = passedFunction
+	else
+		transition_PassedFunction = runTransitionEnd -- if no function passed, then just finished the transition animation.
+	end
+
+	if clearFunction ~= nil then 
+		transition_ClearFunction = clearFunction
+	else
+		transition_ClearFunction = nil -- if no clear function passed, then do nothing.
+	end
 
 	transition_previousAnimType = animType
 	transition_anim = TRANSITION_ANIM[animType]
@@ -373,7 +411,9 @@ end
 -- +--------------------------------------------------------------+
 
 
-gameScene_init()	-- Testing scene outside of main, will put back into scene loading later
+--gameScene_init()	-- Testing scene outside of main, will put back into scene loading later
+--startMenu_StateStart()
+flowerMiniGame_StateStart()
 
 
 -- NOTES:
@@ -427,11 +467,11 @@ function pd.update()
 		-- Redraw all components of Main Game screen so camera can rotate during countdown
 		local screenOffsetX, screenOffsetY, cameraPosX, cameraPosY = c_UpdateCamera(time, crank, playerX, playerY)
 		c_UpdateGameScene(screenOffsetX, screenOffsetY)
+		c_RedrawObjects(screenOffsetX, screenOffsetY)
 		playerX, playerY = c_RedrawPlayer(time, crank)
 		c_RedrawBullets()
 		c_RedrawEnemies(screenOffsetX, screenOffsetY)
-		c_RedrawItems(screenOffsetX, screenOffsetY)
-		c_RedrawObjects(screenOffsetX, screenOffsetY)
+		c_RedrawItems(screenOffsetX, screenOffsetY)		
 		-- draw particles
 		c_DrawPlayerUI()
 
@@ -485,29 +525,30 @@ function pd.update()
 
 	---- Flower Minigame ----
 	elseif checkState < 4 then 
-		updateFlowerMinigame(time)
+		c_UpdateFlowerMinigame(time)
 	
 	---- New Weapon Menu ----
 	elseif checkState < 5 then 
-		updateNewWeaponMenu(time)
+		c_UpdateNewWeaponMenu(time)
 
 	---- Player Upgrade Menu ----
 	elseif checkState < 6 then
-		updatePlayerUpgradeMenu(time)
+		c_UpdatePlayerUpgradeMenu(time)
 
 	---- Level Modifier Menu ----
 	elseif checkState < 7 then
-		updateLevelModifierMenu(time)
+		c_UpdateLevelModifierMenu(time)
 
 	---- Death Screen ----
 	elseif checkState < 8 then
 
 	---- Start Screen ----
 	elseif checkState < 9 then
+		c_UpdateStartScreen(time)
 
 	---- Main Menu ----
 	elseif checkState < 10 then
-
+		c_UpdateMainMenu(time)
 	end
 
 
@@ -528,6 +569,7 @@ function pd.update()
 				SET_COLOR(COLOR_BLACK)
 				local xOffset, yOffset = GET_DRAW_OFFSET()
 				FILL_RECT(-xOffset, -yOffset, 400, 240) -- This covers the last frame of the transition.	
+				if transition_ClearFunction ~= nil then transition_ClearFunction() end
 				transition_PassedFunction() -- at then end of the transition, perform the function that was passed.
 
 			-- Else draw frame
@@ -554,7 +596,6 @@ function pd.update()
 				DRAW_IMAGE_STATIC( GET_IMAGE(transition_anim, transition_index), 0, 0, FLIP_XY)
 			end
 		end
-
 	end
 
 

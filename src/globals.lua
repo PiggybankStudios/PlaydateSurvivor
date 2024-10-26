@@ -121,7 +121,7 @@ local function sign(x)
 end
 
 
-function moveTowards(current, target, maxDelta)
+function moveTowards_global(current, target, maxDelta)
 	if abs(target - current) <= maxDelta then
 		return target
 	else

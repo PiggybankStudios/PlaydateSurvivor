@@ -17,7 +17,7 @@ local cos 		<const> = math.cos
 local random 	<const> = math.random
 local max 		<const>	= math.max
 local sqrt 		<const> = math.sqrt
-local MOVE_TOWARDS <const> = moveTowards
+local MOVE_TOWARDS <const> = moveTowards_global
 
 -- screen
 local setDrawOffset 	<const> = gfx.setDrawOffset

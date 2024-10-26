@@ -38,7 +38,7 @@ local font_guns = gfx.font.new('Resources/Fonts/peridot_7')
 --local pauseImage = gfx.image.new('Resources/Sprites/menu/pauseMenu')
 local pauseImage = gfx.image.new(SCREEN_WIDTH, SCREEN_HEIGHT)
 
-local pauseBkgr = gfx.image.new('Resources/Sprites/menu/pauseMenu_v2')
+local pauseBkgr = gfx.image.new('Resources/Sprites/menu/PauseMenu/pauseMenu_v2')
 local width, height = GET_SIZE(pauseImage)
 local PAUSEIMAGE_HALF_WIDTH, PAUSEIMAGE_HALF_HEIGHT <const> = width * 0.5, height * 0.5
 
@@ -258,7 +258,8 @@ end
 
 
 local function menu_MainMenu()
-	print("return to main menu")
+	gameState_CancelCountdownTimer() -- if coming from the main game, then don't run the countdown timer for this transition.
+	runTransitionStart( GAMESTATE.mainmenu, TRANSITION_TYPE.growingCircles, mainMenu_StateStart, _, true )
 end
 
 local function menu_ExitLevel()
