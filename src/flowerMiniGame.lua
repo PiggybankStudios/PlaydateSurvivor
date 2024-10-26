@@ -704,30 +704,35 @@ local function draw_SelectedLetters()
 				DRAW_IMAGE_FADED(rotatedLetter, x, y, fadeProgress, DITHER_BAYER_4X4)		
 
 			-- Submit Word
-			elseif performWordSubmit and i <= activeLetters then
+			elseif performWordSubmit then
 
-				local index = selectedLetters[i]
-				local progress = selectedLetter_progress[i]
-				local animX
-
-				-- word is valid - slide right towards word list and fade away
-				if wordIsValid == true then 
-					local start = selectedLetter_startX[i]
-					local finish = selectedLetter_startX[i] + ACCEPT_SLIDE_DISTANCE - start
-					animX = IN_QUAD(progress, start, finish, 1)
-					DRAW_IMAGE_FADED(img_LetterList[index], animX, LETTER_DRAW_Y, (1-progress), DITHER_BAYER_4X4)
-
-				-- invalid word - calculate wobble	
-				else 				
-					local amplitude = sin((0.5* pi * progress) + (0.5 * pi)) * REJECT_WOBBLE_AMPLITUDE
-					animX = sin(REJECT_WOBBLE_FREQUENCY * pi * progress) * amplitude + selectedLetter_x[i]
-					DRAW_IMAGE_STATIC(img_LetterList[index], animX, LETTER_DRAW_Y)
-				end
-
-				-- Once progress is completed, exit word wobble
-				if progress >= 1 then
+				if activeLetters < 1 then
 					performWordSubmit = false
-					if wordIsValid == true then activeLetters = 0 end -- if word is accepted, then clear all letters.
+
+				elseif i <= activeLetters then
+					local index = selectedLetters[i]
+					local progress = selectedLetter_progress[i]
+					local animX
+
+					-- word is valid - slide right towards word list and fade away
+					if wordIsValid == true then 
+						local start = selectedLetter_startX[i]
+						local finish = selectedLetter_startX[i] + ACCEPT_SLIDE_DISTANCE - start
+						animX = IN_QUAD(progress, start, finish, 1)
+						DRAW_IMAGE_FADED(img_LetterList[index], animX, LETTER_DRAW_Y, (1-progress), DITHER_BAYER_4X4)
+
+					-- invalid word - calculate wobble	
+					else 				
+						local amplitude = sin((0.5* pi * progress) + (0.5 * pi)) * REJECT_WOBBLE_AMPLITUDE
+						animX = sin(REJECT_WOBBLE_FREQUENCY * pi * progress) * amplitude + selectedLetter_x[i]
+						DRAW_IMAGE_STATIC(img_LetterList[index], animX, LETTER_DRAW_Y)
+					end
+
+					-- Once progress is completed, exit word wobble
+					if progress >= 1 then
+						performWordSubmit = false
+						if wordIsValid == true then activeLetters = 0 end -- if word is accepted, then clear all letters.
+					end
 				end
 
 			-- Draw Solid Letter

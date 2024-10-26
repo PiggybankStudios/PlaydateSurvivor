@@ -107,6 +107,8 @@ end
 
 function addValidWord(letterList, animSpeed)
 
+	if #letterList < 1 then return false end
+
 	-- check if current selected letters make a valid word
 
 
@@ -114,9 +116,8 @@ function addValidWord(letterList, animSpeed)
 
 
 	-- else yes, add to the valid word list
-	print("word list length: " .. #img_wordList)
+	--print("word list length: " .. #img_wordList)
 	local i = #img_wordList + 1
-	--local newWord = concat(selectedLetters)
 	local newWord = concat(letterList)
 	local newWord_width = GET_TEXT_WIDTH(font_ValidWords, newWord)
 	img_wordList[i] = NEW_IMAGE(newWord_width, VALID_WORD_HEIGHT)
