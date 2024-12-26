@@ -5,9 +5,23 @@ local gfx 	<const> = pd.graphics
 local dt 		<const> = getDT()
 local max 		<const> = math.max 
 local min 		<const> = math.min
+local floor 	<const> = math.floor
+
+-- time
+local GET_TIME 	<const> = pd.getCurrentTimeMilliseconds
 
 -- table
 local concat 	<const> = table.concat
+
+-- file
+local FILE_OPEN 	<const> = pd.file.open
+local FILE_CLOSE 	<const> = pd.file.file.close
+local FILE_READ 	<const> = pd.file.file.read
+
+-- string
+local TEXT_BYTE 	<const> = string.byte
+local TEXT_CHAR 	<const> = string.char
+local UPPER_CASE 	<const> = string.upper
 
 -- drawing
 local LOCK_FOCUS 			<const> = gfx.lockFocus
@@ -32,6 +46,7 @@ local GET_TEXT_WIDTH		<const> = gfx.font.getTextWidth
 
 local SET_COLOR 			<const> = gfx.setColor
 local COLOR_WHITE 			<const> = gfx.kColorWhite
+local COLOR_BLACK 			<const> = gfx.kColorBlack
 
 -- animation
 local IN_QUAD			<const> = pd.easingFunctions.inQuad
@@ -47,7 +62,8 @@ local DRAW_RECT 			<const> = gfx.drawRect
 -- +--------------------------------------------------------------+
 
 local font_ValidWords = font_FullCircle_12
-local VALID_WORD_HEIGHT <const> = GET_TEXT_HEIGHT( font_ValidWords )
+local VALID_WORD_HEIGHT 		<const> = GET_TEXT_HEIGHT( font_ValidWords )
+local VALID_WORD_HEIGHT_HALF	<const> = VALID_WORD_HEIGHT // 2
 
 local img_wordListAll = nil
 local img_wordListAllMask = nil 
@@ -78,6 +94,155 @@ local VALID_WORD_LETTER_SPACING	<const> = 2
 local WORDLIST_DITHER_HEIGHT 	<const> = 10
 local WORDLIST_CRANK_SPEED 		<const> = 0.2
 local WORDLIST_RETURN_SPEED 	<const> = 10
+local VALID_WORD_MOVE_SPEED 	<const> = 4
+
+-- Need to make a new WORDLIST_HEIGHT that allows for 15 words to be drawn to the word list
+local WORDLIST_DRAW_HEIGHT 	<const> = WORDLIST_HEIGHT + VALID_WORD_HEIGHT * 3
+
+
+-- +--------------------------------------------------------------+
+-- |                          Dictionary                          |
+-- +--------------------------------------------------------------+
+
+local DICTIONARY_FILE_SIZE 	<const> = 50000
+local BYTE_SPACE 			<const> = 10
+
+local wordFilePaths = {
+	'Resources/Dictionaries/common_words3.txt',
+	'Resources/Dictionaries/common_words4.txt',
+	'Resources/Dictionaries/common_words5.txt',
+	'Resources/Dictionaries/common_words6.txt',
+	'Resources/Dictionaries/common_words7.txt'
+}
+local NUMBER_OF_TEXT_FILES 	<const> = #wordFilePaths
+local dictionary = {}
+local dictionary_LastTime = 0
+
+
+local function dictionary_checkLetter(text, list, charIndex)
+
+	local charByte = TEXT_BYTE(text, charIndex)
+	local charLetter = UPPER_CASE( TEXT_CHAR(charByte) )
+
+	-- If this char is a 'space', then don't return a deeper list - skip back to the dictionary.
+	if charByte == BYTE_SPACE then 
+		return dictionary
+	end
+
+	-- Check all the letters in the given list for a potential match.
+	local listLength = #list
+	for i = 1, listLength do
+		if charLetter == list[i].letter then
+			return list[i].nextLetters -- found a matching letter, end the search and traverse down next list.
+		end
+	end
+
+	-- No match found, so add letter to end of this list and return the new node.
+	-- If the next text character is a 'space' then mark this letter as a complete word.
+	local completeWordBool = TEXT_BYTE(text, charIndex+1) == BYTE_SPACE and true or false
+	--local completeWordBool = false
+	local newSize = #list + 1
+	list[newSize] = { letter = charLetter, completeWord = completeWordBool, nextLetters = {} }
+	return list[newSize].nextLetters
+end
+
+
+-- NEED TO INITIALIZE IN COROUTINE - done on first load in 'main.lua'
+function flowerMiniGame_initialize_dictionary()
+
+	print("")
+	print(" -- Initializing dictionary --")
+
+	local checkingList = dictionary
+
+	for i = 1, NUMBER_OF_TEXT_FILES do
+		-- open this file and set the text
+		local file = pd.file.open( wordFilePaths[i] )
+		local text = file:read(DICTIONARY_FILE_SIZE)
+		local textLength = #text 
+
+		-- loop over the text and add to the dictionary list
+		for charIndex = 1, textLength do
+			checkingList = dictionary_checkLetter(text, checkingList, charIndex)
+		end
+
+		-- after this file's text has been added to the dictionary, close this file.
+		file:close()
+
+		-- print amount of time it took to finish this file's process.
+		local finishTime = GET_TIME()
+		local timeToComplete = finishTime - dictionary_LastTime
+		print("- " .. wordFilePaths[i] .. " :: added to dictionary -- time to complete: " .. timeToComplete)
+		dictionary_LastTime = finishTime
+
+		-- yield(currentTaskCompleted, totalNumberOfTasks, loadDescription)
+		coroutine.yield(i, NUMBER_OF_TEXT_FILES, "Initializing Dictionary")
+	end
+
+	print(" -- Dictionary Initialization Complete --")
+	print("")
+end
+
+
+-- Printing Dictionary is used for debugging only
+
+local function print_tree(node, previousLettersList, depthFromRoot)
+
+	-- print this letter, it's depth from the root, and how many letters it's linked to.
+	local list = node.nextLetters
+	local listLength = #list
+
+	-- increase the indentation to the line we're printing on based on this node's depth from the root
+	local spaces = ""
+	for i = 1, depthFromRoot do
+		spaces = spaces .. "- "
+	end
+
+	-- make the string for previous letters
+	local previousLetters = ""
+	if #previousLettersList > 0 then
+		previousLetters = "~" .. concat(previousLettersList, ", ") .. "~ "
+	end
+
+	-- create a new previousLetters list for all linked nodes
+	local newList = {}
+	for i = 1, #previousLettersList do
+		newList[i] = previousLettersList[i]
+	end
+	newList[#newList+1] = node.letter 
+
+	-- print this node's information
+	if listLength == 0 then
+		print(spaces .. previousLetters .. "[" .. node.letter .. "]" .. " **valid: " .. tostring(node.completeWord))
+	else
+		-- create a single string of the linked letters and print in a single line	
+		local nextLettersTable = {}
+		for i = 1, listLength do
+			nextLettersTable[i] = node.nextLetters[i].letter
+		end
+		print(spaces .. previousLetters .. "[" .. node.letter .. "]" .. " : " .. concat(nextLettersTable, ", ") .. " **valid: " .. tostring(node.completeWord))
+	end
+
+	-- iterate over all of the letters this node is linked to, and print their information.
+	for _, node in ipairs(node.nextLetters) do
+		print_tree(node, newList, depthFromRoot+1)
+	end
+end
+
+
+function print_dictionary()
+	print("")
+	print("-- print the dictionary --")
+
+	print("dictionary length: " .. #dictionary)
+	
+	for i = 1, #dictionary do
+		local node = dictionary[i]
+		local depthFromRoot = 0
+		print_tree(node, {}, depthFromRoot)
+	end
+end
+
 
 
 
@@ -105,14 +270,61 @@ end
 -- |                        List Functions                        |
 -- +--------------------------------------------------------------+
 
-function addValidWord(letterList, animSpeed)
 
-	if #letterList < 1 then return false end
+local function confirmValidWord(letterList)
+	print("Checking word: " .. concat(letterList))
+	local list = dictionary
+
+	-- loop through every letter in the passed letterList
+	for i = 1, #letterList do
+		local letter = letterList[i]
+
+		-- attempt to find a matching letter in the dictionary
+		for k = 1, #list do
+
+			print("::finding match for: " .. letter .. " - checking list letter: " .. list[k].letter ..
+					" -- test match: " .. tostring(letter == list[k].letter))
+
+			-- if there's a match...
+			if letter == list[k].letter then 
+
+				print(" - letter found: " .. letter)
+
+				-- and this IS the end of the letterList, then return if this is a valid word.
+				if i >= #letterList then
+					return list[k].completeWord
+				end
+
+				-- else go to the next linked list if it exists, and exit this inner loop.
+				list = list[k].nextLetters
+				print("~~ FOUND LETTER, but not end of word. Going to next list. ~~")
+				break
+
+			end
+		end
+
+	end
+	
+	-- after checking every letter, at this point the word does not exist in the dictionary. 
+	return false
+end
+
+
+function addValidWord(letterList, animSpeed, minLetters)
+
+	-- If no letters are passed, abort with 0 length.
+	local validWordLength = #letterList - minLetters + 1
+	if validWordLength < 1 then return 0 end
 
 	-- check if current selected letters make a valid word
-
+	local wordInDictionary = confirmValidWord(letterList)
+	print(" -- wordInDictionary: " .. tostring(wordInDictionary))
 
 	-- if no, reject
+	if wordInDictionary == false then 
+		print(" ~NOT A VALID WORD~")
+		return 0
+	end
 
 
 	-- else yes, add to the valid word list
@@ -134,8 +346,8 @@ function addValidWord(letterList, animSpeed)
 		SET_DRAW_MODE(DRAW_MODE_COPY)
 	UNLOCK_FOCUS()
 
-	-- word is valid, so return true
-	return true
+	-- word is valid, so return number of letters.
+	return validWordLength
 end
 
 
@@ -150,6 +362,8 @@ function draw_ValidWordList(crankChange, listControl)
 	CLEAR_IMAGE(img_wordListAll, COLOR_CLEAR)
 	LOCK_FOCUS(img_wordListAll)
 
+		-- If controlling the list, then allow crankChange to scroll through word list. 
+		-- Else, return to end of word list when making new words.
 		if listControl then 
 			validWord_Crank += crankChange * WORDLIST_CRANK_SPEED
 		else
@@ -161,36 +375,35 @@ function draw_ValidWordList(crankChange, listControl)
 		local crankMax = max(wordTotalHeight + gapTotal - WORDLIST_HEIGHT + WORDLIST_DITHER_HEIGHT, 0)
 		validWord_Crank = max( min(validWord_Crank, crankMax), 0)
 		local crank = validWord_Crank
-		
-		-- draw all the words to the mask
+
+		-- draw only visible words to the mask
 		for i = 1, validWordCount do
-			local VALID_WORD_MOVE_SPEED = 4
-
-			-- move horizontal
-			local progress = validWord_progress[i]
-			if progress < 1 then
-				progress = max( min(progress + validWord_progressSpeed, 1), 0 )
-				validWord_progress[i] = progress
-				local startX = -GET_SIZE(img_wordList[i])
-				local finishX = VALID_WORD_END_X - startX
-				validWord_x[i] = IN_QUAD(progress, startX, finishX, 1)
-			end
-
+		
+			-- move word vertically
 			local index = validWordCount - i
 			local targetY = ((VALID_WORD_HEIGHT + VALID_WORD_GAP) * -1) * index + VALID_WORD_START_Y
 			validWord_y[i] = MOVE_TOWARDS(validWord_y[i], targetY, VALID_WORD_MOVE_SPEED)
+			local wordY = validWord_y[i] + crank
 
-			DRAW_IMAGE_STATIC(img_wordList[i], validWord_x[i], validWord_y[i] + crank)
+			-- IF the word can be seen, either moving into or out of view, then calc horizontal movement and draw word.
+			if (wordY + VALID_WORD_HEIGHT) > 0 and wordY < WORDLIST_HEIGHT then
+
+				local progress = validWord_progress[i]
+				if progress < 1 then
+					progress = max( min(progress + validWord_progressSpeed, 1), 0 )
+					validWord_progress[i] = progress
+					local startX = -GET_SIZE(img_wordList[i])
+					local finishX = VALID_WORD_END_X - startX
+					validWord_x[i] = IN_QUAD(progress, startX, finishX, 1)
+				end
+			
+				DRAW_IMAGE_STATIC(img_wordList[i], validWord_x[i], validWord_y[i] + crank)
+			end
 		end
 
 		-- set the mask
 		SET_MASK(img_wordListAll, img_wordListAllMask)
-		--DRAW_IMAGE_STATIC(img_wordListAllMask, 0, 0)
-
-		-- temp test
-		--SET_COLOR(COLOR_WHITE)
-		--DRAW_RECT(0, 0, WORDLIST_WIDTH, WORDLIST_HEIGHT)
-
+	
 	UNLOCK_FOCUS()
 
 	DRAW_IMAGE_STATIC(img_wordListAll, WORD_LIST_X, WORD_LIST_Y)

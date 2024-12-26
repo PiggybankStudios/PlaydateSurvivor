@@ -71,7 +71,8 @@ GAMESTATE = {
 	levelModifierMenu 	= 6,
 	deathscreen 		= 7,
 	startscreen 		= 8,
-	mainmenu 			= 9
+	mainmenu 			= 9,
+	loadGame 			= 10
 }
 
 --[[

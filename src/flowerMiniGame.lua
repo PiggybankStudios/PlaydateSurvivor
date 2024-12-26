@@ -17,7 +17,6 @@ local pi 		<const> = math.pi
 local GET_TIME 	<const> = pd.getCurrentTimeMilliseconds
 
 -- table
-local concat 	<const> = table.concat
 local UNPACK 	<const> = table.unpack
 
 -- string
@@ -47,7 +46,7 @@ local GET_SIZE_AT_PATH 		<const> = gfx.imageSizeAtPath
 local CLEAR_IMAGE 			<const> = gfx.image.clear
 local COLOR_CLEAR 			<const> = gfx.kColorClear
 
-local SET_DRAW_MODE 	<const> = gfx.setImageDrawMode
+local SET_DRAW_MODE 		<const> = gfx.setImageDrawMode
 local DRAW_MODE_FILL_WHITE	<const> = gfx.kDrawModeFillWhite
 local DRAW_MODE_NXOR 		<const> = gfx.kDrawModeNXOR
 local DRAW_MODE_COPY 		<const> = gfx.kDrawModeCopy
@@ -91,6 +90,8 @@ local MOVE_TOWARDS			<const> = moveTowards_global
 
 -- temp
 local DRAW_RECT 			<const> = gfx.drawRect
+
+
 
 -- +--------------------------------------------------------------+
 -- |                            Render                            |
@@ -138,11 +139,6 @@ local img_underline = nil
 local FLOWERTEXT_HEIGHT 		<const> = GET_TEXT_HEIGHT(font_FlowerLetters)
 local FLOWERTEXT_HEIGHT_HALF 	<const> = FLOWERTEXT_HEIGHT // 2
 
--- Combo Score
-local img_totalScore_Bkgr = nil 
-local path_totalScore_Bkgr = 'Resources/Sprites/menu/FlowerGame/TotalScore_Background'
-local TOTALSCORE_WIDTH, TOTALSCORE_HEIGHT <const> = GET_SIZE_AT_PATH(path_totalScore_Bkgr)
-local TOTALSCORE_HEIGHT_HALF <const>  = TOTALSCORE_HEIGHT // 2
 
 
 -- +--------------------------------------------------------------+
@@ -206,7 +202,8 @@ local underline_progress = 0
 local underline_x = 0
 local underline_startX = 0
 
-local MAX_WORD_LENGTH 		<const> = 20
+local MAX_WORD_LENGTH 		<const> = 10
+local MIN_WORD_LENGTH 		<const> = 3
 local WORD_DRAW_X 			<const> = 180
 local WORD_DRAW_Y 			<const> = 180
 local LETTER_SPACING 		<const> = 5
@@ -237,10 +234,12 @@ local ACCEPT_SLIDE_DISTANCE		<const> = 120
 local REJECT_WOBBLE_FREQUENCY 	<const> = 8
 local REJECT_WOBBLE_AMPLITUDE	<const> = 6
 
+
 -- Minigame Scoring
-local enemyScore = 0
-local wordScore = 0
-local totalScore = 0
+local CREATE_COMBO_SCORE  		<const> = create_ComboScore
+local CLEAR_COMBO_SCORE 		<const> = clear_ComboScore
+local COMBO_SCORE_APPLY_NEW_SCORE 	<const> = comboScore_applyNewWordScore
+local DRAW_COMBO_SCORE 			<const> = draw_ComboScore
 
 
 -- Countdown Timer
@@ -395,16 +394,6 @@ local function create_SelectedLetters()
 end
 
 
-local function create_ComboScore()
-	
-	img_totalScore_Bkgr = NEW_IMAGE(path_totalScore_Bkgr)
-
-	enemyScore = 0
-	wordScore = 0
-	totalScore = 0
-end
-
-
 function flowerMiniGame_StateStart()
 
 	-- reset the draw offset so the selector boxes are drawn correctly
@@ -414,7 +403,7 @@ function flowerMiniGame_StateStart()
 	create_InputText()
 	create_FlowerLetters()
 	create_SelectedLetters()
-	create_ComboScore()
+	CREATE_COMBO_SCORE()
 	CREATE_COUNTDOWN_TIMER()
 	CREATE_VALIDWORDLIST()
 
@@ -442,7 +431,7 @@ local function flowerMiniGame_ClearState()
 	img_underline = nil
 
 	-- Combo Score
-	img_totalScore_Bkgr = nil
+	CLEAR_COMBO_SCORE()
 
 	-- Countdown Timer
 	CLEAR_COUNTDOWN_TIMER()
@@ -457,6 +446,10 @@ local function flowerMiniGame_ClearState()
 	COLLECT_GARBAGE()
 end
 
+
+function flowerMiniGame_LoadCoroutines()
+
+end
 
 
 -- +--------------------------------------------------------------+
@@ -767,23 +760,6 @@ local function draw_SelectedLetters()
 end
 
 
---- Combo Scoring
-local function draw_ComboScore()
-
-	SET_DRAW_MODE(DRAW_MODE_FILL_WHITE) -- draw text white
-	SET_FONT(font_ValidWords)
-	local comboString = {enemyScore, " x ", wordScore}
-	DRAW_TEXT(concat(comboString), 6, 3)
-
-	SET_DRAW_MODE(DRAW_MODE_COPY) -- draw text black
-	DRAW_IMAGE_STATIC(img_totalScore_Bkgr, -3, 35)
-	SET_FONT(font_FlowerLetters)
-	DRAW_TEXT("$", 4, 40)
-	DRAW_TEXT(totalScore, 24, 40)
-end
-
-
-
 -- +--------------------------------------------------------------+
 -- |                            Update                            |
 -- +--------------------------------------------------------------+
@@ -813,7 +789,7 @@ function updateFlowerMinigame(time)
 	--DRAW_IMAGE_STATIC(image, 0, 0)
 
 	-- Combo Score
-	draw_ComboScore()
+	DRAW_COMBO_SCORE(time)
 
 	-- Countdown Timer
 	DRAW_COUNTDOWN_TIMER(time)
@@ -863,7 +839,8 @@ function updateFlowerMinigame(time)
 				--selectedLetters_resetMoveProgress() -- skip letter fading, so no param
 				selectedLetters_prepareWordSubmit()
 				performWordSubmit = true 			-- setting action bool AFTER reset, b/c reset sets all action bools to false
-				wordIsValid = ADD_VALID_WORD( selectedLetters_getFinalLetterList(), LETTER_PROGRESS_SPEED )
+				local numLetters = ADD_VALID_WORD( selectedLetters_getFinalLetterList(), LETTER_PROGRESS_SPEED, MIN_WORD_LENGTH ) -- getting num letters bc activeLetters is cleared after word submit
+				wordIsValid = COMBO_SCORE_APPLY_NEW_SCORE(numLetters, time)
 			end
 
 			-- clear word

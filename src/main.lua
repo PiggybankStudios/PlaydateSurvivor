@@ -35,7 +35,8 @@ import "writefunctions"
 import "gameScene_v2"
 
 import "selectionBubble" -- multiple menus use the selection bubble for navigation
-import "flowerMinigame_CountdownTimer"
+import "flowerMiniGame_CountdownTimer"
+import "flowerMiniGame_ComboScore"
 import "flowerMiniGame_ValidWordList"
 import "flowerMinigame"
 import "newWeaponMenu"
@@ -148,7 +149,8 @@ local GS_PLAYER_UPGRADE_MENU		<const> = GAMESTATE.playerUpgradeMenu
 local GS_LEVEL_MODIFIER_MENU		<const> = GAMESTATE.levelModifierMenu
 local GS_DEATH_SCREEN				<const> = GAMESTATE.deathscreen
 local GS_STARTSCREEN				<const> = GAMESTATE.startscreen
-local GS_MAIN_MENU 					<const> = GAMESTATE.mainmenu	
+local GS_MAIN_MENU 					<const> = GAMESTATE.mainmenu
+local GS_LOAD_GAME 					<const> = GAMESTATE.loadGame
 
 
 -- +--------------------------------------------------------------+
@@ -242,7 +244,7 @@ gfx.setBackgroundColor(COLOR_BLACK)
 
 --------------
 --- Shared ---
-local currentState = GS_FLOWER_MINIGAME --GS_STARTSCREEN
+local currentState = GS_LOAD_GAME --GS_FLOWER_MINIGAME --GS_STARTSCREEN
 local lastState = currentState
 
 
@@ -348,6 +350,17 @@ local TRANSITION_TABLE_LENGTH = {
 	GET_LENGTH(imgTable_transition_growingCircles) 	-- growing circles
 }
 
+-- coroutine list
+	-- 1. Filled on transitionStart
+	-- 2. Runs through coroutines one-at-a-time - in transitions - with yeilds until all coroutines are dead
+	-- 3. List cleared on transitionEnd
+local coroutineList = {
+	coroutine.create(flowerMiniGame_initialize_dictionary)
+}
+local COROUTINE_LIST_LENGTH 	<const> = #coroutineList
+local coroutineTracker = 1
+local currentTask, totalTasks = 1, 1
+
 
 -- fades screen TO black
 -- The passedFunction needs to have 'runTransitionEnd' called by it.
@@ -410,10 +423,6 @@ end
 -- |                         Main Update                          |
 -- +--------------------------------------------------------------+
 
-
---gameScene_init()	-- Testing scene outside of main, will put back into scene loading later
---startMenu_StateStart()
-flowerMiniGame_StateStart()
 
 
 -- NOTES:
@@ -549,8 +558,59 @@ function pd.update()
 	---- Main Menu ----
 	elseif checkState < 10 then
 		c_UpdateMainMenu(time)
-	end
 
+	---- Initial Load at Start of Game ----
+	elseif checkState < 11 then
+
+		--print("inside 'loadGame' state - performCoroutines: " .. tostring(coroutineTracker <= COROUTINE_LIST_LENGTH))
+		
+		if coroutineTracker <= COROUTINE_LIST_LENGTH then
+
+			-- perform all coroutines from list IN ORDER, starting the next once the previous is dead.
+			local _, currentT, totalT = coroutine.resume(coroutineList[coroutineTracker])
+			currentTask = currentT == nil and currentTask or currentT
+			totalTasks = totalT == nil and totalTasks or totalT
+			print("performing coroutines - loading: " .. coroutineTracker .. "/" .. COROUTINE_LIST_LENGTH .. 
+					" - subTasks: " .. currentTask .. "/" .. totalTasks)
+
+			
+			-- draw a 'loading' animation
+			gfx.setColor(gfx.kColorBlack)
+			gfx.fillRect(0, 0, 400, 240)
+
+			gfx.setColor(gfx.kColorWhite)
+			local totalWidth = 200
+
+			local taskPercentage = currentTask / totalTasks
+			local taskWidth = totalWidth // COROUTINE_LIST_LENGTH * taskPercentage
+
+			local completedTaskWidth = ((coroutineTracker-1) / COROUTINE_LIST_LENGTH) * totalWidth
+			local width = completedTaskWidth + taskWidth
+			gfx.fillRect(100, 100, width, 20)
+			--print("width: " .. width .. " - completedTaskWidth: " .. completedTaskWidth .. " - taskWidth: " .. taskWidth ..
+			--		" - completedTasks: " .. coroutineTracker .. " - all Tasks: " .. COROUTINE_LIST_LENGTH)
+
+			-- If this coroutine is finished, begin the next one.
+			if coroutine.status(coroutineList[coroutineTracker]) == 'dead' then
+				print("coroutine dead")
+				coroutineTracker += 1
+			end
+
+			-- DEBUGGING after initial load, perform single actions here
+			--[[
+			if coroutineTracker > COROUTINE_LIST_LENGTH then 
+				print_dictionary()
+			end
+			]]
+
+		-- once all the loading is done, change the game state.
+		else
+			--print("stopping coroutine loop")
+			--runTransitionStart( GAMESTATE.startscreen, TRANSITION_TYPE.growingCircles, startMenu_StateStart )
+			runTransitionStart( GAMESTATE.flowerMinigame, TRANSITION_TYPE.growingCircles, flowerMiniGame_StateStart ) -- DEBUGGING
+		end
+
+	end
 
 	-- Transition Overlay
 	if performTransition then 

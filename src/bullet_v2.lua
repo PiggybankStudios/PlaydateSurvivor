@@ -319,32 +319,38 @@ local theGunTier = {3, 2, 2, 2} -- what tier the gun is at
 -- |                Init, Create, Delete, Handle                  |
 -- +--------------------------------------------------------------+
 
---- Init Arrays ---
-for i = 1, maxBullets do
-	bulletType[i] = 0
-	posX[i] = 0
-	posY[i] = 0
-	rotation[i] = 0
-	velX[i] = 0
-	velY[i] = 0
-	speed[i] = 0
-	lifeTime[i] = 0
-	damage[i] = 0
-	knockback[i] = 0
-	peircing[i] = 0
-	tier[i] = 0
-	mode[i] = 0
-	misc[i] = 0
-	timer[i] = 0
-	moveCalcTimer[i] = 0
-	bounce[i] = 0
-	rotatedImage[i] = 0
-	imageHalfSize[i] = 0
+function initialize_bullets()
 
-	-- GrenadePellets
-	grenadeX[i] = 0
-	grenadeY[i] = 0
-	grenadeTier[i] = 0
+	--- Init Arrays ---
+	for i = 1, maxBullets do
+		bulletType[i] = 0
+		posX[i] = 0
+		posY[i] = 0
+		rotation[i] = 0
+		velX[i] = 0
+		velY[i] = 0
+		speed[i] = 0
+		lifeTime[i] = 0
+		damage[i] = 0
+		knockback[i] = 0
+		peircing[i] = 0
+		tier[i] = 0
+		mode[i] = 0
+		misc[i] = 0
+		timer[i] = 0
+		moveCalcTimer[i] = 0
+		bounce[i] = 0
+		rotatedImage[i] = 0
+		imageHalfSize[i] = 0
+
+		-- GrenadePellets
+		grenadeX[i] = 0
+		grenadeY[i] = 0
+		grenadeTier[i] = 0
+	end
+	-- yield(currentTaskCompleted, totalNumberOfTasks, loadDescription)
+	coroutine.yield()
+
 end
 
 
