@@ -309,9 +309,9 @@ local grenadeCount = 0
 
 -- Gun Slots
 local theShotTimes = {0, 0, 0, 0} --how long until next shot
-local theGunSlots = {BULLET_TYPE.peagun, 0, 0, 0} --what gun in each slot
+local theGunSlots = {BULLET_TYPE.minigun, BULLET_TYPE.shotgun, BULLET_TYPE.shotgun, BULLET_TYPE.shotgun} --what gun in each slot
 local theGunLogic = {0, 0, 0, 0} --what special logic that slotted gun needs
-local theGunTier = {3, 2, 2, 2} -- what tier the gun is at
+local theGunTier = {3, 3, 3, 3} -- what tier the gun is at
 
 
 

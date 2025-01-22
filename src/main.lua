@@ -20,8 +20,6 @@ import "uibanner"
 
 --import "expbar"
 
-
-import "controls"
 import "player"
 import "camera"
 import "mun"
@@ -95,12 +93,10 @@ local DRAW_IMAGE_STATIC		<const> = gfx.image.drawIgnoringOffset
 local FLIP_XY 				<const> = gfx.kImageFlippedXY
 
 -- controls
-local crankAngle 	<const> = pd.getCrankPosition
-local c_ResetInput 	<const> = resetInput
+local crankAngle 			<const> = pd.getCrankPosition
 
 -- Main Game
 local c_UpdateGameScene 			<const> = updateGameScene
-local c_UpdateControls_MainGame 	<const> = updateControls_MainGame
 local c_UpdatePlayer 				<const> = updatePlayer
 local c_UpdateCamera 				<const> = updateCamera
 local c_UpdateBullets 				<const> = updateBullets
@@ -128,12 +124,13 @@ local c_UpdateFlowerMinigame 		<const> = updateFlowerMinigame
 local c_UpdateNewWeaponMenu			<const> = updateNewWeaponMenu 
 local c_UpdatePlayerUpgradeMenu		<const> = updatePlayerUpgradeMenu
 local c_UpdateLevelModifierMenu		<const> = updateLevelModifierMenu
+
 -- death screen
 local c_UpdateStartScreen			<const> = updateStartScreen
 local c_UpdateMainMenu				<const> = updateMainMenu
 
 -- Transitions
-local c_UpdateControls_SetInputLockForMainGameControls <const> = updateControls_SetInputLockForMainGameControls
+local c_Player_LockInput 			<const> = player_LockInput
 
 
 -- +--------------------------------------------------------------+
@@ -373,7 +370,7 @@ function runTransitionStart(nextState, animType, passedFunction, clearFunction, 
 	performTransition = true
 	transitionStart = true
 	transitionEnd = false
-	c_UpdateControls_SetInputLockForMainGameControls(true) -- lock player controls during animation - unlocked at end of TransitionEnd check.
+	c_Player_LockInput(true) -- need to prevent all input during action game while transitioning to prevent other possible transitions.
 
 	transition_nextState = nextState
 	if passedFunction ~= nil then
@@ -453,12 +450,9 @@ function pd.update()
 		c_UpdateGameScene(screenOffsetX, screenOffsetY)
 		--gameSceneDebugUpdate() --- visual debugging over game scene here ---
 		c_UpdateObjects(time, playerX, playerY, screenOffsetX, screenOffsetY)
-
-		-- Input, Player
-		local inputX, inputY, inputButtonB = updateControls_MainGame()
-		playerX, playerY = c_UpdatePlayer(time, inputX, inputY, inputButtonB, crank, shotsFired, itemsCollected)
 		
-		-- Bullets, Enemies, Items
+		-- Player, Bullets, Enemies, Items
+		playerX, playerY = c_UpdatePlayer(time, crank, shotsFired, itemsCollected)
 		shotsFired = c_UpdateBullets(time, crank, playerX, playerY, screenOffsetX, screenOffsetY)
 		c_UpdateEnemies(time, playerX, playerY, cameraPosX, cameraPosY, screenOffsetX, screenOffsetY)
 		itemsCollected = c_UpdateItems(time, playerX, playerY, screenOffsetX, screenOffsetY)
@@ -527,7 +521,6 @@ function pd.update()
 		-- Switch back to last state after countdown
 		else
 			currentState = lastState
-			c_ResetInput()
 			COLLECT_GARBAGE("collect") -- clean up 			
 			sendPauseTimer(time)
 		end
@@ -607,7 +600,8 @@ function pd.update()
 		else
 			--print("stopping coroutine loop")
 			--runTransitionStart( GAMESTATE.startscreen, TRANSITION_TYPE.growingCircles, startMenu_StateStart )
-			runTransitionStart( GAMESTATE.flowerMinigame, TRANSITION_TYPE.growingCircles, flowerMiniGame_StateStart ) -- DEBUGGING
+			--runTransitionStart( GAMESTATE.flowerMinigame, TRANSITION_TYPE.growingCircles, flowerMiniGame_StateStart ) -- DEBUGGING
+			runTransitionStart( GAMESTATE.maingame, TRANSITION_TYPE.growingCircles, gameScene_init, mainMenu_ClearState ) -- DEBUGGING - loads into action portion
 		end
 
 	end
@@ -649,7 +643,7 @@ function pd.update()
 			if transition_index < 1 then 
 				performTransition = false 
 				transitionEnd = false
-				c_UpdateControls_SetInputLockForMainGameControls(false) -- unlock player controls
+				c_Player_LockInput(false)
 
 			-- Else draw frame, flipped on both X and Y.
 			else

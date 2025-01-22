@@ -16,8 +16,11 @@ local sin 		<const> = math.sin
 local cos 		<const> = math.cos
 local random 	<const> = math.random
 local max 		<const>	= math.max
+local min 		<const> = math.min
 local sqrt 		<const> = math.sqrt
+local abs 		<const> = math.abs
 local MOVE_TOWARDS <const> = moveTowards_global
+local rescale 	<const> = rescaleRange_global
 
 -- screen
 local setDrawOffset 	<const> = gfx.setDrawOffset
@@ -36,7 +39,7 @@ local halfBannerHeight 	<const> = getHalfUIBannerHeight()
 -- |                            Init                              |
 -- +--------------------------------------------------------------+
 
-local SPEED 			<const> = 4
+local CAMERA_SPEED_MAX 	<const> = 6
 local CAM_DISTANCE_X 	<const> = 100
 local CAM_DISTANCE_Y 	<const> = 40
 
@@ -97,9 +100,19 @@ local function moveCamera(angle, posX, posY)
 	local targetPosX = CAM_DISTANCE_X * cos(rad) + posX
 	local targetPosY = CAM_DISTANCE_Y * sin(rad) + posY - halfBannerHeight
 
-	cameraPosX = MOVE_TOWARDS(cameraPosX, targetPosX, SPEED)
-	cameraPosY = MOVE_TOWARDS(cameraPosY, targetPosY, SPEED)
+	-- Adjusting camera speed based on separate axis to move cleanly to the target point - no more separate horizontal/vertical movement.
+		-- Needed b/c horizontal movement is greater than vertical movement in most cases, which gives weird 'sliding' effect
+	local distX, distY = targetPosX - cameraPosX, targetPosY - cameraPosY
+	local magnitude = sqrt(distX * distX + distY * distY)
+	local speedScale = min(magnitude / 5, CAMERA_SPEED_MAX) -- smooths movement based on distance to target
+	local scaledMag = speedScale / max(magnitude, 1) -- setting mag to min 1 avoids any chance for div by 0
+	local speedX = abs(distX) * scaledMag 
+	local speedY = abs(distY) * scaledMag
 
+	cameraPosX = MOVE_TOWARDS(cameraPosX, targetPosX, speedX)
+	cameraPosY = MOVE_TOWARDS(cameraPosY, targetPosY, speedY)
+
+	-- Need to floor to avoid camera jitter - happens at non-integer values
 	camAnchorX = floor(halfScreenWidth - cameraPosX)
 	camAnchorY = floor(halfScreenHeight - cameraPosY)
 

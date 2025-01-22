@@ -55,7 +55,8 @@ local img_countdownTimer = nil
 -- Countdown Timer
 local countdownTimer = 0
 local countdownTimer_seconds = 15
-local CD_TIMER_SET 				<const> = 1000
+local countdownTimer_set = 0
+local CD_TIMER_SET_MILL			<const> = 1000
 
 local CD_TIMER_X 				<const> = 8 
 local CD_TIMER_Y 				<const> = 88
@@ -75,7 +76,8 @@ local CD_TIMER_VERTICE_COUNT 	<const> = CD_TIMER_MASKPOINTS_MAX * 2
 function create_CountdownTimer()
 
 	img_countdownTimer = NEW_IMAGE(CD_TIMER_RADIUS_DOUBLE, CD_TIMER_RADIUS_DOUBLE)
-	countdownTimer = CD_TIMER_SET * countdownTimer_seconds + GET_TIME()
+	countdownTimer_set = CD_TIMER_SET_MILL * countdownTimer_seconds
+	countdownTimer = countdownTimer_set + GET_TIME()
 
 	-- set all the mask points in the center of the countdown circle
 	for i = 1, CD_TIMER_VERTICE_COUNT do
@@ -99,7 +101,7 @@ end
 
 function draw_CountdownTimer(time)
 	
-	local timePercent = (countdownTimer - time) / countdownTimer
+	local timePercent = (countdownTimer - time) / countdownTimer_set
 	
 	-- Draw Timer w/ elapsed time
 	if timePercent > 0 then

@@ -118,6 +118,12 @@ local NUMBER_OF_TEXT_FILES 	<const> = #wordFilePaths
 local dictionary = {}
 local dictionary_LastTime = 0
 
+local submittedWordIDs = {}
+local charIDs = { 
+	A = 1,  B = 2,  C = 3,  D = 4,  E = 5,  F = 6,  G = 7,  H = 8,  I = 9,  J = 10, K = 11, L = 12, M = 13,
+	N = 14, O = 15, P = 16, Q = 17, R = 18, S = 19, T = 20, U = 21, V = 22, W = 23, X = 24, Y = 25, Z = 26
+}
+
 
 local function dictionary_checkLetter(text, list, charIndex)
 
@@ -254,14 +260,19 @@ function create_ValidWordList()
 	img_wordListAll = NEW_IMAGE(WORDLIST_WIDTH, WORDLIST_HEIGHT)
 	img_wordListAllMask = NEW_IMAGE(path_wordListMask)
 	validWordCount = 0
+
+	submittedWordIDs = {} -- resetting the saved wordID list to be used again after being cleared by garbage collector.
 end
 
 
 function clear_ValidWordList()
 	img_wordListMask = nil 
-	for i = 1, validWordCount do
+	for i = 1, #img_wordList do
 		img_wordList[i] = nil
 	end
+
+	submittedWordIDs = nil
+
 end
 
 
@@ -270,7 +281,37 @@ end
 -- |                        List Functions                        |
 -- +--------------------------------------------------------------+
 
+-- Creates a unique numerical ID for the passed word, by combining all char alphabet positions into a string, then to a number.
+-- No math is used, literally making a number from the given digits.
+local function createWordID(letterList)
 
+	local wordID = {}
+
+	for i = 1, #letterList do
+		local letter = letterList[i]
+		wordID[i] = charIDs[letter]
+	end
+
+	return tonumber( concat(wordID) )
+end
+
+
+-- Determines if word has already been submitted by comparing wordID to the saved list.
+local function checkIfSubmitted(wordID)
+
+	for i = 1, #submittedWordIDs do
+		print("wordID: " .. wordID .. " =? " .. submittedWordIDs[i])
+		if wordID == submittedWordIDs[i] then
+			print(" !! MATCH FOUND !!")
+			return true
+		end
+	end
+
+	return false
+end
+
+
+-- Determines if the word is in dictionaries.
 local function confirmValidWord(letterList)
 	print("Checking word: " .. concat(letterList))
 	local list = dictionary
@@ -278,6 +319,7 @@ local function confirmValidWord(letterList)
 	-- loop through every letter in the passed letterList
 	for i = 1, #letterList do
 		local letter = letterList[i]
+		local letterFound = false
 
 		-- attempt to find a matching letter in the dictionary
 		for k = 1, #list do
@@ -297,10 +339,16 @@ local function confirmValidWord(letterList)
 
 				-- else go to the next linked list if it exists, and exit this inner loop.
 				list = list[k].nextLetters
+				letterFound = true
 				print("~~ FOUND LETTER, but not end of word. Going to next list. ~~")
 				break
 
 			end
+		end
+
+		-- After checking every linked letter, if a match was NOT found then this word does not exist in the dictionary. 
+		if letterFound == false then
+			return false
 		end
 
 	end
@@ -319,17 +367,23 @@ function addValidWord(letterList, animSpeed, minLetters)
 	-- check if current selected letters make a valid word
 	local wordInDictionary = confirmValidWord(letterList)
 	print(" -- wordInDictionary: " .. tostring(wordInDictionary))
-
-	-- if no, reject
 	if wordInDictionary == false then 
 		print(" ~NOT A VALID WORD~")
 		return 0
 	end
 
+	-- check if word has already been submitted
+	local wordID = createWordID(letterList)
+	if checkIfSubmitted(wordID) == true then 
+		print(" ~~WORD ALREADY SUBMITTED~~ ")
+		return 0
+	end
 
 	-- else yes, add to the valid word list
-	--print("word list length: " .. #img_wordList)
-	local i = #img_wordList + 1
+	validWordCount += 1
+	submittedWordIDs[validWordCount] = wordID
+
+	local i = validWordCount
 	local newWord = concat(letterList)
 	local newWord_width = GET_TEXT_WIDTH(font_ValidWords, newWord)
 	img_wordList[i] = NEW_IMAGE(newWord_width, VALID_WORD_HEIGHT)
@@ -337,7 +391,7 @@ function addValidWord(letterList, animSpeed, minLetters)
 	validWord_y[i] = VALID_WORD_START_Y
 	validWord_progress[i] = 0
 	validWord_progressSpeed = animSpeed
-	validWordCount += 1
+	
 
 	LOCK_FOCUS(img_wordList[i])
 		SET_FONT(font_ValidWords)

@@ -1059,7 +1059,10 @@ function worldCheckFast(self, item, goalX, goalY, filter)
     )
   end
 
-  return floor(goalX), floor(goalY)
+  -- Need to add '0.5' while flooring to round to NEAREST integer, so that movement is equal 
+  -- between Left and Right, and Up and Down. Player is moving w/ decimal values via velocity,
+  -- and the '0.5' inside floor here makes movement in opposite directions the same.
+  return floor(goalX + 0.5), floor(goalY + 0.5)
 end
 
 --[[

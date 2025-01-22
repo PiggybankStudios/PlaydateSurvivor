@@ -202,6 +202,11 @@ function gameScene_NextLevel()
 		newLevel = newLevel + 1 
 		if newLevel > #level_list then newLevel = 1 end
 	end
+
+	--TEST--
+	newLevel = 1
+	--------
+
 	currentLevel = newLevel
 
 	-- clear bullets, enemies, items, objects

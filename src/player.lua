@@ -7,7 +7,6 @@
 -- extensions
 local pd 	<const> = playdate
 local gfx 	<const> = pd.graphics
-local vec 	<const> = pd.geometry.vector2D
 
 -- math
 local floor 	<const> = math.floor
@@ -15,7 +14,6 @@ local max 		<const> = math.max
 local min 		<const> = math.min
 local sqrt 		<const> = math.sqrt
 local random 	<const> = math.random
-local newVec 	<const> = vec.new
 
 -- screen
 local SCREEN_WIDTH 	<const> = pd.display.getWidth()
@@ -36,6 +34,7 @@ local GET_SIZE 		<const> = gfx.image.getSize
 
 -- globals
 local dt 			<const> = getDT()
+
 
 -- +--------------------------------------------------------------+
 -- |               World, Sprite, Collider, Healthbar             |
@@ -61,8 +60,10 @@ local playerRect = { x = 150, y = 150, width = colliderSize, height = colliderSi
 local velX, velY = 0, 0
 
 -- Movement
-local ACCEL 			<const> = 30
-local MAX_SPEED_CHANGE 	<const> = ACCEL * dt 
+local MOVE_BUMP_AMOUNT 	<const> = 50 * dt
+local FRICTION 			<const> = -0.1
+local DELTA 			<const> = 0.01
+local inputLock = 1 
 
 -- Healthbar
 local HEALTHBAR_OFFSET_X 		<const> = 2
@@ -700,63 +701,6 @@ end
 -- |                          Movement                            |
 -- +--------------------------------------------------------------+
 
----------
-local resetTime <const> = pd.resetElapsedTime
-local getTime <const> = pd.getElapsedTime
-
-local timerWindow = 0
-local totalElapseTime = 0
-local timeInstances = 0
-local TIME_INSTANCE_MAX <const> = 500
-local averageTime = 0
-local maxTime = 0
-local minTime = 1
-
-local function addTotalTime()
-	if timeInstances >= TIME_INSTANCE_MAX then return end
-
-	local elapsed = getTime()
-	totalElapseTime += elapsed
-	timeInstances += 1
-
-	if elapsed < minTime then 
-		minTime = elapsed
-	elseif elapsed > maxTime then 
-		maxTime = elapsed
-	end
-end
-
-local function printAndClearTotalTime(activeNameAsString, activeObject)
-	-- avoid divide by 0
-	if timeInstances == 0 then return end
-
-	-- time instance check
-	if timeInstances < TIME_INSTANCE_MAX then return end 
-
-	-- calc average
-	averageTime = totalElapseTime / timeInstances
-
-	local objectName = activeNameAsString or ""
-	local object = activeObject or ""
-
-	-- print statistics
-	print(	"------------")
-	print(	objectName .. ": " .. object ..
-			" - total time: " .. totalElapseTime .. 
-			" - average time: " .. averageTime .. 
-			" - time instances: " .. timeInstances .. 
-			" - min: " .. minTime .. 
-			" - max: " .. maxTime)
-
-	-- reset values for new data
-	totalElapseTime = 0
-	averageTime = 0
-	timeInstances = 0
-	minTime = 1
-	maxTime = 0
-end
---------
-
 
 function damageBouncePlayer(otherX, otherY, xDiff, yDiff)
 
@@ -797,39 +741,49 @@ local playerFilter = function(item, other)
 end
 
 
+--------------------- MOVEMENT --------------------- 
 
-local abs <const> = math.abs
+local UP 		<const> = pd.kButtonUp
+local DOWN 		<const> = pd.kButtonDown
+local LEFT 		<const> = pd.kButtonLeft
+local RIGHT 	<const> = pd.kButtonRight
+local BUTTON_JUST_PRESSED 	<const> = pd.buttonJustPressed
 
-local function sign(x)
-	if x > 0 then 	return 1
-	else 			return -1
+
+function player_LockInput(value)
+	if value == true then 	inputLock = 0
+	else 					inputLock = 1
 	end
 end
 
-local function move_towards(current, target, maxDelta)
-	if abs(target - current) <= maxDelta then
-		return target
-	else
-		return current + sign(target - current) * maxDelta
+
+local function movePlayer_NEW()
+
+	-- button input added to velocity
+	local vX, vY = velX, velY
+	if BUTTON_JUST_PRESSED(LEFT) then 	vX -= MOVE_BUMP_AMOUNT * inputLock end
+	if BUTTON_JUST_PRESSED(RIGHT) then 	vX += MOVE_BUMP_AMOUNT * inputLock end
+	if BUTTON_JUST_PRESSED(UP) then 	vY -= MOVE_BUMP_AMOUNT * inputLock end
+	if BUTTON_JUST_PRESSED(DOWN) then 	vY += MOVE_BUMP_AMOUNT * inputLock end
+
+	-- friction added to velocity
+	if (vX * vX) > DELTA then vX = vX + (vX * FRICTION)
+	else vX = 0 
 	end
-end
+	if (vY * vY) > DELTA then vY = vY + (vY * FRICTION)
+	else vY = 0 
+	end
 
-
-local function movePlayer(inputX, inputY, inputButtonB)
-
-	local maxSpeed = playerSpeed * inputButtonB * dt
-	local desiredVelX = maxSpeed * inputX
-	local desiredVelY = maxSpeed * inputY
-	local vX = move_towards(velX, desiredVelX, MAX_SPEED_CHANGE)
-	local vY = move_towards(velY, desiredVelY, MAX_SPEED_CHANGE)
-
-	velX, velY = vX, vY
+	-- checking for player's collision 
+	velX, velY = vX, vY 
 	local goalX, goalY = vX + playerRect.x, vY + playerRect.y
 	local actualX, actualY = world_Check(world, playerRect, goalX, goalY, playerFilter)
 	playerRect.x, playerRect.y = actualX, actualY
 
+	-- returning position that's the center of the player's collision box
 	return actualX + halfCol, actualY + halfCol
 end
+
 
 
 -- +--------------------------------------------------------------+
@@ -891,7 +845,7 @@ local function drawInvincible(time, image, x, y, flipState)
 end
 
 
-function updatePlayer(time, inputX, inputY, inputButtonB, crank, newShots, newItems)
+function updatePlayer(time, crank, newShots, newItems)
 	
 	--currentTime = time
 
@@ -908,7 +862,8 @@ function updatePlayer(time, inputX, inputY, inputButtonB, crank, newShots, newIt
 		performSpikeDamage = false  		-- always set to false, will ignore future damage instances
 	end
 	
-	local playerX, playerY = movePlayer(inputX, inputY, inputButtonB)
+	--local playerX, playerY = movePlayer(inputX, inputY, inputButtonB)
+	local playerX, playerY = movePlayer_NEW()
 
 	local imageIndex = crank % 180 // IMAGE_ANGLE_DIFF + 1 	-- 1 to 40
 	local flipState = crank < 180 and UNFLIPPED or FLIP_XY	-- same as   a ? b : c
@@ -927,8 +882,6 @@ function updatePlayer(time, inputX, inputY, inputButtonB, crank, newShots, newIt
 					flipState)
 	end
 
-
-	--printAndClearTotalTime()
 
 	return playerX, playerY
 end

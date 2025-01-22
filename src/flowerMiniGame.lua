@@ -267,6 +267,12 @@ local function getRandomLetter()
 end
 
 
+local testLetterList = {"B", "O", "P", "T", "A", "G", "S", "L", "I", "W"}
+
+local function getTestLetterList(index)
+	return testLetterList[index]
+end
+
 
 -- +--------------------------------------------------------------+
 -- |                      Init, Start, Clear                      |
@@ -354,7 +360,7 @@ local function create_FlowerLetters()
 
 		-- select and setup the letters for this minigame
 		local font = font_FlowerLetters
-		flowerLetters[i] = getRandomLetter()
+		flowerLetters[i] = getTestLetterList(i) --getRandomLetter()
 		img_LetterList[i] = GET_GLYPH(font, flowerLetters[i])
 		letterHalfWidth[i] = GET_TEXT_WIDTH(font, flowerLetters[i]) // 2 -- GET_SIZE won't get true letter width
 		letterHalfHeight[i] = GET_TEXT_HEIGHT(font) // 2
@@ -860,6 +866,7 @@ function updateFlowerMinigame(time)
 		-- skip to 'New Weapon' menu
 		if pd.buttonJustPressed(pd.kButtonA) then 
 			runTransitionStart( GAMESTATE.newWeaponMenu, TRANSITION_TYPE.growingCircles, newWeaponMenu_StateStart, flowerMiniGame_ClearState )
+			--runTransitionStart( GAMESTATE.maingame, TRANSITION_TYPE.growingCircles, gameScene_NextLevel)
 		end
 	end
 
