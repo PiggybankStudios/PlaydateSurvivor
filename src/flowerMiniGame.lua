@@ -155,10 +155,12 @@ local selector_index = 1
 --local selector_y = 0
 
 -- Letter Petals
-local numLetters = 5
+local numLetters = 0 	-- this will increase when player collects new letters in action game, then reset back to 0 at end of flower game
 
 local letterList = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-local flowerLetters = {}
+local flowerLetters = {} 	-- letters on flower petals
+local collectedLetters = {} 	-- letters passed from PuzzleSettings on level load 
+
 
 local flowerCenter_x = 0
 local flowerCenter_y = 0
@@ -261,17 +263,28 @@ local DRAW_VALIDWORDLIST 		<const> = draw_ValidWordList
 -- |                        Helper Functions                      |
 -- +--------------------------------------------------------------+
 
+--[[
 local function getRandomLetter()
 	local randLetter = math.random(1, #letterList)
 	return GET_CHAR(letterList, randLetter, randLetter)
 end
 
-
+-- TO DO: get rid of this test list and all references
 local testLetterList = {"B", "O", "P", "T", "A", "G", "S", "L", "I", "W"}
 
 local function getTestLetterList(index)
 	return testLetterList[index]
 end
+]]
+
+
+function flowerGame_CollectNewLetter(newLetter)
+	numLetters += 1
+	collectedLetters[numLetters] = newLetter
+
+	print("Letter Collected: " .. collectedLetters[numLetters] .. " - Total Collected: " .. table.concat(collectedLetters))
+end
+
 
 
 -- +--------------------------------------------------------------+
@@ -360,7 +373,7 @@ local function create_FlowerLetters()
 
 		-- select and setup the letters for this minigame
 		local font = font_FlowerLetters
-		flowerLetters[i] = getTestLetterList(i) --getRandomLetter()
+		flowerLetters[i] = collectedLetters[i]  --getTestLetterList(i)	--getRandomLetter()
 		img_LetterList[i] = GET_GLYPH(font, flowerLetters[i])
 		letterHalfWidth[i] = GET_TEXT_WIDTH(font, flowerLetters[i]) // 2 -- GET_SIZE won't get true letter width
 		letterHalfHeight[i] = GET_TEXT_HEIGHT(font) // 2
@@ -431,6 +444,7 @@ local function flowerMiniGame_ClearState()
 		img_PetalList[i] = nil
 		img_LetterList[i] = nil
 	end
+	numLetters = 0
 
 	-- Selected Letters
 	img_word = nil 

@@ -32,6 +32,13 @@ CAMERA_SHAKE_STRENGTH = {
 	massive = 48
 }
 
+LEVEL_DIFFICULTY = {
+	breezy = 	1,
+	easy = 		2,  
+	medium = 	3, 
+	hard = 		5, 
+	intense = 	6
+}
 
 ITEM_TYPE = {
 	health = 	1,
@@ -45,15 +52,38 @@ ITEM_TYPE = {
 	exp9 = 		9,
 	exp16 = 	10,
 	luck = 		11,
-	mun2 = 		12 ,
-	mun10 = 	13 ,
-	mun50 = 	14 
+	mun2 = 		12,
+	mun10 = 	13,
+	mun50 = 	14,
+	petal = 	15
 }
 
 
 OBJECT_TYPE = {
 	teleporter = 1,
-	spikeball = 2
+	spikeball = 2,
+	enemySpawner = 3
+}
+
+ENEMY_TYPE = {
+	fastBall = 1,
+	normalSquare = 2,
+	bat = 3,
+	medic = 4,
+	bulletBill = 5,
+	chunkyArms = 6,
+	munBag = 7,
+	enemy_A = 8
+}
+
+ENEMY_SPAWN_RATE = {
+	sluggish = 1600,
+	verySlow = 1400,
+	slow = 1200,
+	medium = 1000,
+	fast = 800,
+	veryFast = 600,
+	swift = 400
 }
 
 

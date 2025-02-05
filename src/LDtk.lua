@@ -462,6 +462,45 @@ function LDtk.get_entities( level_name, layer_name )
 	return layer.entities or {}
 end
 
+
+-- +--------------------------------------------------------------+
+-- |                            CUSTOM                            |
+-- +--------------------------------------------------------------+
+
+-- same as 'get_entities' except this function also provides a count of each entity type, return in a second list.
+function LDtk.get_entities_and_counts( level_name, layer_name )
+	local level = _levels[level_name]
+	if not level then return end
+
+	if not layer_name then
+		local all_entities = {}
+		local entity_counts = {}
+		for layer_name, layer in pairs(level.layers) do
+			for entity_index, entity in pairs(layer.entities or {}) do
+				table.insert( all_entities, entity)
+
+				-- Either add entity type to the count list, or increase the existing count of this entity type.
+				if entity_counts[entity.name] == nil then
+					entity_counts[entity.name] = 1
+				else
+					entity_counts[entity.name] += 1 
+				end
+			end
+		end
+
+		return all_entities, entity_counts
+	end
+
+	local layer = level.layers[ layer_name ]
+	if not layer then return end
+
+	return layer.entities or {}
+end
+
+-------------------------------------------------------------------
+-------------------------------------------------------------------
+
+
 -- return a tilemap for the level
 -- @layer_name is optional, if nil then will return the first layer with tiles
 function LDtk.create_tilemap( level_name, layer_name )

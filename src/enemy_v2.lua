@@ -14,6 +14,8 @@ local random 	<const> = math.random
 local GET_IMAGE <const> = gfx.imagetable.getImage
 local GET_SIZE 	<const> = gfx.image.getSize
 
+local CREATE_ITEM <const> = createItem
+
 
 -- World Data
 local worldRef, cellSizeRef
@@ -105,7 +107,7 @@ local SCALE_DAMAGE 			<const> = 5
 
 local movementParticleSpawnRate = 50
 
-
+--[[
 local ENEMY_TYPE = {
 	fastBall = 1,
 	normalSquare = 2,
@@ -116,6 +118,8 @@ local ENEMY_TYPE = {
 	munBag = 7,
 	enemy_A = 8
 }
+]]
+local ENEMY_TYPE = ENEMY_TYPE
 
 local ENEMY_DROP = {
 	{ LOCAL_ITEM_TYPE.exp1,		LOCAL_ITEM_TYPE.health, 	LOCAL_ITEM_TYPE.luck 		},	-- fastBall
@@ -473,8 +477,6 @@ function bulletEnemyCollision(i, damage, knockback, playerX, playerY, time)
 	end
 end
 
-
-local CREATE_ITEM <const> = createItem
 
 -- Create an instance of an item at the enemy's position -- called on enemy death.
 -- Items are created via percent, 1 - 100

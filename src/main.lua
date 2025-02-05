@@ -30,13 +30,15 @@ import "particle"
 import "objects"
 import "write"
 import "writefunctions"
+
+import "flowerMiniGame_PuzzleSettings"
 import "gameScene_v2"
 
 import "selectionBubble" -- multiple menus use the selection bubble for navigation
 import "flowerMiniGame_CountdownTimer"
 import "flowerMiniGame_ComboScore"
 import "flowerMiniGame_ValidWordList"
-import "flowerMinigame"
+import "flowerMiniGame"
 import "newWeaponMenu"
 import "playerUpgradeMenu"
 import "levelModifierMenu"

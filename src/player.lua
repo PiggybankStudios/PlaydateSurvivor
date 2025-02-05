@@ -757,6 +757,8 @@ function player_LockInput(value)
 end
 
 
+-- TO DO:
+	-- Add a 'hold to move longer' to each tap
 local function movePlayer_NEW()
 
 	-- button input added to velocity

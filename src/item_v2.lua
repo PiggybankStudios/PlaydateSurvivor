@@ -27,6 +27,7 @@ local img_Luck		= gfx.image.new('Resources/Sprites/item/iLuck')
 local img_Mun2		= gfx.image.new('Resources/Sprites/item/iMun2')
 local img_Mun10 	= gfx.image.new('Resources/Sprites/item/iMun10')
 local img_Mun50 	= gfx.image.new('Resources/Sprites/item/iMun50')
+local img_Petal 	= gfx.image.new('Resources/Sprites/item/iPetal')
 
 local IMAGE_LIST = {
 	img_Health,
@@ -42,7 +43,8 @@ local IMAGE_LIST = {
 	img_Luck,
 	img_Mun2,
 	img_Mun10,
-	img_Mun50	
+	img_Mun50,
+	img_Petal
 }
 
 -- items should be square images, so checking only width is fine
@@ -67,11 +69,12 @@ local PLAYER_COLLISION_DISTANCE 	<const> = 20 * 20	-- distance from player (SQUA
 local defaultDistanceCheck = getPlayerMagnetStat()
 local absorbAllFlag = false
 
-
-
 -- Items
 local maxItems <const> = 200
 local activeItems = 0
+
+-- Tags Reference
+local ITEM_TAG <const> = ITEM_TYPE
 
 -- Arrays
 local itemType = {}
@@ -81,6 +84,9 @@ local rotation = {}
 local distanceCheck = {}
 local lifeTime = {}
 
+-- Letter Lists
+local droppedLetterList = {}
+local collectedLetters = 0
 
 
 -- +--------------------------------------------------------------+
@@ -101,10 +107,9 @@ end
 
 function createItem(type, spawnX, spawnY)
 	
-	local total = activeItems + 1
+	local total = activeItems + 1		
 	if total > maxItems then return end
 	activeItems = total
-	
 
 	itemType[total] = type
 	posX[total] = spawnX
@@ -112,6 +117,40 @@ function createItem(type, spawnX, spawnY)
 	rotation[total] = 0
 	distanceCheck[total] = defaultDistanceCheck * defaultDistanceCheck -- This is squared so it can be compared with a squared magnitude as distance
 	lifeTime[total] = -1
+end
+
+
+-- TO DO:
+	-- need to test if replacing an item with a petal when at max items actually works
+function createPetal(letter, spawnX, spawnY)
+
+	local total = activeItems + 1
+	local id
+	if total > maxItems then
+		total -= 1
+		for k = 1, maxItems do -- find a non-petal item and replace it
+			if itemType[k] ~= ITEM_TAG.petal then
+				id = k
+				break
+			end
+		end
+	else 
+		id = total
+		activeItems = total
+	end
+	
+	-- petal letter details
+	local nextLetter = #droppedLetterList + 1
+	droppedLetterList[nextLetter] = letter
+
+	-- item details
+	itemType[id] = ITEM_TAG.petal
+	posX[id] = spawnX
+	posY[id] = spawnY
+	rotation[id] = 0 
+	distanceCheck[total] = defaultDistanceCheck * defaultDistanceCheck
+	lifeTime[total] = -1
+
 end
 
 
@@ -136,9 +175,11 @@ function debugItemSpawn()
 	end
 end
 
+--[[
 function spawnShieldItem()
 	createItem(ITEM_TYPE.shield, 100, 100)
 end
+]]
 
 
 -- To be called at the end of the pause animation.
@@ -169,13 +210,18 @@ function clearItems()
 end
 
 
+
 local HEAL_PLAYER 			<const> = healPlayer
 local NEW_WEAPON_GRABBED 	<const> = newWeaponGrabbed
 local SHIELD_PLAYER 		<const> = shieldPlayer
 local ADD_EXP 				<const> = addPlayerEXP
 local ADD_PLAYER_LUCK 		<const> = addPlayerLuck
 local ADD_MUN 				<const> = addMun
+local COLLECT_LETTER 		<const> = flowerGame_CollectNewLetter
 
+
+-- Returning a value indicates how many items were collected when this item is picked up. 
+-- Money and EXP are not added towards the total item count.
 local activateItemEffect = {
 	-- Health
 	function() HEAL_PLAYER(20) 		return 1 end,
@@ -217,7 +263,16 @@ local activateItemEffect = {
 	function() ADD_MUN(5) 			return 0 end,
 
 	--Mun50
-	function() ADD_MUN(20) 			return 0 end
+	function() ADD_MUN(20) 			return 0 end,
+
+	--Petal
+	function() 
+		collectedLetters += 1
+		print("this petal letter: " .. droppedLetterList[collectedLetters])
+		--COLLECT_LETTER(droppedLetterList[collectedLetters]) 	
+		flowerGame_CollectNewLetter(droppedLetterList[collectedLetters]) 	
+		return 1 
+	end
 }
 
 

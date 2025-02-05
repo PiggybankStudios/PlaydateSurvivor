@@ -35,8 +35,9 @@ function updateGameScene(screenOffsetX, screenOffsetY)
 	DRAW(tilemap_combined, 0, 0)
 
 
-	--[[
+	
 	-- DEBUG - only draw white background
+	--[[
 	local offX, offY = gfx.getDrawOffset()
 	gfx.setColor(gfx.kColorWhite)
 	gfx.fillRect(-offX, -offY, 400, 240)
@@ -75,8 +76,42 @@ local worldToBullets 		<const> = sendWorldCollidersToBullets
 local worldToEnemies 		<const> = sendWorldCollidersToEnemies
 
 
+local function CreateBumpCollisionForLayer(layer, layer_name, level_name, tileString, tileTag)
 
-local function gameScene_goToLevel(level_name)
+	local zIndex = layer.zIndex + 1	
+	local tileMap = ldtk_createTilemap(level_name, layer_name)	
+	tilemaps[zIndex] = tileMap		
+
+	local emptyTiles = ldtk_getEmptyTileIDs(level_name, tileString, layer_name)
+	if (emptyTiles) then
+
+		-- Bump Collision
+		local wallRectList = getCollisionRects(tileMap, emptyTiles)
+		local tileSize = getTileSize(tileMap)
+
+		for i = 1, #wallRectList do
+			local rect = wallRectList[i]
+			-- weak key-value table to be able to be garbage collected
+			local r = setmetatable(	{ x = 0, y = 0, width = 0, height = 0, tag = 0 },
+									{ __mode = 'kv' }
+									)
+
+			-- add wall object to world
+			r.x = rect.x * tileSize
+			r.y = rect.y * tileSize
+			r.width = rect.width * tileSize
+			r.height = rect.height * tileSize
+			r.tag = tileTag
+			bump_addToWorld(world, r, r.x, r.y, r.width, r.height)
+		end
+	end
+end
+
+
+local function gameScene_goToLevel(level_data, level_index)
+
+	-- separate level details
+	local level_name = level_data.name
 
 	-- catch for if a tileset png name follows the naming convention required by LDtk
 	if ldtk_getLayers(level_name) == nil then
@@ -90,62 +125,10 @@ local function gameScene_goToLevel(level_name)
 	-- load in the level's tileset and collision
 	for layer_name, layer in NEXT, ldtk_getLayers(level_name) do
 		if layer.tiles then
-
-			local zIndex = layer.zIndex + 1		
-			tilemaps[zIndex] = ldtk_createTilemap(level_name, layer_name)			
-
-
-			--- Walls ---
-			local emptyTiles = ldtk_getEmptyTileIDs(level_name, "Solid", layer_name)
-			if (emptyTiles) then
-
-				-- Bump Collision
-				local wallRectList = getCollisionRects(tilemaps[zIndex], emptyTiles)
-				local tileSize = getTileSize(tilemaps[zIndex])
-
-				for i = 1, #wallRectList do
-					local rect = wallRectList[i]
-					-- weak key-value table to be able to be garbage collected
-					local r = setmetatable(	{ x = 0, y = 0, width = 0, height = 0, tag = 0 },
-											{ __mode = 'kv' }
-											)
-
-					-- add wall object to world
-					r.x = rect.x * tileSize
-					r.y = rect.y * tileSize
-					r.width = rect.width * tileSize
-					r.height = rect.height * tileSize
-					r.tag = TAGS.walls
-					bump_addToWorld(world, r, r.x, r.y, r.width, r.height)
-				end
-			end
-
-
-			--- Damaging Tiles ---
-			emptyTiles = ldtk_getEmptyTileIDs(level_name, "Damage", layer_name)
-			if (emptyTiles) then
-
-				-- Bump Collision
-				local wallRectList = getCollisionRects(tilemaps[zIndex], emptyTiles)
-				local tileSize = getTileSize(tilemaps[zIndex])
-
-				for i = 1, #wallRectList do
-					local rect = wallRectList[i]	
-					-- weak key-value table to be able to be garbage collected
-					local r = setmetatable(	{ x = 0, y = 0, width = 0, height = 0, tag = 0 },
-											{ __mode = 'kv' }
-											)					
-					r.x = rect.x * tileSize
-					r.y = rect.y * tileSize
-					r.width = rect.width * tileSize
-					r.height = rect.height * tileSize
-					r.tag = TAGS.damage
-					bump_addToWorld(world, r, r.x, r.y, r.width, r.height)
-				end
-			end
+			CreateBumpCollisionForLayer(layer, layer_name, level_name, "Solid", TAGS.walls) 	-- Walls
+			CreateBumpCollisionForLayer(layer, layer_name, level_name, "Damage", TAGS.damage)	-- Damaging Tiles	
 		end
 	end
-
 
 	-- combine the separate tilemaps into a single image, based on their zIndex
 	tilemap_combined = newImage(width, height, colorBlack) 
@@ -157,21 +140,19 @@ local function gameScene_goToLevel(level_name)
 		end
 	unlockFocus()
 
-
 	-- Add objects (ldtk entities) to room
 	worldToObjects(world)
-	resetPlayerSpawnPositions()
-	for _, entity in NEXT, ldtk.get_entities(level_name) do
+	local entity_list, entity_counts = ldtk.get_entities_and_counts(level_name)
+	objects_SetObjectDetailsInLevel(level_data, entity_counts)
+	for _, entity in NEXT, entity_list do
 		createObject(entity)		
 	end
 
-	
 	-- Perform inits at start of level, and pass the new world collision to everything that needs it
 	local playerX, playerY = getPlayerSpawnPosition() -- a playerSpawner object sets the spawn position.
 	initPlayerInNewWorld(world, playerX, playerY)
 	worldToBullets(world)
 	worldToEnemies(world)
-
 
 	-- Run the 'End Transition' animation
 	runTransitionEnd()
@@ -181,8 +162,11 @@ end
 
 -- TO DO: make a level selection system
 function gameScene_init()
-	local level_name = "Level_3"
-	local levelRect = ldtk_getRect(level_name)
+
+	local level_index = 1
+
+	local levelData = get_Level_Data(level_index)
+	local levelRect = ldtk_getRect(levelData.name)
 	x = levelRect.x
 	y = levelRect.y
 	width = levelRect.width
@@ -191,20 +175,21 @@ function gameScene_init()
 	offsetWidth = -width + 400
 	offsetHeight = -height + 240
 
-	gameScene_goToLevel(level_name)
+	gameScene_goToLevel(levelData, level_index)
 end
 
 
 function gameScene_NextLevel()
 	-- new level name
-	local newLevel = math.random(1, #level_list)
+	--local newLevel = math.random(1, #level_list)
+	local newLevel = math.random(1, flowerGame_puzzleCount())
 	if newLevel == currentLevel then 
 		newLevel = newLevel + 1 
 		if newLevel > #level_list then newLevel = 1 end
 	end
 
 	--TEST--
-	newLevel = 1
+	--newLevel = 1
 	--------
 
 	currentLevel = newLevel
@@ -216,8 +201,9 @@ function gameScene_NextLevel()
 	clearObjects()
 
 	-- new level setup
-	local level_name = level_list[newLevel]
-	local levelRect = ldtk_getRect(level_name)
+	--local level_name = level_list[newLevel]
+	local level_data = get_Level_Data(newLevel)
+	local levelRect = ldtk_getRect(level_data.name)
 	x = levelRect.x
 	y = levelRect.y
 	width = levelRect.width
@@ -226,7 +212,7 @@ function gameScene_NextLevel()
 	offsetWidth = -width + 400
 	offsetHeight = -height + 240
 
-	gameScene_goToLevel(level_name)
+	gameScene_goToLevel(level_data, newLevel)
 end
 
 -- +--------------------------------------------------------------+
