@@ -36,7 +36,6 @@ local NEW_IMAGE 			<const> = gfx.image.new
 local NEW_ROTATED_IMAGE 	<const> = gfx.image.rotatedImage
 local NEW_IMAGE_TABLE 		<const> = gfx.imagetable.new
 local GET_IMAGE 			<const> = gfx.imagetable.getImage
-local SET_MASK 				<const> = gfx.image.setMaskImage
 local DRAW_IMAGE_STATIC		<const> = gfx.image.drawIgnoringOffset
 local DRAW_IMAGE_SCALED		<const> = gfx.image.drawScaled
 local DRAW_IMAGE_FADED 		<const> = gfx.image.drawFaded
@@ -83,28 +82,27 @@ local B_BUTTON 				<const> = pd.kButtonB
 
 -- animation
 local IN_OUT_CUBIC 			<const> = pd.easingFunctions.inOutCubic
-local OUT_IN_BACK 				<const> = pd.easingFunctions.outInBack
-local OUT_IN_EXPO 				<const> = pd.easingFunctions.outInExpo
+local OUT_IN_BACK 			<const> = pd.easingFunctions.outInBack
+local OUT_IN_EXPO 			<const> = pd.easingFunctions.outInExpo
 local IN_QUAD				<const> = pd.easingFunctions.inQuad
 local MOVE_TOWARDS			<const> = moveTowards_global
 
--- temp
-local DRAW_RECT 			<const> = gfx.drawRect
-
+-- Selection Bubble
+local GET_WORDLIST_CENTER 				<const> = validWordList_GetWordListCenter
+local SETUP_BUBBLE_SELECTOR 			<const> = setupBubbleSelector
+local CLEAR_BUBBLE_SELECTOR 			<const> = clearBubbleSelector
+local UPDATE_BUBBLE_INDEX 				<const> = updateBubbleIndex
+local APPLY_SELECTION_BUMP_FORCE 		<const> = applySelectionBumpForce
+local DRAW_SELECTION_BUBBLE				<const> = drawSelectionBubble
 
 
 -- +--------------------------------------------------------------+
 -- |                            Render                            |
 -- +--------------------------------------------------------------+
 
-local imgTable_FlowerMiniGame_TitleCard = gfx.imagetable.new('Resources/Sheets/Menu_FlowerGame/flowerTitleCard_Wobble')
-
-local TITLECARD_FRAMES <const> = #imgTable_FlowerMiniGame_TitleCard
-
-
 -- Fonts
 local font_FlowerLetters 	= font_Roobert_24 
-local font_ValidWords 		= font_Roobert_20 
+--local font_ValidWords 		= font_Roobert_20 
 local font_InputText 		= font_Onyx_9 
 
 -- Input Icons, Input Text
@@ -145,10 +143,6 @@ local FLOWERTEXT_HEIGHT_HALF 	<const> = FLOWERTEXT_HEIGHT // 2
 -- |                     Variables and Arrays                     |
 -- +--------------------------------------------------------------+
 
-local TITLECARD_WOBBLE_TIMER_SET <const> = 150
-local titleCardWobbleTimer = 0
-local titleCardIndex = 1
-
 -- Letter Selector
 local selector_index = 1
 --local selector_x = 0
@@ -181,8 +175,8 @@ local PETAL_DISTANCE_FAR	<const> = 60
 local LETTER_DISTANCE_ADD	<const> = 6
 local PETAL_MAX_SCALE 		<const> = 1.4
 
-local PETAL_PROGRESS_SPEED_GROW 	<const> = 0.12
-local PETAL_PROGRESS_SPEED_SHRINK 	<const> = -0.04
+local PETAL_PROGRESS_SPEED_GROW 	<const> = 4 * dt
+local PETAL_PROGRESS_SPEED_SHRINK 	<const> = -1 * dt
 
 -- Selected Letters
 local activeLetters = 0
@@ -258,6 +252,22 @@ local ADD_VALID_WORD		 	<const> = addValidWord
 local DRAW_VALIDWORDLIST 		<const> = draw_ValidWordList
 
 
+-- White Out
+local CREATE_WHITE_OUT 			<const> = create_WhiteOut
+local CLEAR_WHITE_OUT 			<const> = clear_WhiteOut
+local DRAW_WHITE_OUT 			<const> = draw_whiteOut
+
+
+-- Selection Bubble
+local SELECTION_BUBBLE_PETAL_SIZE 		<const> = 40
+local SELECTION_BUBBLE_WORDLIST_WIDTH 	<const> = 80
+local SELECTION_BUBBLE_WORDLIST_HEIGHT 	<const> = 120
+local selection_center_x = {}
+local selection_center_y = {}
+local selection_center_width = {}
+local selection_center_height = {}
+
+
 
 -- +--------------------------------------------------------------+
 -- |                        Helper Functions                      |
@@ -287,9 +297,7 @@ end
 
 
 
--- +--------------------------------------------------------------+
--- |                      Init, Start, Clear                      |
--- +--------------------------------------------------------------+
+ 
 
 local function create_InputText()
 
@@ -378,7 +386,18 @@ local function create_FlowerLetters()
 		letterHalfWidth[i] = GET_TEXT_WIDTH(font, flowerLetters[i]) // 2 -- GET_SIZE won't get true letter width
 		letterHalfHeight[i] = GET_TEXT_HEIGHT(font) // 2
 		
+		-- petal centers that the selection bubble focuses on - set at max distance out to match when a petal is being focused on
+		selection_center_x[i] = ((PETAL_DISTANCE_FAR + LETTER_DISTANCE_ADD) * circleX) + flowerCenter_x
+		selection_center_y[i] = ((PETAL_DISTANCE_FAR + LETTER_DISTANCE_ADD) * circleY) + flowerCenter_y
+		selection_center_width[i] = SELECTION_BUBBLE_PETAL_SIZE
+		selection_center_height[i] = SELECTION_BUBBLE_PETAL_SIZE
 	end
+
+	-- add the center of the ValidWords list as a point for the selection bubble.
+	-- this will be hovered over when controls are toggled to scroll through the ValidWords list.
+	selection_center_x[numLetters+1], selection_center_y[numLetters+1] = GET_WORDLIST_CENTER()
+	selection_center_width[numLetters+1] = SELECTION_BUBBLE_WORDLIST_WIDTH
+	selection_center_height[numLetters+1] = SELECTION_BUBBLE_WORDLIST_HEIGHT
 end
 
 
@@ -425,13 +444,18 @@ function flowerMiniGame_StateStart()
 	CREATE_COMBO_SCORE()
 	CREATE_COUNTDOWN_TIMER()
 	CREATE_VALIDWORDLIST()
+	CREATE_WHITE_OUT()
+
+	if numLetters > 0 then
+		SETUP_BUBBLE_SELECTOR(selection_center_x, selection_center_y, selection_center_width, selection_center_height)
+	end
 
 	-- Run the 'End Transition' animation
 	runTransitionEnd()
 end
 
 
-local function flowerMiniGame_ClearState()
+function flowerMiniGame_ClearState()
 
 	-- Input Images
 	img_InputText = nil
@@ -459,6 +483,11 @@ local function flowerMiniGame_ClearState()
 	-- Valid Word List
 	CLEAR_VALIDWORDLIST()
 
+	-- Bubble Selector
+	CLEAR_BUBBLE_SELECTOR()
+
+	-- White Out
+	CLEAR_WHITE_OUT()
 
 	print("flower minigame state cleared")
 
@@ -480,6 +509,11 @@ end
 -- move and draw each petal, around the flower center, with highlight and selection animations.
 local function draw_FlowerLetters(crank, scrollWordList)
 
+	-- Gaurd
+	if numLetters < 1 then
+		return 0
+	end
+
 	local angle = 360 / numLetters
 	local halfAngle = angle // 2
 
@@ -489,6 +523,9 @@ local function draw_FlowerLetters(crank, scrollWordList)
 	elseif 	adjustedCrank < 0 then adjustedCrank += 360
 	end
 	local index = adjustedCrank // angle + 1
+
+
+	if scrollValidWords == false then UPDATE_BUBBLE_INDEX(index) end
 
 	for i = 1, numLetters do
 		local rad = rad(angle * i)
@@ -780,9 +817,17 @@ local function draw_SelectedLetters()
 end
 
 
+
 -- +--------------------------------------------------------------+
 -- |                            Update                            |
 -- +--------------------------------------------------------------+
+
+local WHITE_OUT_STATE_INACTIVE 			<const> = whiteOutStates.inactive
+local WHITE_OUT_STATE_WHITEOUT_ANIM 	<const> = whiteOutStates.whiteOutAnim
+local WHITE_OUT_STATE_NUMBER_ANIM 		<const> = whiteOutStates.numberAnim
+local WHITE_OUT_STATE_COMPLETE 			<const> = whiteOutStates.complete
+local whiteOutState = WHITE_OUT_STATE_INACTIVE
+
 
 function updateFlowerMinigame(time)
 
@@ -793,56 +838,70 @@ function updateFlowerMinigame(time)
 	-- move letter selector	
 	local crank = GET_CRANK_POSITION()
 	local crankChange = GET_CRANK_CHANGE()
+	local letterIndex = 0
 	--selector_x = cos(rad(crank-90)) * PETAL_DISTANCE_CLOSE + flowerCenter_x
 	--selector_y = sin(rad(crank-90)) * PETAL_DISTANCE_CLOSE + flowerCenter_y
 
 
 	--- DRAWING ---
 	---------------
-	-- Title Card Wobble
-	--if titleCardWobbleTimer < time then 
-	--	titleCardWobbleTimer = time + TITLECARD_WOBBLE_TIMER_SET
-	--	titleCardIndex = titleCardIndex % TITLECARD_FRAMES + 1
-	--end
+	if whiteOutState < WHITE_OUT_STATE_NUMBER_ANIM then
 
-	--local image = GET_IMAGE(imgTable_FlowerMiniGame_TitleCard, titleCardIndex)
-	--DRAW_IMAGE_STATIC(image, 0, 0)
+		-- Combo Score
+		DRAW_COMBO_SCORE(time)
 
-	-- Combo Score
-	DRAW_COMBO_SCORE(time)
+		-- Countdown Timer
+		DRAW_COUNTDOWN_TIMER(time)
 
-	-- Countdown Timer
-	DRAW_COUNTDOWN_TIMER(time)
+		-- Valid Word List
+		DRAW_VALIDWORDLIST(crankChange, scrollValidWords)
 
-	-- Valid Word List
-	DRAW_VALIDWORDLIST(crankChange, scrollValidWords)
+		-- Flower Letters
+		letterIndex = draw_FlowerLetters(crank, scrollValidWords)
 
-	-- Flower Letters
-	local letterIndex = draw_FlowerLetters(crank, scrollValidWords)
+		-- Selected Letters
+		draw_SelectedLetters()
 
-	-- Selected Letters
-	draw_SelectedLetters()
+		-- Selection Bubble
+		if numLetters > 0 then
+			DRAW_SELECTION_BUBBLE()
+		end
+
+		-- Instruction Text - Needs to be before drawing whiteOut so instructions can get covered by transition
+		if scrollValidWords then
+			DRAW_IMAGE_STATIC(img_InputText_Toggled, 0, INPUTTEXT_Y)
+		else
+			DRAW_IMAGE_STATIC(img_InputText, 0, INPUTTEXT_Y)
+		end
+	end
+
+
+	--- End of Timer Score ---
+	--------------------------
+	whiteOutState = DRAW_WHITE_OUT(time)
+	if 	whiteOutState == WHITE_OUT_STATE_NUMBER_ANIM then
+		return
+	elseif 	whiteOutState == WHITE_OUT_STATE_COMPLETE then
+		runTransitionStart( GAMESTATE.newWeaponMenu, TRANSITION_TYPE.growingCircles, newWeaponMenu_StateStart, flowerMiniGame_ClearState )
+		return
+	end
+	--------------------------
 
 
 	--- INTERACTION ---
 	-------------------
 	-- Scroll Word List --
 	if scrollValidWords then
-		DRAW_IMAGE_STATIC(img_InputText_Toggled, 0, INPUTTEXT_Y) -- draw instructions
-
-		-- toggle TO selecting flower letters
 		if BUTTON_PRESSED(B_BUTTON) then
-			scrollValidWords = not scrollValidWords
+			scrollValidWords = not scrollValidWords -- toggle TO selecting flower letters
 		end
 
 	-- Select Letters --
 	else
-		DRAW_IMAGE_STATIC(img_InputText, 0, INPUTTEXT_Y) -- draw instructions
-
 		if not performClearWord and not performWordSubmit then
 
 			-- select letter
-			if BUTTON_PRESSED(DOWN) then 
+			if BUTTON_PRESSED(DOWN) and letterIndex > 0 then 
 				activeLetters = min(activeLetters + 1, MAX_WORD_LENGTH)
 				selectedLetters[activeLetters] = letterIndex
 				selectedLetters_resetMoveProgress(true) 	-- fade in the last letter
@@ -875,6 +934,7 @@ function updateFlowerMinigame(time)
 		-- toggle TO scrolling word list
 		if BUTTON_PRESSED(B_BUTTON) then
 			scrollValidWords = not scrollValidWords
+			UPDATE_BUBBLE_INDEX(numLetters+1)
 		end
 
 		-- skip to 'New Weapon' menu

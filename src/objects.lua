@@ -8,9 +8,13 @@ local dt 		<const> = getDT()
 
 local GET_SIZE 		<const> = gfx.image.getSize
 local GET_IMAGE 	<const> = gfx.imagetable.getImage
+local FAST_DRAW 	<const> = gfx.image.draw
 
 local CREATE_ITEM 	<const> = createItem
 local CREATE_PETAL 	<const> = createPetal
+
+local DAMAGE_BOUNCE_PLAYER 	<const> = damageBouncePlayer
+local CREATE_ENEMY 			<const> = createEnemy
 
 
 
@@ -18,28 +22,72 @@ local CREATE_PETAL 	<const> = createPetal
 -- |                            Render                            |
 -- +--------------------------------------------------------------+
 
-local imgTable_PlayerSpawner	= gfx.imagetable.new('Resources/Sheets/Objects/playerSpawner')
-local imgTable_Teleporter 		= gfx.imagetable.new('Resources/Sheets/Objects/teleporter')
-local imgTable_Spikeball 		= gfx.imagetable.new('Resources/Sheets/Objects/spike')
-local imgTable_EnemySpawner 	= gfx.imagetable.new('Resources/Sheets/Objects/enemySpawner')
 
+local imgTable_PlayerSpawner	
+local imgTable_Teleporter 		
+local imgTable_Spikeball 		
+local imgTable_EnemySpawner 
 
-local IMAGETABLE_LIST = {
-	imgTable_PlayerSpawner,
-	imgTable_Teleporter,
-	imgTable_Spikeball,
-	imgTable_EnemySpawner
-}
+local IMAGETABLE_LIST
 
--- items should be square images, so checking only width is fine
 local IMAGE_SIZE = {}
 local IMAGE_SIZE_HALF = {}
-local BIGGEST_HALF_IMAGE_SIZE = 0
-for i = 1, #IMAGETABLE_LIST do
-	local width = GET_SIZE( GET_IMAGE(IMAGETABLE_LIST[i], 1) )
-	IMAGE_SIZE[i] = width
-	IMAGE_SIZE_HALF[i] = width * 0.5
-	BIGGEST_HALF_IMAGE_SIZE = BIGGEST_HALF_IMAGE_SIZE < IMAGE_SIZE_HALF[i] and IMAGE_SIZE_HALF[i] or BIGGEST_HALF_IMAGE_SIZE
+local BIGGEST_HALF_IMAGE_SIZE
+
+local SCREEN_MIN_X
+local SCREEN_MAX_X
+local SCREEN_MIN_Y
+local SCREEN_MAX_Y
+
+-- image animation details
+local PLAYERSPAWNER_ANIM_SPEED 			<const> = 60 
+local PLAYERSPAWNER_FRAME_COUNT
+
+local TELEPORTER_ANIM_SPEED 			<const> = 60
+local TELEPORTER_FRAME_COUNT
+		
+local SPIKEBALL_ANIM_SPEED 				<const> = 400
+local SPIKEBALL_FRAME_COUNT
+
+local ENEMYSPAWNER_ANIM_SPEED 			<const> = 400
+local ENEMYSPAWNER_FRAME_COUNT
+
+
+local function load_objectImages()
+
+	imgTable_PlayerSpawner	= gfx.imagetable.new('Resources/Sheets/Objects/playerSpawner')
+	imgTable_Teleporter 	= gfx.imagetable.new('Resources/Sheets/Objects/teleporter')
+	imgTable_Spikeball 		= gfx.imagetable.new('Resources/Sheets/Objects/spike')
+	imgTable_EnemySpawner 	= gfx.imagetable.new('Resources/Sheets/Objects/enemySpawner')
+
+	IMAGETABLE_LIST = {
+		imgTable_PlayerSpawner,
+		imgTable_Teleporter,
+		imgTable_Spikeball,
+		imgTable_EnemySpawner
+	}
+
+	-- image frame counts
+	PLAYERSPAWNER_FRAME_COUNT 	= #imgTable_PlayerSpawner
+	TELEPORTER_FRAME_COUNT 		= #imgTable_Teleporter
+	SPIKEBALL_FRAME_COUNT		= #imgTable_Spikeball
+	ENEMYSPAWNER_FRAME_COUNT 	= #imgTable_EnemySpawner
+
+	-- items should be square images, so checking only width is fine
+	IMAGE_SIZE = {}
+	IMAGE_SIZE_HALF = {}
+	BIGGEST_HALF_IMAGE_SIZE = 0
+	for i = 1, #IMAGETABLE_LIST do
+		local width = GET_SIZE( GET_IMAGE(IMAGETABLE_LIST[i], 1) )
+		IMAGE_SIZE[i] = width
+		IMAGE_SIZE_HALF[i] = width * 0.5
+		BIGGEST_HALF_IMAGE_SIZE = BIGGEST_HALF_IMAGE_SIZE < IMAGE_SIZE_HALF[i] and IMAGE_SIZE_HALF[i] or BIGGEST_HALF_IMAGE_SIZE
+	end
+
+	SCREEN_MIN_X = -BIGGEST_HALF_IMAGE_SIZE
+	SCREEN_MAX_X = 400 + BIGGEST_HALF_IMAGE_SIZE
+	SCREEN_MIN_Y = getBannerHeight() - BIGGEST_HALF_IMAGE_SIZE
+	SCREEN_MAX_Y = 240 + BIGGEST_HALF_IMAGE_SIZE
 end
 
 
@@ -178,22 +226,36 @@ local changeLevel = false
 -- |                    Init, Create, Delete                      |
 -- +--------------------------------------------------------------+
 
+function objects_initialize_data()
 
---- Init Arrays ---
-for i = 1, maxObjects do
-	objectType[i] = 0
-	posX[i] = 0
-	posY[i] = 0
-	distanceCheck[i] = 0
-	health[i] = 0
-	state[i] = 0
-	image[i] = 0
-	animTimer[i] = 0
-	animFrame[i] = 0
-	enemySpawnTimer[i] = 0
-	enemySpawnType[i] = 0
-	enemySpawnRate[i] = 0
-	collisionDetails[i] = 0
+	print("")
+	print(" -- Initializing Objects --")
+	local currentTask = 0
+	local totalTasks = 2
+
+	--- 1: Loading Images ---
+	currentTask += 1
+	coroutine.yield(currentTask, totalTasks, "Objects: Loading Images")
+	load_objectImages()
+	
+	--- 2: Init Arrays ---
+	currentTask += 1
+	coroutine.yield(currentTask, totalTasks, "Objects: Initializing Arrays")
+	for i = 1, maxObjects do
+		objectType[i] = 0
+		posX[i] = 0
+		posY[i] = 0
+		distanceCheck[i] = 0
+		health[i] = 0
+		state[i] = 0
+		image[i] = 0
+		animTimer[i] = 0
+		animFrame[i] = 0
+		enemySpawnTimer[i] = 0
+		enemySpawnType[i] = 0
+		enemySpawnRate[i] = 0
+		collisionDetails[i] = 0
+	end
 end
 
 
@@ -348,12 +410,13 @@ function objects_SetObjectDetailsInLevel(puzzle, entity_counts)
 		local j = random(i)
 		spawnerLetters[i], spawnerLetters[j] = spawnerLetters[j], spawnerLetters[i]
 	end
+	print("letter length: " .. letterListLength .. " - letters: " .. table.concat(spawnerLetters))
 
 	--- Enemy Spawners --- 
 	-- In most cases, there will be more spawner positions than the puzzleSettings actually set, so these extra IDs are 0.
 	local enemyCount = entity_counts["EnemySpawner"]
 	for i = 1, enemyCount do
-		if i > #puzzle.spawners then
+		if i > letterListLength then
 			spawnerList[i] = 0 
 		else
 			spawnerList[i] = puzzle.spawners[i]
@@ -370,24 +433,6 @@ end
 -- +--------------------------------------------------------------+
 -- |                       Object Actions                         |
 -- +--------------------------------------------------------------+
-
-local PLAYERSPAWNER_ANIM_SPEED 			<const> = 60 
-local PLAYERSPAWNER_FRAME_COUNT 		<const> = #imgTable_PlayerSpawner
-
-local TELEPORTER_ANIM_SPEED 			<const> = 60
-local TELEPORTER_FRAME_COUNT 			<const> = #imgTable_Teleporter
-		
-local SPIKEBALL_ANIM_SPEED 				<const> = 400
-local SPIKEBALL_FRAME_COUNT				<const> = #imgTable_Spikeball
-	
-local ENEMYSPAWNER_ANIM_SPEED 			<const> = 400
-local ENEMYSPAWNER_FRAME_COUNT 			<const> = #imgTable_EnemySpawner
-local ENEMYSPAWNER_SPAWN_RATE 			<const> = 400
-local ENEMYSPAWNER_SPAWN_RATE_RANDOM	<const> = 300
-
-local DAMAGE_BOUNCE_PLAYER 	<const> = damageBouncePlayer
-local CREATE_ENEMY 			<const> = createEnemy
-
 
 local PerformObjectActions = {
 
@@ -523,14 +568,6 @@ end
 -- |                            Update                            |
 -- +--------------------------------------------------------------+
 
-local SCREEN_MIN_X 			<const> = -BIGGEST_HALF_IMAGE_SIZE
-local SCREEN_MAX_X 			<const> = 400 + BIGGEST_HALF_IMAGE_SIZE
-local SCREEN_MIN_Y 			<const> = getBannerHeight() - BIGGEST_HALF_IMAGE_SIZE
-local SCREEN_MAX_Y 			<const> = 240 + BIGGEST_HALF_IMAGE_SIZE
-
-local FAST_DRAW <const> = gfx.image.draw
-
-
 function updateObjects(time, playerX, playerY, offsetX, offsetY)
 	
 	-- Loop over all items
@@ -587,7 +624,7 @@ function updateObjects(time, playerX, playerY, offsetX, offsetY)
 	-- change level check
 	if changeLevel then 
 		changeLevel = false
-		runTransitionStart( GAMESTATE.flowerMinigame, TRANSITION_TYPE.growingCircles, flowerMiniGame_StateStart )
+		runTransitionStart( GAMESTATE.flowerMinigame, TRANSITION_TYPE.growingCircles, flowerMiniGame_StateStart, gameScene_ClearState )
 	end
 end
 

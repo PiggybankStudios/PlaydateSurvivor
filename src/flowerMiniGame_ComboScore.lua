@@ -22,6 +22,7 @@ local SET_DRAW_MODE 		<const> = gfx.setImageDrawMode
 local DRAW_MODE_FILL_WHITE	<const> = gfx.kDrawModeFillWhite
 local DRAW_MODE_COPY 		<const> = gfx.kDrawModeCopy
 local SET_FONT				<const> = gfx.setFont
+local GET_TEXT_WIDTH		<const> = gfx.font.getTextWidth
 local DRAW_TEXT 			<const> = gfx.drawText
 
 local LOCK_FOCUS 			<const> = gfx.lockFocus
@@ -32,6 +33,8 @@ local OUT_SINE				<const> = pd.easingFunctions.outSine
 local IN_BACK 				<const> = pd.easingFunctions.inBack
 local MOVE_TOWARDS 			<const> = moveTowards_global
 
+-- globals
+local PLAYER_GET_MULTIPLIER_TOKENS 	<const> = player_GetPlayerMultiplierTokens
 
 
 -- +--------------------------------------------------------------+
@@ -113,9 +116,11 @@ local wordScore_x = 0
 local moneyText_x = 0
 local totalScore_x = 0
 
-local ENEMY_SCORE_DEFAULT_X		<const> = 6 
-local MULT_TEXT_DEFAULT_X 		<const> = 26
-local WORD_SCORE_DEFAULT_X 		<const> = 49
+local enemyScore_width = 0
+
+local ENEMY_SCORE_DEFAULT_X		<const> = 5 
+local MULT_TEXT_DEFAULT_X 		<const> = 10
+local WORD_SCORE_DEFAULT_X 		<const> = 32
 local MONEY_TEXT_DEFUALT_X 		<const> = 14
 local TOTAL_SCORE_DEFAULT_X 	<const> = 36
 
@@ -141,6 +146,19 @@ local FIRE_AMOUNT_MAX 			<const> = 4
 
 
 -- +--------------------------------------------------------------+
+-- |                        Helper Functions                      |
+-- +--------------------------------------------------------------+
+
+function getTotalScorePosition()
+	return TOTAL_SCORE_DEFAULT_X, LOWER_TEXT_Y
+end
+
+function getTotalScore()
+	return totalScore
+end
+
+
+-- +--------------------------------------------------------------+
 -- |                      Init, Start, Clear                      |
 -- +--------------------------------------------------------------+
 
@@ -151,9 +169,11 @@ function create_ComboScore()
 	img_fireCut = NEW_IMAGE(FIRE_WIDTH, FIRE_CUT_HEIGHT)
 	imgTable_fireNoise = NEW_IMAGE_TABLE(path_fireNoise)
 
-	enemyScore = 1
+	enemyScore = PLAYER_GET_MULTIPLIER_TOKENS()
 	wordScore = 0
 	totalScore = 0
+
+	enemyScoreWidth = GET_TEXT_WIDTH(font_smallText, enemyScore) + ENEMY_SCORE_DEFAULT_X
 
 	animProgress = 1
 	enemyScore_progress = 0
@@ -168,8 +188,8 @@ function create_ComboScore()
 	totalScore_newText = 0
 
 	enemyScore_x = ENEMY_SCORE_DEFAULT_X
-	multText_x = MULT_TEXT_DEFAULT_X
-	wordScore_x = WORD_SCORE_DEFAULT_X
+	multText_x = enemyScoreWidth + MULT_TEXT_DEFAULT_X
+	wordScore_x = enemyScoreWidth + WORD_SCORE_DEFAULT_X
 	moneyText_x = MONEY_TEXT_DEFUALT_X
 	totalScore_x = TOTAL_SCORE_DEFAULT_X
 
@@ -291,12 +311,12 @@ function draw_ComboScore(time)
 		-- mult 'x' anim
 		multText_progress = min( max( rescale(animProgress, 0.1, 0.6, 0, 1), 0), 1 )
 		decreaseAmp = 1 - multText_progress
-		multText_x = (sin(pi * multText_progress * UPPER_TEXT_FREQUENCY) * (UPPER_TEXT_AMPLITUDE * decreaseAmp)) + MULT_TEXT_DEFAULT_X
+		multText_x = (sin(pi * multText_progress * UPPER_TEXT_FREQUENCY) * (UPPER_TEXT_AMPLITUDE * decreaseAmp)) + MULT_TEXT_DEFAULT_X + enemyScoreWidth
 
 		-- word score anim
 		wordScore_progress = min( max( rescale(animProgress, 0.2, 0.7, 0, 1), 0 ), 1)
 		decreaseAmp = 1 - wordScore_progress
-		wordScore_x = (sin(pi * wordScore_progress * UPPER_TEXT_FREQUENCY) * (UPPER_TEXT_AMPLITUDE * decreaseAmp)) + WORD_SCORE_DEFAULT_X
+		wordScore_x = (sin(pi * wordScore_progress * UPPER_TEXT_FREQUENCY) * (UPPER_TEXT_AMPLITUDE * decreaseAmp)) + WORD_SCORE_DEFAULT_X + enemyScoreWidth
 		if wordScore_progress > 0 and wordScore_textChange == false then
 			wordScore = wordScore_newText
 			wordScore_textChange = true

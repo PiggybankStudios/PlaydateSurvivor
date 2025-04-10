@@ -49,7 +49,7 @@ local COLOR_WHITE 			<const> = gfx.kColorWhite
 local COLOR_BLACK 			<const> = gfx.kColorBlack
 
 -- animation
-local IN_QUAD			<const> = pd.easingFunctions.inQuad
+local IN_QUAD				<const> = pd.easingFunctions.inQuad
 local MOVE_TOWARDS			<const> = moveTowards_global
 
 -- temp
@@ -68,7 +68,7 @@ local VALID_WORD_HEIGHT_HALF	<const> = VALID_WORD_HEIGHT // 2
 local img_wordListAll = nil
 local img_wordListAllMask = nil 
 local path_wordListMask = 'Resources/Sprites/menu/FlowerGame/VerticalGradient_wide'
-local WORDLIST_WIDTH, WORDLIST_HEIGHT <const> = GET_SIZE_AT_PATH(path_wordListMask)
+local WORDLIST_WIDTH <const>, WORDLIST_HEIGHT <const> = GET_SIZE_AT_PATH(path_wordListMask)
 
 local img_wordList = setmetatable({}, {__mode = 'k'})
 
@@ -98,6 +98,13 @@ local VALID_WORD_MOVE_SPEED 	<const> = 4
 
 -- Need to make a new WORDLIST_HEIGHT that allows for 15 words to be drawn to the word list
 local WORDLIST_DRAW_HEIGHT 	<const> = WORDLIST_HEIGHT + VALID_WORD_HEIGHT * 3
+
+
+function validWordList_GetWordListCenter()
+	local list_x = WORD_LIST_X + (WORDLIST_WIDTH // 2)
+	local list_y = WORD_LIST_Y + (WORDLIST_HEIGHT // 2)
+	return list_x, list_y
+end
 
 
 -- +--------------------------------------------------------------+
@@ -157,11 +164,22 @@ end
 function flowerMiniGame_initialize_dictionary()
 
 	print("")
-	print(" -- Initializing dictionary --")
+	print(" -- Initializing Dictionary --")
 
 	local checkingList = dictionary
 
 	for i = 1, NUMBER_OF_TEXT_FILES do
+
+		-- Coroutine Start
+		local taskDescription = { 
+			"Initializing Dictionary: ", 
+			i, 
+			" / ",
+			NUMBER_OF_TEXT_FILES
+			}
+		-- yield(currentTaskCompleted, totalNumberOfTasks, loadDescription)
+		coroutine.yield(i, NUMBER_OF_TEXT_FILES, concat(taskDescription))
+
 		-- open this file and set the text
 		local file = pd.file.open( wordFilePaths[i] )
 		local text = file:read(DICTIONARY_FILE_SIZE)
@@ -175,23 +193,24 @@ function flowerMiniGame_initialize_dictionary()
 		-- after this file's text has been added to the dictionary, close this file.
 		file:close()
 
+		-- TO DO: delete this print statement at some point
 		-- print amount of time it took to finish this file's process.
 		local finishTime = GET_TIME()
 		local timeToComplete = finishTime - dictionary_LastTime
 		print("- " .. wordFilePaths[i] .. " :: added to dictionary -- time to complete: " .. timeToComplete)
-		dictionary_LastTime = finishTime
-
-		-- yield(currentTaskCompleted, totalNumberOfTasks, loadDescription)
-		coroutine.yield(i, NUMBER_OF_TEXT_FILES, "Initializing Dictionary")
+		dictionary_LastTime = finishTime	
 	end
 
 	print(" -- Dictionary Initialization Complete --")
 	print("")
+
+	-- Final print to loading bar to show end of loading
+	coroutine.yield(_, _, "Loading Complete")
 end
 
 
 -- Printing Dictionary is used for debugging only
-
+--[[
 local function print_tree(node, previousLettersList, depthFromRoot)
 
 	-- print this letter, it's depth from the root, and how many letters it's linked to.
@@ -248,7 +267,7 @@ function print_dictionary()
 		print_tree(node, {}, depthFromRoot)
 	end
 end
-
+]]
 
 
 
@@ -313,7 +332,7 @@ end
 
 -- Determines if the word is in dictionaries.
 local function confirmValidWord(letterList)
-	print("Checking word: " .. concat(letterList))
+	--print("Checking word: " .. concat(letterList))
 	local list = dictionary
 
 	-- loop through every letter in the passed letterList
@@ -324,13 +343,13 @@ local function confirmValidWord(letterList)
 		-- attempt to find a matching letter in the dictionary
 		for k = 1, #list do
 
-			print("::finding match for: " .. letter .. " - checking list letter: " .. list[k].letter ..
-					" -- test match: " .. tostring(letter == list[k].letter))
+			--print("::finding match for: " .. letter .. " - checking list letter: " .. list[k].letter ..
+			--		" -- test match: " .. tostring(letter == list[k].letter))
 
 			-- if there's a match...
 			if letter == list[k].letter then 
 
-				print(" - letter found: " .. letter)
+				--print(" - letter found: " .. letter)
 
 				-- and this IS the end of the letterList, then return if this is a valid word.
 				if i >= #letterList then
@@ -340,7 +359,7 @@ local function confirmValidWord(letterList)
 				-- else go to the next linked list if it exists, and exit this inner loop.
 				list = list[k].nextLetters
 				letterFound = true
-				print("~~ FOUND LETTER, but not end of word. Going to next list. ~~")
+				--print("~~ FOUND LETTER, but not end of word. Going to next list. ~~")
 				break
 
 			end

@@ -9,7 +9,7 @@
 
 	- Menu navigation is expected to be done outside of this file.
 
-	- This selector bubble is expected to its 'setup' and 'clear' functions called outside of this file.
+	- This selector bubble is expected to have its 'setup' and 'clear' functions called outside of this file.
 ]]
 
 
@@ -92,10 +92,10 @@ local ditherDot_Length = 0
 -- Selection Bubble
 local bubble_index = 1
 
-local bubble_target_x = {}
-local bubble_target_y = {}
-local bubble_target_w = {}
-local bubble_target_h = {}
+local bubble_target_x = setmetatable({}, {__mode = 'k'})
+local bubble_target_y = setmetatable({}, {__mode = 'k'})
+local bubble_target_w = setmetatable({}, {__mode = 'k'})
+local bubble_target_h = setmetatable({}, {__mode = 'k'})
 
 local bubble_x, bubble_y = 0, 0
 local bubble_rotation = 0
@@ -138,6 +138,23 @@ local ACTION_BAR_SUBTRACT_SPEED <const> = 4
 -- +--------------------------------------------------------------+
 
 
+local function setupTable(maybeTable, length)
+
+	-- if 'maybeTable' is actually a table, then just return the passed table.
+	if type(maybeTable) == 'table' then
+		return maybeTable
+
+	-- if it's NOT a table, then make a new table filled with the passed value at passed 'length' and return that.
+	else
+		local newList = {}
+		for i = 1, length do
+			newList[i] = maybeTable
+		end
+		return newList
+	end
+end
+
+
 -- Set up the the starting data in order to draw the bubble selector
 function setupBubbleSelector(	xList, yList, wList, hList,
 								bubble_image_height
@@ -146,8 +163,11 @@ function setupBubbleSelector(	xList, yList, wList, hList,
 	-- menu navigation and details
 	bubble_target_x = xList
 	bubble_target_y = yList
-	bubble_target_w = wList
-	bubble_target_h = hList
+	bubble_target_w = setupTable(wList, #xList)
+	bubble_target_h = setupTable(hList, #xList)
+
+	-- bubble_image_height can be changed if a menu is larger than the PlayDate's screen. 
+	-- It can be ignored if the menu stays within the screen space.
 	if not bubble_image_height then bubble_image_height = 240 end
 
 	-- image creation

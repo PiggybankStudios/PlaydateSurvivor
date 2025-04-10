@@ -63,7 +63,7 @@ local flowerGame_Puzzles = {
 -- +--------------------------------------------------------------+
 
 
-function get_Level_Data(value)
+function flowerGame_get_Level_Data(value)
 	return flowerGame_Puzzles[value]
 end
 

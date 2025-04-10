@@ -31,7 +31,7 @@ local screenWidth 		<const> = dsp.getWidth()
 local screenHeight 		<const> = dsp.getHeight()
 local halfScreenHeight 	<const> = screenHeight / 2
 local halfScreenWidth 	<const> = screenWidth / 2
-local halfBannerHeight 	<const> = getHalfUIBannerHeight()
+local halfBannerHeight 	<const> = getBannerHeight() // 2
 
 
 

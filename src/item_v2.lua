@@ -1,59 +1,97 @@
 local pd 	<const> = playdate
 local gfx 	<const> = pd.graphics
 
+-- math
 local random 	<const> = math.random
 local sqrt		<const> = math.sqrt
-
 local dt 		<const> = getDT()
 
-local GET_SIZE 	<const> = gfx.image.getSize
+-- drawing
+local GET_SIZE 		<const> = gfx.image.getSize
+local NEW_IMAGE 	<const> = gfx.image.new
+local DRAW_IMAGE 	<const> = gfx.image.draw
 
 
 -- +--------------------------------------------------------------+
 -- |                            Render                            |
 -- +--------------------------------------------------------------+
 
-local img_Health 	= gfx.image.new('Resources/Sprites/item/iHealth')
-local img_Weapon 	= gfx.image.new('Resources/Sprites/item/iWeapon')
-local img_Shield 	= gfx.image.new('Resources/Sprites/item/iShield')
-local img_AbsorbAll = gfx.image.new('Resources/Sprites/item/iAbsorbAll')
-local img_EXP_1 	= gfx.image.new('Resources/Sprites/item/iEXP1')
-local img_EXP_2 	= gfx.image.new('Resources/Sprites/item/iEXP2')
-local img_EXP_3 	= gfx.image.new('Resources/Sprites/item/iEXP3')
-local img_EXP_6 	= gfx.image.new('Resources/Sprites/item/iEXP6')
-local img_EXP_9 	= gfx.image.new('Resources/Sprites/item/iEXP9')
-local img_EXP_16 	= gfx.image.new('Resources/Sprites/item/iEXP16')
-local img_Luck		= gfx.image.new('Resources/Sprites/item/iLuck')
-local img_Mun2		= gfx.image.new('Resources/Sprites/item/iMun2')
-local img_Mun10 	= gfx.image.new('Resources/Sprites/item/iMun10')
-local img_Mun50 	= gfx.image.new('Resources/Sprites/item/iMun50')
-local img_Petal 	= gfx.image.new('Resources/Sprites/item/iPetal')
+local img_Health 		
+local img_Weapon 		
+local img_Shield 		
+local img_AbsorbAll 	
+local img_EXP_1 		
+local img_EXP_2 		
+local img_EXP_3 		
+local img_EXP_6 		
+local img_EXP_9 		
+local img_EXP_16 		
+local img_Luck			
+local img_Mun2			
+local img_Mun10 		
+local img_Mun50 		
+local img_Petal 		
+local img_MultiplierToken
 
-local IMAGE_LIST = {
-	img_Health,
-	img_Weapon,
-	img_Shield,
-	img_AbsorbAll,
-	img_EXP_1,
-	img_EXP_2,
-	img_EXP_3,
-	img_EXP_6,
-	img_EXP_9,
-	img_EXP_16,  
-	img_Luck,
-	img_Mun2,
-	img_Mun10,
-	img_Mun50,
-	img_Petal
-}
+local IMAGE_LIST
 
--- items should be square images, so checking only width is fine
 local IMAGE_SIZE_HALF = {}
-local BIGGEST_ITEM_SIZE = 0
-for i = 1, #IMAGE_LIST do
-	local width = GET_SIZE(IMAGE_LIST[i])
-	IMAGE_SIZE_HALF[i] = width * 0.5
-	BIGGEST_ITEM_SIZE = BIGGEST_ITEM_SIZE < width and width or BIGGEST_ITEM_SIZE
+local BIGGEST_ITEM_SIZE
+
+local SCREEN_MAX_X	<const> = 400
+local SCREEN_MAX_Y	<const> = 240
+local SCREEN_MIN_X 			= 0
+local SCREEN_MIN_Y			= 0
+
+
+local function load_item_v2_images()
+
+	img_Health 			= NEW_IMAGE('Resources/Sprites/item/iHealth')
+	img_Weapon 			= NEW_IMAGE('Resources/Sprites/item/iWeapon')
+	img_Shield 			= NEW_IMAGE('Resources/Sprites/item/iShield')
+	img_AbsorbAll 		= NEW_IMAGE('Resources/Sprites/item/iAbsorbAll')
+	img_EXP_1 			= NEW_IMAGE('Resources/Sprites/item/iEXP1')
+	img_EXP_2 			= NEW_IMAGE('Resources/Sprites/item/iEXP2')
+	img_EXP_3 			= NEW_IMAGE('Resources/Sprites/item/iEXP3')
+	img_EXP_6 			= NEW_IMAGE('Resources/Sprites/item/iEXP6')
+	img_EXP_9 			= NEW_IMAGE('Resources/Sprites/item/iEXP9')
+	img_EXP_16 			= NEW_IMAGE('Resources/Sprites/item/iEXP16')
+	img_Luck			= NEW_IMAGE('Resources/Sprites/item/iLuck')
+	img_Mun2			= NEW_IMAGE('Resources/Sprites/item/iMun2')
+	img_Mun10 			= NEW_IMAGE('Resources/Sprites/item/iMun10')
+	img_Mun50 			= NEW_IMAGE('Resources/Sprites/item/iMun50')
+	img_Petal 			= NEW_IMAGE('Resources/Sprites/item/iPetal')
+	img_MultiplierToken	= NEW_IMAGE('Resources/Sheets/ActionBanner/MultiplierToken')
+
+	IMAGE_LIST = {
+		img_Health,
+		img_Weapon,
+		img_Shield,
+		img_AbsorbAll,
+		img_EXP_1,
+		img_EXP_2,
+		img_EXP_3,
+		img_EXP_6,
+		img_EXP_9,
+		img_EXP_16,  
+		img_Luck,
+		img_Mun2,
+		img_Mun10,
+		img_Mun50,
+		img_Petal,
+		img_MultiplierToken
+	}
+
+	-- items should be square images, so checking only width is fine
+	BIGGEST_ITEM_SIZE = 0
+	for i = 1, #IMAGE_LIST do
+		local width = GET_SIZE(IMAGE_LIST[i])
+		IMAGE_SIZE_HALF[i] = width * 0.5
+		BIGGEST_ITEM_SIZE = BIGGEST_ITEM_SIZE < width and width or BIGGEST_ITEM_SIZE
+	end
+
+	SCREEN_MIN_X = -BIGGEST_ITEM_SIZE
+	SCREEN_MIN_Y = getBannerHeight() - BIGGEST_ITEM_SIZE
 end
 
 
@@ -66,6 +104,7 @@ local ITEM_MOVE_SPEED	 			<const> = 6
 local PLAYER_COLLISION_DISTANCE 	<const> = 20 * 20	-- distance from player (SQUARED) that is close enough to mimic a collision
 
 -- Variables
+local itemsCollected = 0
 local defaultDistanceCheck = getPlayerMagnetStat()
 local absorbAllFlag = false
 
@@ -93,15 +132,29 @@ local collectedLetters = 0
 -- |                    Init, Create, Delete                      |
 -- +--------------------------------------------------------------+
 
+function item_v2_initialize_data()
 
---- Init Arrays ---
-for i = 1, maxItems do
-	itemType[i] = 0
-	posX[i] = 0
-	posY[i] = 0
-	rotation[i] = 0
-	distanceCheck[i] = 0
-	lifeTime[i] = 0
+	print("")
+	print(" -- Initializing Items --")
+	local currentTask = 0
+	local totalTasks = 2
+
+	--- 1: Loading Images ---
+	currentTask += 1
+	coroutine.yield(currentTask, totalTasks, "Items: Loading Images")
+	load_item_v2_images()
+
+	--- 2: Init Arrays ---
+	currentTask += 1
+	coroutine.yield(currentTask, totalTasks, "Items: Initializing Arrays")
+	for i = 1, maxItems do
+		itemType[i] = 0
+		posX[i] = 0
+		posY[i] = 0
+		rotation[i] = 0
+		distanceCheck[i] = 0
+		lifeTime[i] = 0
+	end
 end
 
 
@@ -193,6 +246,11 @@ function getPauseTime_Items(pauseTime)
 end
 
 
+function items_GetItemsCollectedInFinishedArea()
+	return itemsCollected
+end
+
+
 -- +--------------------------------------------------------------+
 -- |                           Effects                            |
 -- +--------------------------------------------------------------+
@@ -207,17 +265,19 @@ end
 -- GLOBAL clear all items
 function clearItems()
 	activeItems = 0
+	itemsCollected = 0
 end
 
 
 
-local HEAL_PLAYER 			<const> = healPlayer
-local NEW_WEAPON_GRABBED 	<const> = newWeaponGrabbed
-local SHIELD_PLAYER 		<const> = shieldPlayer
-local ADD_EXP 				<const> = addPlayerEXP
-local ADD_PLAYER_LUCK 		<const> = addPlayerLuck
-local ADD_MUN 				<const> = addMun
-local COLLECT_LETTER 		<const> = flowerGame_CollectNewLetter
+local HEAL_PLAYER 				<const> = healPlayer
+local NEW_WEAPON_GRABBED 		<const> = newWeaponGrabbed
+local SHIELD_PLAYER 			<const> = shieldPlayer
+local ADD_EXP 					<const> = addPlayerEXP
+local ADD_PLAYER_LUCK 			<const> = addPlayerLuck
+local ADD_MUN 					<const> = addMun
+local COLLECT_LETTER 			<const> = flowerGame_CollectNewLetter
+local COLLECT_MULTIPLIER_TOKEN 	<const> = player_CollectNewMultiplierToken
 
 
 -- Returning a value indicates how many items were collected when this item is picked up. 
@@ -232,69 +292,62 @@ local activateItemEffect = {
 	-- Shield
 	function(time) SHIELD_PLAYER(time + 10000) return 1 end,
 
-	--AbsorbAll
+	-- AbsorbAll
 	function() absorbAllFlag = true return 1 end,
 
-	--Exp1
+	-- Exp1
 	function() ADD_EXP(1) 			return 0 end,
 
-	--Exp2
+	-- Exp2
 	function() ADD_EXP(2) 			return 0 end,
 
-	--Exp3
+	-- Exp3
 	function() ADD_EXP(3) 			return 0 end,
 
-	--Exp6
+	-- Exp6
 	function() ADD_EXP(6) 			return 0 end,
 
-	--Exp9
+	-- Exp9
 	function() ADD_EXP(9) 			return 0 end,
 
-	--Exp16
+	-- Exp16
 	function() ADD_EXP(16) 			return 0 end,
 
-	--Luck
+	-- Luck
 	function() ADD_PLAYER_LUCK() 	return 1 end,
 
-	--Mun2
+	-- Mun2
 	function() ADD_MUN(2) 			return 0 end,
 
-	--Mun10
+	-- Mun10
 	function() ADD_MUN(5) 			return 0 end,
 
-	--Mun50
+	-- Mun50
 	function() ADD_MUN(20) 			return 0 end,
 
-	--Petal
-	function() 
+	-- Petal
+	function(time, i) 
 		collectedLetters += 1
-		print("this petal letter: " .. droppedLetterList[collectedLetters])
-		--COLLECT_LETTER(droppedLetterList[collectedLetters]) 	
-		flowerGame_CollectNewLetter(droppedLetterList[collectedLetters]) 	
+		local newLetter = droppedLetterList[collectedLetters]
+		flowerGame_CollectNewLetter(newLetter) 
+		banner_CollectNewPetal(time, newLetter, posX[i], posY[i])	
 		return 1 
-	end
+	end,
+
+	-- Multiplier Token
+	function(time) COLLECT_MULTIPLIER_TOKEN(time) return 1 end
 }
 
 
 
+
 -- +--------------------------------------------------------------+
--- |                          Management                          |
+-- |                            Update                            |
 -- +--------------------------------------------------------------+
-
-
-local SCREEN_MIN_X 			<const> = -BIGGEST_ITEM_SIZE
-local SCREEN_MAX_X 			<const> = 400
-local SCREEN_MIN_Y 			<const> = getBannerHeight() - BIGGEST_ITEM_SIZE
-local SCREEN_MAX_Y 			<const> = 240
-
-local FAST_DRAW <const> = gfx.image.draw
 
 -- update function for moving items and removing from item lists
-local function updateItemLists(time, playerX, playerY, offsetX, offsetY)
+function updateItems(time, playerX, playerY, offsetX, offsetY)
 	
-	-- Items Collected Count
-	local itemsCollected = 0
-
 	-- No matter which item set the ABSORB_ALL flag, make sure all existing items are affected
 	local removeDistanceCheck = false
 	if absorbAllFlag then
@@ -339,13 +392,13 @@ local function updateItemLists(time, playerX, playerY, offsetX, offsetY)
 				SCREEN_MIN_Y < drawY and drawY < SCREEN_MAX_Y then
 
 				local halfSize = IMAGE_SIZE_HALF[type]
-				FAST_DRAW(IMAGE_LIST[type], itemX - halfSize, itemY - halfSize) 
+				DRAW_IMAGE(IMAGE_LIST[type], itemX - halfSize, itemY - halfSize) 
 			end
 			i = i + 1
 
 		-- Delete
 		else 
-			itemsCollected = itemsCollected + activateItemEffect[type](time)
+			itemsCollected = itemsCollected + activateItemEffect[type](time, i)
 			deleteItem(i, currentActiveItems)
 			currentActiveItems = currentActiveItems - 1
 		end 
@@ -355,9 +408,6 @@ local function updateItemLists(time, playerX, playerY, offsetX, offsetY)
 	-- After all items are changed for absorb distance, reset this flag
 	removeDistanceCheck = false
 	activeItems = currentActiveItems
-
-	-- Return the items collected this frame
-	return itemsCollected
 end
 
 
@@ -375,22 +425,10 @@ function redrawItems(offsetX, offsetY)
 
 			local type = itemType[i]
 			local halfSize = IMAGE_SIZE_HALF[type]
-			FAST_DRAW(IMAGE_LIST[type], x - halfSize, y - halfSize) 
+			DRAW_IMAGE(IMAGE_LIST[type], x - halfSize, y - halfSize) 
 		end
 
 	end
 end
 
 
-
--- +--------------------------------------------------------------+
--- |                            Update                            |
--- +--------------------------------------------------------------+
-
-
-function updateItems(time, playerX, playerY, offsetX, offsetY)
-	
-	-- Returns the items collected this tick, after updating all items
-	return updateItemLists(time, playerX, playerY, offsetX, offsetY)
-	
-end

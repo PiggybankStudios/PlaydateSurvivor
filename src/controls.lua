@@ -172,10 +172,12 @@ end
 ------DEBUG------
 -----------------
 
+--[[
 function pd.BButtonDown()
 	--spawnTwoEnemies()
 	--debugSpawnMassEnemy()
 end
+]]
 
 -----------------
 -----------------

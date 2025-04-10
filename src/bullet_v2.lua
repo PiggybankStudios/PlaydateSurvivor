@@ -14,7 +14,12 @@
 local pd 		<const> = playdate
 local gfx 		<const> = pd.graphics
 
+-- loops
 local NEXT 		<const> = next
+
+-- math
+local dt 		<const> = getDT()
+local M_PI_180 	<const> = 0.017453
 local ceil 		<const> = math.ceil
 local abs 		<const> = math.abs
 local max 		<const> = math.max
@@ -24,12 +29,12 @@ local cos 		<const> = math.cos
 local sqrt		<const> = math.sqrt
 local random 	<const> = math.random
 
-local GET_IMAGE	<const> = gfx.imagetable.getImage
-local GET_SIZE 	<const> = gfx.image.getSize
+-- drawing
+local NEW_IMAGE_TABLE 	<const> = gfx.imagetable.new
+local GET_IMAGE			<const> = gfx.imagetable.getImage
+local GET_SIZE 			<const> = gfx.image.getSize
+local DRAW_IMAGE 		<const> = gfx.image.draw
 
--- Globals
-local dt 		<const> = getDT()
-local M_PI_180 	<const> = 0.017453
 
 -- World Reference
 local worldRef
@@ -41,6 +46,8 @@ local playerAttackRate = getPlayerAttackRate()
 local playerGunDamage = getPlayerGunDamage()
 
 local newShotsFired = 0
+
+
 
 -- +--------------------------------------------------------------+
 -- |                         Bullet Data                          |
@@ -131,6 +138,8 @@ local BULLET_SPEEDS = {
 	2  -- grenadePellet
 }
 
+
+-- WILL need to change playerGunDamage into a function call so it can actually get updated here
 local BULLET_DAMAGE = {
 	function() 		return playerGunDamage + 1 				end, 	-- peagun
 	function(tier) 	return playerGunDamage * (1 + tier) + 3 end, 	-- cannon
@@ -183,94 +192,132 @@ local BULLET_PEIRCING = {
 }
 
 
+
 -- +--------------------------------------------------------------+
 -- |                          Rendering                           |
 -- +--------------------------------------------------------------+
 
--- TO DO: try to automate largest size
 -- Biggest bullet size from all image tables.
+	-- Must be updated manually to keep these variables constant.
 	-- Only need 1 number since they're all squares.
-	-- Update this number is a bigger bullet is made.
+	-- Update this number if a bigger bullet is made.
 	-- CURRENT BIGGEST = Ranggun, Large Size = 27
-local BIGGEST_BULLET_SIZE <const> = 27
-
--- Screen size constants for destroying bullets
-local SCREEN_MIN_X 	<const> = -BIGGEST_BULLET_SIZE
-local SCREEN_MAX_X 	<const> = 400 + BIGGEST_BULLET_SIZE
-local SCREEN_MIN_Y 	<const> = (getBannerHeight() * 0.5) - BIGGEST_BULLET_SIZE
-local SCREEN_MAX_Y 	<const> = 240 + BIGGEST_BULLET_SIZE
-
--- There are 8 images in each bullet image table.
-local imgTable_bulletPeagun = gfx.imagetable.new('Resources/Sheets/BulletPeagun')
-local imgTable_bulletCannon = gfx.imagetable.new('Resources/Sheets/BulletCannon')
-local imgTable_bulletMinigun = gfx.imagetable.new('Resources/Sheets/BulletMinigun')
-local imgTable_bulletShotgun = gfx.imagetable.new('Resources/Sheets/BulletShotgun')
-local imgTable_bulletBurstgun = gfx.imagetable.new('Resources/Sheets/BulletBurst')
-local imgTable_bulletGrenade = gfx.imagetable.new('Resources/Sheets/BulletGrenade')
-local imgTable_bulletRanggun = gfx.imagetable.new('Resources/Sheets/BulletRanggun')
---local imgTable_bulletWavegun = 
-local imtTable_bulletGrenadePellet = gfx.imagetable.new('Resources/Sheets/BulletGrenadePellet')
-
--- Default Bullet Image Tables
-local IMAGETABLE_LIST = {
-	imgTable_bulletPeagun,
-	imgTable_bulletCannon,
-	imgTable_bulletMinigun,
-	imgTable_bulletShotgun,
-	imgTable_bulletBurstgun,
-	imgTable_bulletGrenade,
-	imgTable_bulletRanggun,
-	imgTable_bulletPeagun, -- This shouldn't ever be referenced, but filling the table space for ease of mind
-	imtTable_bulletGrenadePellet
-}
-
--- Cannon tier 2 and 3 sizes
-local imgTable_bulletCannon_s2 = gfx.imagetable.new('Resources/Sheets/BulletCannonMedium')
-local imgTable_bulletCannon_s3 = gfx.imagetable.new('Resources/Sheets/BulletCannonLarge')
-local CANNON_TABLES_LIST = {
-	imgTable_bulletCannon_s2,
-	imgTable_bulletCannon_s3
-}
-
--- Ranggun tier 2 and 3 sizes
-local imgTable_bulletRangGun_s2 = gfx.imagetable.new('Resources/Sheets/BulletRanggunMedium')
-local imgTable_bulletRangGun_s3 = gfx.imagetable.new('Resources/Sheets/BulletRanggunLarge')
-local RANGGUN_TABLES_LIST = {
-	imgTable_bulletRanggun,
-	imgTable_bulletRangGun_s2,
-	imgTable_bulletRangGun_s3
-}
-
----------------------
 
 
---- Bullet Image Sizes ---
 
--- All images in the image table should be the same size, so get the width/height of the first image in the given image table.
-	-- Only get width; height will be the same.
-	-- Only need the halfsizes.
+-- Bullet image variables
+local imgTable_bulletPeagun 		
+local imgTable_bulletCannon 		
+local imgTable_bulletMinigun 		
+local imgTable_bulletShotgun 		
+local imgTable_bulletBurstgun 		
+local imgTable_bulletGrenade 		
+local imgTable_bulletRanggun 		
+--local imgTable_bulletWavegun
+local imtTable_bulletGrenadePellet
+local IMAGETABLE_LIST
+
+-- Cannon image variables
+local imgTable_bulletCannon_s2
+local imgTable_bulletCannon_s3
+local CANNON_TABLES_LIST
+
+-- Rang image variables
+local imgTable_bulletRangGun_s2
+local imgTable_bulletRangGun_s3
+local RANGGUN_TABLES_LIST
+
+-- Image sizes
 local DEFAULT_IMAGE_HALFSIZE = {}
-for i = 1, #IMAGETABLE_LIST do
-	local image = GET_IMAGE(IMAGETABLE_LIST[i], 1)
-	local fullWidth = GET_SIZE(image)
-	DEFAULT_IMAGE_HALFSIZE[i] = fullWidth * 0.5
-end
-
--- Cannon
 local CANNON_IMAGE_HALFSIZE = {}
-for i = 1, #CANNON_TABLES_LIST do
-	local image = GET_IMAGE(CANNON_TABLES_LIST[i], 1)
-	local fullWidth = GET_SIZE(image)
-	CANNON_IMAGE_HALFSIZE[i] = ceil(fullWidth * 0.5)
+local RANGGUN_IMAGE_HALFSIZE = {}
+
+-- Screen size for destroying bullets
+local SCREEN_MIN_X
+local SCREEN_MAX_X
+local SCREEN_MIN_Y
+local SCREEN_MAX_Y
+
+
+local function load_bulletImages()
+
+	--- Images ---
+	-- There are 8 images in each bullet image table.
+	imgTable_bulletPeagun 			= NEW_IMAGE_TABLE('Resources/Sheets/BulletPeagun')
+	imgTable_bulletCannon 			= NEW_IMAGE_TABLE('Resources/Sheets/BulletCannon')
+	imgTable_bulletMinigun 			= NEW_IMAGE_TABLE('Resources/Sheets/BulletMinigun')
+	imgTable_bulletShotgun 			= NEW_IMAGE_TABLE('Resources/Sheets/BulletShotgun')
+	imgTable_bulletBurstgun 		= NEW_IMAGE_TABLE('Resources/Sheets/BulletBurst')
+	imgTable_bulletGrenade 			= NEW_IMAGE_TABLE('Resources/Sheets/BulletGrenade')
+	imgTable_bulletRanggun 			= NEW_IMAGE_TABLE('Resources/Sheets/BulletRanggun')
+	--imgTable_bulletWavegun 		= 
+	imtTable_bulletGrenadePellet 	= NEW_IMAGE_TABLE('Resources/Sheets/BulletGrenadePellet')
+
+	-- Default Bullet Image Tables
+	IMAGETABLE_LIST = {
+		imgTable_bulletPeagun,
+		imgTable_bulletCannon,
+		imgTable_bulletMinigun,
+		imgTable_bulletShotgun,
+		imgTable_bulletBurstgun,
+		imgTable_bulletGrenade,
+		imgTable_bulletRanggun,
+		imgTable_bulletPeagun, -- This shouldn't ever be referenced, but filling the table space for ease of mind
+		imtTable_bulletGrenadePellet
+	}
+
+	-- Cannon tier 2 and 3 sizes
+	imgTable_bulletCannon_s2 = NEW_IMAGE_TABLE('Resources/Sheets/BulletCannonMedium')
+	imgTable_bulletCannon_s3 = NEW_IMAGE_TABLE('Resources/Sheets/BulletCannonLarge')
+	CANNON_TABLES_LIST = {
+		imgTable_bulletCannon_s2,
+		imgTable_bulletCannon_s3
+	}
+
+	-- Ranggun tier 2 and 3 sizes
+	imgTable_bulletRangGun_s2 = NEW_IMAGE_TABLE('Resources/Sheets/BulletRanggunMedium')
+	imgTable_bulletRangGun_s3 = NEW_IMAGE_TABLE('Resources/Sheets/BulletRanggunLarge')
+	RANGGUN_TABLES_LIST = {
+		imgTable_bulletRanggun,
+		imgTable_bulletRangGun_s2,
+		imgTable_bulletRangGun_s3
+	}
+
+	--- Bullet Image Sizes ---
+	-- All images in the image table should be the same size, so get the width/height of the first image in the given image table.
+	-- Only get width; height will be the same; Only need the halfsizes.
+	local biggestBulletSize = 0
+
+	-- Basic Bullets
+	for i = 1, #IMAGETABLE_LIST do
+		local image = GET_IMAGE(IMAGETABLE_LIST[i], 1)
+		local fullWidth = GET_SIZE(image)
+		DEFAULT_IMAGE_HALFSIZE[i] = fullWidth * 0.5
+		if biggestBulletSize < fullWidth then biggestBulletSize = fullWidth end
+	end
+
+	-- Cannon
+	for i = 1, #CANNON_TABLES_LIST do
+		local image = GET_IMAGE(CANNON_TABLES_LIST[i], 1)
+		local fullWidth = GET_SIZE(image)
+		CANNON_IMAGE_HALFSIZE[i] = ceil(fullWidth * 0.5)
+		if biggestBulletSize < fullWidth then biggestBulletSize = fullWidth end
+	end
+
+	-- Ranggun
+	for i = 1, #RANGGUN_TABLES_LIST do
+		local image = GET_IMAGE(RANGGUN_TABLES_LIST[i], 1)
+		local fullWidth = GET_SIZE(image)
+		RANGGUN_IMAGE_HALFSIZE[i] = ceil(fullWidth * 0.5)
+		if biggestBulletSize < fullWidth then biggestBulletSize = fullWidth end
+	end
+
+	SCREEN_MIN_X = -biggestBulletSize
+	SCREEN_MAX_X = 400 + biggestBulletSize
+	SCREEN_MIN_Y = (getBannerHeight() * 0.5) - biggestBulletSize
+	SCREEN_MAX_Y = 240 + biggestBulletSize
 end
 
--- Ranggun
-local RANGGUN_IMAGE_HALFSIZE = {}
-for i = 1, #RANGGUN_TABLES_LIST do
-	local image = GET_IMAGE(RANGGUN_TABLES_LIST[i], 1)
-	local fullWidth = GET_SIZE(image)
-	RANGGUN_IMAGE_HALFSIZE[i] = ceil(fullWidth * 0.5)
-end
 
 -- +--------------------------------------------------------------+
 -- |                         Bullet Lists                         |
@@ -307,6 +354,7 @@ local grenadeY = {}
 local grenadeTier = {}
 local grenadeCount = 0
 
+
 -- Gun Slots
 local theShotTimes = {0, 0, 0, 0} --how long until next shot
 local theGunSlots = {BULLET_TYPE.minigun, BULLET_TYPE.shotgun, BULLET_TYPE.shotgun, BULLET_TYPE.shotgun} --what gun in each slot
@@ -319,9 +367,21 @@ local theGunTier = {3, 3, 3, 3} -- what tier the gun is at
 -- |                Init, Create, Delete, Handle                  |
 -- +--------------------------------------------------------------+
 
-function initialize_bullets()
+function bullet_v2_initialize_data()
 
-	--- Init Arrays ---
+	print("")
+	print(" -- Initializing Bullets --")
+	local currentTask = 0
+	local totalTasks = 2
+
+	--- 1: Loading Images ---
+	currentTask += 1
+	coroutine.yield(currentTask, totalTasks, "Bullets: Loading Images")
+	load_bulletImages()
+
+	--- 2: Init Arrays ---
+	currentTask += 1
+	coroutine.yield(currentTask, totalTasks, "Bullets: Initializing Arrays")
 	for i = 1, maxBullets do
 		bulletType[i] = 0
 		posX[i] = 0
@@ -348,9 +408,6 @@ function initialize_bullets()
 		grenadeY[i] = 0
 		grenadeTier[i] = 0
 	end
-	-- yield(currentTaskCompleted, totalNumberOfTasks, loadDescription)
-	coroutine.yield()
-
 end
 
 
@@ -652,6 +709,13 @@ function getPauseTime_Bullets(pauseTime)
 end
 
 
+function bullets_GetShotsFiredInFinishedArea()
+	local shots = newShotsFired
+	newShotsFired = 0 	-- reset the shots counter when this is called - it's the end of the area 
+	return shots
+end
+
+
 -- +--------------------------------------------------------------+
 -- |                          Movement                            |
 -- +--------------------------------------------------------------+
@@ -930,10 +994,14 @@ local function collideMove(i, type, halfSize, bTier, offsetX, offsetY, playerX, 
 end
 
 
-local FAST_DRAW <const> = gfx.image.draw
+-- +--------------------------------------------------------------+
+-- |                            Update                            |
+-- +--------------------------------------------------------------+
 
 -- Move, Collide, Draw and Delete all bullets
-local function updateBulletLists(time, playerX, playerY, screenOffsetX, screenOffsetY)
+function updateBullets(time, crank, playerX, playerY, screenOffsetX, screenOffsetY)
+
+	handleCreatingBullets(time, playerX, playerY, crank)
 
 	-- LOOP
 	local i = 1
@@ -948,7 +1016,7 @@ local function updateBulletLists(time, playerX, playerY, screenOffsetX, screenOf
 
 		-- draw
 		if time < lifeTime[i] then		
-			FAST_DRAW(rotatedImage[i], x - halfSize, y - halfSize)
+			DRAW_IMAGE(rotatedImage[i], x - halfSize, y - halfSize)
 			i = i + 1
 		
 		-- delete - do NOT need to increment loop here
@@ -982,27 +1050,8 @@ function redrawBullets()
 	for i = 1, currentActiveBullets do	
 
 		local halfSize = imageHalfSize[i]
-		FAST_DRAW(rotatedImage[i], posX[i] - halfSize, posY[i] - halfSize)
+		DRAW_IMAGE(rotatedImage[i], posX[i] - halfSize, posY[i] - halfSize)
 
 	end
 end
 
-
--- +--------------------------------------------------------------+
--- |                            Update                            |
--- +--------------------------------------------------------------+
-
-
-function updateBullets(time, crank, playerX, playerY, screenOffsetX, screenOffsetY)
-
-	-- Variable setup for this tick
-	newShotsFired = 0
-
-
-	handleCreatingBullets(time, playerX, playerY, crank)
-	updateBulletLists(time, playerX, playerY, screenOffsetX, screenOffsetY)
-
-	
-	-- Shot bullet tracking for player
-	return newShotsFired
-end

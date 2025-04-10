@@ -1,3 +1,4 @@
+--[[
 local gfx <const> = playdate.graphics
 
 local screenWidth <const> = playdate.display.getWidth()
@@ -115,3 +116,4 @@ end
 function setWaveOver(value)
 	waveOver = value
 end
+]]

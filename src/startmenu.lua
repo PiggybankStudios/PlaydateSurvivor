@@ -368,8 +368,7 @@ end
 
 
 -- Removes start screen data from memory - set everything to 0 and call the garbageCollector.
--- Local - only called from this file to clear data
-local function startMenu_ClearState()
+function startMenu_ClearState()
 
 	-- background images
 	img_TitleCard_Background = nil

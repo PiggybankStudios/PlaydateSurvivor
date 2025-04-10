@@ -186,12 +186,20 @@ end
 -- |                           Pausing                            |
 -- +--------------------------------------------------------------+
 
-
+local previousGameState
 
 local GET_EQUIPPED_GUN_DATA <const> = getEquippedGunData
 local GET_PLAYER_STATS 		<const> = getPlayerStats
 
+
+-- TO DO:
+	-- Don't show gun info part when pausing on splash screen or main menu.
+	-- Also try to hide any irrelevant custom menu buttons if possible if pausing on menu pages.
 function pd.gameWillPause()
+
+	-- Save the gameState we are pausing from
+	previousGameState = getGameState()
+	gameState_SaveTimeAtPause()
 
 	-- Create the menu image
 	LOCK_FOCUS(pauseImage)
@@ -256,16 +264,34 @@ end
 -- |                         Menu Buttons                         |
 -- +--------------------------------------------------------------+
 
+local clearFunction = {
+	gameScene_ClearState,			-- maingame 		
+	_,								-- pauseMenu 		
+	flowerMiniGame_ClearState,		-- flowerMinigame	
+	_,								-- newWeaponMenu 	
+	_,								-- playerUpgradeMenu
+	_,								-- levelModifierMenu
+	_,								-- deathscreen 	
+	startMenu_ClearState,			-- startscreen 	
+	mainMenu_ClearState,			-- mainmenu 		
+	_								-- loadGame 		
+}
+
 
 local function menu_MainMenu()
 	gameState_CancelCountdownTimer() -- if coming from the main game, then don't run the countdown timer for this transition.
-	runTransitionStart( GAMESTATE.mainmenu, TRANSITION_TYPE.growingCircles, mainMenu_StateStart, _, true )
+	local clearState = clearFunction[ previousGameState ]
+	runTransitionStart( GAMESTATE.mainmenu, TRANSITION_TYPE.growingCircles, mainMenu_StateStart, clearState, true )
 end
+
 
 local function menu_ExitLevel()
 	print("exited from level")
 end
 
+
+-------------------------------
+--- Playdate's Menu Buttons ---
 local menu = pd.getSystemMenu()
 
 local mainMenu = menu:addMenuItem("main menu", menu_MainMenu)

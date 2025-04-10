@@ -1,9 +1,8 @@
 local pd <const> = playdate
 local gfx <const> = pd.graphics
 
-local SCREEN_HALF_WIDTH 	<const> = pd.display.getWidth() / 2
-local SCREEN_HALF_HEIGHT 	<const> = pd.display.getHeight() / 2
-
+-- math
+local dt 		<const> = getDT()
 local ceil 		<const> = math.ceil
 local min 		<const> = math.min
 local max 		<const> = math.max
@@ -11,22 +10,31 @@ local sqrt 		<const> = math.sqrt
 local atan2 	<const> = math.atan2
 local random 	<const> = math.random
 
-local GET_IMAGE <const> = gfx.imagetable.getImage
-local GET_SIZE 	<const> = gfx.image.getSize
+-- tables
+local NEXT 					<const> = next
 
-local CREATE_ITEM <const> = createItem
+-- drawing
+local NEW_IMAGE 			<const> = gfx.image.new
+local NEW_IMAGE_TABLE 		<const> = gfx.imagetable.new
+local GET_IMAGE 			<const> = gfx.imagetable.getImage
+local GET_SIZE 				<const> = gfx.image.getSize
+local DRAW_IMAGE 			<const> = gfx.image.draw
 
+local SCREEN_HALF_WIDTH 	<const> = pd.display.getWidth() / 2
+local SCREEN_HALF_HEIGHT 	<const> = pd.display.getHeight() / 2
+
+-- globals
+local CREATE_ITEM 			<const> = createItem
+local ADD_KILL 				<const> = player_AddKill -- TO DO: send a total count to player instead of on every kill
+local UPDATE_ENEMY 			<const> = worldUpdateEnemy
+local DAMAGE_PLAYER 		<const> = damagePlayer
 
 -- World Data
 local worldRef, cellSizeRef
 
--- Main Data
-local dt <const> = getDT()
-
 
 -- Non-Enemy Data
 local LOCAL_ITEM_TYPE = ITEM_TYPE
-
 local CAMERA_SHAKE = CAMERA_SHAKE_STRENGTH
 
 
@@ -34,31 +42,23 @@ local CAMERA_SHAKE = CAMERA_SHAKE_STRENGTH
 local stunChance = 0
 local difficulty = 10
 local reflectDamage = 1
+local enemiesKilled = 0
 
--- Enemy Data
 
----- RENDERING ----
-local img_enemyFastBall = 		gfx.image.new('Resources/Sprites/enemy/Enemy1')
-local img_enemyNormalSquare = 	gfx.image.new('Resources/Sprites/enemy/Enemy2')
-local img_enemyBast = 			gfx.image.new('Resources/Sprites/enemy/Enemy3')
-local img_enemyMedic = 			gfx.image.new('Resources/Sprites/enemy/Enemy4')
-local img_enemyMunBag = 		gfx.image.new('Resources/Sprites/enemy/Enemy16')
+-- +--------------------------------------------------------------+
+-- |                          Rendering                           |
+-- +--------------------------------------------------------------+
 
-local imgTable_bulletBill = 	gfx.imagetable.new('Resources/Sheets/Enemies/bulletBill-table-22-22')
-local imgTable_chunkyArms = 	gfx.imagetable.new('Resources/Sheets/Enemies/chunkyArms-table-58-50')
+local img_enemyFastBall 	
+local img_enemyNormalSquare 
+local img_enemyBast 		
+local img_enemyMedic 		
+local img_enemyMunBag 		
+local imgTable_bulletBill 	
+local imgTable_chunkyArms 	
+local imgTable_enemy_A 		
 
-local imgTable_enemy_A 			= gfx.imagetable.new('Resources/Sheets/Enemies/enemy_A')
-
-local IMAGE_LIST = {
-	img_enemyFastBall,
-	img_enemyNormalSquare,
-	img_enemyBast,
-	img_enemyMedic,
-	GET_IMAGE(imgTable_bulletBill, 1),
-	GET_IMAGE(imgTable_chunkyArms, 1),
-	img_enemyMunBag,
-	GET_IMAGE(imgTable_enemy_A, 1)
-}
+local IMAGE_LIST = {}
 
 local COLLISION_BOX_SCALING = {
 	1, 		-- fastBall
@@ -75,19 +75,57 @@ local IMAGE_WIDTH, IMAGE_HEIGHT = {}, {}
 local IMAGE_WIDTH_HALF, IMAGE_HEIGHT_HALF = {}, {}
 local COLLISION_OFFSET_X, COLLISION_OFFSET_Y = {}, {}
 local BIGGEST_ENEMY_WIDTH, BIGGEST_ENEMY_HEIGHT = 0, 0
-for i = 1, #IMAGE_LIST do
-	local width, height = GET_SIZE(IMAGE_LIST[i])
-	IMAGE_WIDTH[i], IMAGE_HEIGHT[i] = width, height
-	IMAGE_WIDTH_HALF[i], IMAGE_HEIGHT_HALF[i] = width * 0.5, height * 0.5
+local SCREEN_MIN_X = 0
+local SCREEN_MIN_Y = 0
+local SCREEN_MAX_X <const> = 400
+local SCREEN_MAX_Y <const> = 240
 
-	local c_offset_x, c_offset_y = width * COLLISION_BOX_SCALING[i] * 0.5, height * COLLISION_BOX_SCALING[i] * 0.5
-	COLLISION_OFFSET_X[i], COLLISION_OFFSET_Y[i] = IMAGE_WIDTH_HALF[i] - c_offset_x, IMAGE_HEIGHT_HALF[i] - c_offset_y
 
-	BIGGEST_ENEMY_WIDTH = BIGGEST_ENEMY_WIDTH < width and width or BIGGEST_ENEMY_WIDTH
-	BIGGEST_ENEMY_HEIGHT = BIGGEST_ENEMY_HEIGHT < height and height or BIGGEST_ENEMY_HEIGHT
+local function load_EnemyImages()
+
+	-- images
+	img_enemyFastBall 		= NEW_IMAGE('Resources/Sprites/enemy/Enemy1')
+	img_enemyNormalSquare 	= NEW_IMAGE('Resources/Sprites/enemy/Enemy2')
+	img_enemyBast 			= NEW_IMAGE('Resources/Sprites/enemy/Enemy3')
+	img_enemyMedic 			= NEW_IMAGE('Resources/Sprites/enemy/Enemy4')
+	img_enemyMunBag 		= NEW_IMAGE('Resources/Sprites/enemy/Enemy16')
+
+	imgTable_bulletBill 	= NEW_IMAGE_TABLE('Resources/Sheets/Enemies/bulletBill-table-22-22')
+	imgTable_chunkyArms 	= NEW_IMAGE_TABLE('Resources/Sheets/Enemies/chunkyArms-table-58-50')
+	imgTable_enemy_A 		= NEW_IMAGE_TABLE('Resources/Sheets/Enemies/enemy_A')
+
+	IMAGE_LIST = {
+		img_enemyFastBall,
+		img_enemyNormalSquare,
+		img_enemyBast,
+		img_enemyMedic,
+		GET_IMAGE(imgTable_bulletBill, 1),
+		GET_IMAGE(imgTable_chunkyArms, 1),
+		img_enemyMunBag,
+		GET_IMAGE(imgTable_enemy_A, 1)
+	}
+
+	-- image sizes
+	for i = 1, #IMAGE_LIST do
+		local width, height = GET_SIZE(IMAGE_LIST[i])
+		IMAGE_WIDTH[i], IMAGE_HEIGHT[i] = width, height
+		IMAGE_WIDTH_HALF[i], IMAGE_HEIGHT_HALF[i] = width * 0.5, height * 0.5
+
+		local c_offset_x, c_offset_y = width * COLLISION_BOX_SCALING[i] * 0.5, height * COLLISION_BOX_SCALING[i] * 0.5
+		COLLISION_OFFSET_X[i], COLLISION_OFFSET_Y[i] = IMAGE_WIDTH_HALF[i] - c_offset_x, IMAGE_HEIGHT_HALF[i] - c_offset_y
+
+		BIGGEST_ENEMY_WIDTH = BIGGEST_ENEMY_WIDTH < width and width or BIGGEST_ENEMY_WIDTH
+		BIGGEST_ENEMY_HEIGHT = BIGGEST_ENEMY_HEIGHT < height and height or BIGGEST_ENEMY_HEIGHT
+	end	
+
+	SCREEN_MIN_X = -BIGGEST_ENEMY_WIDTH
+	SCREEN_MIN_Y = getBannerHeight() - BIGGEST_ENEMY_HEIGHT
 end
 
--------------------
+
+-- +--------------------------------------------------------------+
+-- |                        Enemy Values                          |
+-- +--------------------------------------------------------------+
 
 local BASE_ACCEL				<const> = 100 --15
 local SPEED_DAMPEN 				<const> = 0.96
@@ -97,13 +135,13 @@ local GROUP_TIME_SET			<const> = GROUP_SIZE * TIME_SET_SIZE
 
 local REPEL_FORCE 				<const> = 3
 local PLAYER_COLLISION_DISTANCE <const> = 25 * 25
-local BOUNCE_STRENGTH 		<const> = 6
-local STUN_WIGGLE_AMOUNT 	<const> = 3
-local STUN_TIMER_SET 		<const> = 100
+local BOUNCE_STRENGTH 			<const> = 6
+local STUN_WIGGLE_AMOUNT 		<const> = 3
+local STUN_TIMER_SET 			<const> = 100
 
-local SCALE_HEALTH			<const> = 3
-local SCALE_SPEED 			<const> = 4
-local SCALE_DAMAGE 			<const> = 5
+local SCALE_HEALTH				<const> = 3
+local SCALE_SPEED 				<const> = 4
+local SCALE_DAMAGE 				<const> = 5
 
 local movementParticleSpawnRate = 50
 
@@ -248,16 +286,10 @@ local collisionDetails = {}
 
 
 
-local spawnInc = 0
-local theSpawnTime = 0
-
-
-
-
 -- +--------------------------------------------------------------+
 -- |                            Timing                            |
 -- +--------------------------------------------------------------+
-
+--[[
 local resetTime <const> = pd.resetElapsedTime
 local getTime <const> = pd.getElapsedTime
 
@@ -312,41 +344,57 @@ local function printAndClearTotalTime(activeNameAsString, activeObject)
 	minTime = 1
 	maxTime = 0
 end
-
-
+]]
 
 
 -- +--------------------------------------------------------------+
 -- |                Init, Create, Delete, Handle                  |
 -- +--------------------------------------------------------------+
 
-for i = 1, maxEnemies do
-	enemyType[i] = 0
-	posX[i] = 0
-	posY[i] = 0
-	velX[i] = 0
-	velY[i] = 0
-	savedDirX[i] = 0
-	savedDirY[i] = 0
 
-	maxSpeed[i] = 0
-	spawnMoveParticle[i] = 0
-	rotation[i] = 0
+function enemy_v2_initialize_data()
 
-	health[i] = 0
-	fullHealth[i] = 0
-	healthPercent[i] = 0
-	stunned[i] = 0
-	wiggleDir[i] = 0
-	wigglePosX[i] = 0
+	print("")
+	print(" -- Initializing Enemies --")
+	local currentTask = 0
+	local totalTasks = 2
 
-	moveCalcTimer[i] = 0
-	timer[i] = 0
-	damageAmount[i] = 0
-	aiPhase[i] = 0
+	--- 1. Loading Images ---
+	currentTask += 1 
+	coroutine.yield(currentTask, totalTasks, "Enemies: Loading Images")
+	load_EnemyImages()
 
-	images[i] = 0
-	collisionDetails[i] = 0
+	--- 2: Init Arrays ---
+	currentTask += 1
+	coroutine.yield(currentTask, totalTasks, "Enemies: Initializing Arrays")
+	for i = 1, maxEnemies do
+		enemyType[i] = 0
+		posX[i] = 0
+		posY[i] = 0
+		velX[i] = 0
+		velY[i] = 0
+		savedDirX[i] = 0
+		savedDirY[i] = 0
+
+		maxSpeed[i] = 0
+		spawnMoveParticle[i] = 0
+		rotation[i] = 0
+
+		health[i] = 0
+		fullHealth[i] = 0
+		healthPercent[i] = 0
+		stunned[i] = 0
+		wiggleDir[i] = 0
+		wigglePosX[i] = 0
+
+		moveCalcTimer[i] = 0
+		timer[i] = 0
+		damageAmount[i] = 0
+		aiPhase[i] = 0
+
+		images[i] = 0
+		collisionDetails[i] = 0
+	end
 end
 
 
@@ -866,8 +914,6 @@ local ENEMY_MOVE_CALC = {
 
 
 -- Pushes this enemy away from any enemies that are inside the its current cells.
-local NEXT <const> = next
-
 local function repelFromEnemies(i, type, centerX, centerY, thisVelX, thisVelY)
 
 	-- If there are no cells to check, then don't calculate anything. Safe to abort here.
@@ -910,9 +956,6 @@ end
 
 
 -- Movement shared by all enemies
-local UPDATE_ENEMY 		<const> = worldUpdateEnemy
-local DAMAGE_PLAYER 	<const> = damagePlayer
-
 local function moveSingleEnemy(i, type, time, playerX, playerY)
 
 	local startX, startY = posX[i], posY[i]
@@ -927,10 +970,8 @@ local function moveSingleEnemy(i, type, time, playerX, playerY)
 
 		else
 			stunned[i], velX[i], velY[i] = 0, 0, 0
-
 		end
 	end
-
 
 	--- Collide With Player - Bounce, Deal Damage, Take Damage ---
 	local centerX, centerY = startX + IMAGE_WIDTH_HALF[type], startY + IMAGE_HEIGHT_HALF[type]
@@ -1018,6 +1059,12 @@ end
 -- |                           Globals                            |
 -- +--------------------------------------------------------------+
 
+function enemy_v2_getEnemiesKilledInFinishedArea()
+	local newCount = enemiesKilled
+	enemiesKilled = 0
+	return newCount
+end
+
 
 function getEnemyPosition(i)
 	return posX[i], posY[i]
@@ -1046,12 +1093,16 @@ end
 -- To be called at the end of the pause animation.
 function getPauseTime_Enemies(pauseTime)
 	
-	theSpawnTime = theSpawnTime + pauseTime
-
 	for i = 1, activeEnemies do
 		moveCalcTimer[i] 	= moveCalcTimer[i] + pauseTime
 		timer[i] 			= timer[i] + pauseTime
-		stunned[i]			= stunned[i] + pauseTime
+
+		-- if not currently stunned, then don't add to the timer, or it will reset velocity.
+		local stunnedTime = stunned[i]
+		if stunnedTime > 0 then 
+			stunnedTime = stunnedTime + pauseTime
+			stunned[i] = stunnedTime
+		end
 	end
 end
 
@@ -1090,87 +1141,21 @@ function debugSpawnMassEnemy()
 	end
 end
 
+--[[
 function spawnTwoEnemies()
 	createEnemy(8, 250, 200)
 	--createEnemy(2, 250, 250)
 end
-
-
--- +--------------------------------------------------------------+
--- |                          Management                          |
--- +--------------------------------------------------------------+
-
-
-local function spawnMonsters(cameraX, cameraY, time)
-	if time >= theSpawnTime then
-
-		theSpawnTime = time + 3200 - 200 * difficulty
-
-		local enemyX = cameraX + random(-250, 250)
-		local enemyY = cameraY + random(-145, 145)
-
-		local type = random(1, 8)
-		createEnemy(type, enemyX, enemyY)
-
-		-- Sometimes create a second enemy, possibly with higher difficulty
-		spawnInc += random(1, difficulty)
-		if spawnInc > 5 then
-			spawnInc = 0
-			type = random(1, 7)
-			createEnemy(type, enemyX, -enemyY)
-		end
-	end
-end
-
-
---[[
--- ASK ABOUT:
-	-- Do we want healthbars for enemies? Takes up a lot of space on screen, and healing can be shown through particles
-	-- What about a "damaged" sprite for each enemy?
-
--- Constants for speed
-local setColor <const> = gfx.setColor
-local colorBlack <const> = gfx.kColorBlack
-local colorWhite <const> = gfx.kColorWhite
-local roundRect <const> = gfx.fillRoundRect
-
-
--- Draw enemy healthbars
-local HEALTHBAR_OFFSET_Y 			<const> = 10
-local HEALTHBAR_MAXWIDTH 			<const> = 40
-local HEALTHBAR_HEIGHT 				<const> = 4
-local HEALTHBAR_CORNER_RADIUS 		<const> = 3
-
-local HEALTHBAR_BORDER_WIDTH 		<const> = HEALTHBAR_MAXWIDTH + 2
-local HEALTHBAR_BORDER_WIDTH_HALF	<const> = HEALTHBAR_BORDER_WIDTH * 0.5
-local HEALTHBAR_BORDER_HEIGHT		<const> = HEALTHBAR_HEIGHT + 2
-local HEALTHBAR_BORDER_RADIUS		<const> = HEALTHBAR_CORNER_RADIUS + 2
-	
-local HEALTHBAR_XPOS_OFFSET			<const> = floor((HEALTHBAR_BORDER_WIDTH - HEALTHBAR_MAXWIDTH) / 2)
-local HEALTHBAR_YPOS_OFFSET			<const> = floor((HEALTHBAR_BORDER_HEIGHT - HEALTHBAR_HEIGHT) / 2)
-
-local function drawHealthBar(i, type, x, y)
-	local healthbarWidth = healthPercent[i] * HEALTHBAR_MAXWIDTH
-	x = x + IMAGE_WIDTH_HALF[type] - HEALTHBAR_BORDER_WIDTH_HALF
-	y = y - HEALTHBAR_OFFSET_Y
-
-	setColor(colorBlack)
-	roundRect(x, y, HEALTHBAR_BORDER_WIDTH, HEALTHBAR_BORDER_HEIGHT, HEALTHBAR_BORDER_RADIUS)
-	setColor(colorWhite)
-	roundRect(x + HEALTHBAR_XPOS_OFFSET, y + HEALTHBAR_YPOS_OFFSET, healthbarWidth, HEALTHBAR_HEIGHT, HEALTHBAR_CORNER_RADIUS)
-end
 ]]
 
 
-local SCREEN_MIN_X 			<const> = -BIGGEST_ENEMY_WIDTH
-local SCREEN_MAX_X 			<const> = 400
-local SCREEN_MIN_Y 			<const> = getBannerHeight() - BIGGEST_ENEMY_HEIGHT
-local SCREEN_MAX_Y 			<const> = 240
+-- +--------------------------------------------------------------+
+-- |                            Update                            |
+-- +--------------------------------------------------------------+
 
-local FAST_DRAW <const> = gfx.image.draw
 
 -- Update enemy movement, destruction, item drops, etc.
-local function updateEnemiesLists(time, playerX, playerY, screenOffsetX, screenOffsetY)
+function updateEnemies(time, playerX, playerY, screenOffsetX, screenOffsetY)
 
 	local i = 1
 	local currentActiveEnemies = activeEnemies
@@ -1187,7 +1172,7 @@ local function updateEnemiesLists(time, playerX, playerY, screenOffsetX, screenO
 			local drawY = y + screenOffsetY
 			if 	SCREEN_MIN_X < drawX and drawX < SCREEN_MAX_X and 
 				SCREEN_MIN_Y < drawY and drawY < SCREEN_MAX_Y then
-					FAST_DRAW(images[i], x, y)
+					DRAW_IMAGE(images[i], x, y)
 			end
 
 			--drawHealthBar(i, type, x, y)  
@@ -1196,7 +1181,8 @@ local function updateEnemiesLists(time, playerX, playerY, screenOffsetX, screenO
 		-- delete - do NOT need to increment loop here
 		else 
 			createDroppedItem(i, type)
-			deleteEnemy(i, currentActiveEnemies)				
+			deleteEnemy(i, currentActiveEnemies)
+			enemiesKilled += 1 --ADD_KILL()				
 			currentActiveEnemies = currentActiveEnemies - 1
 			
 		end		
@@ -1217,22 +1203,8 @@ function redrawEnemies(screenOffsetX, screenOffsetY)
 		local drawY = y + screenOffsetY
 		if 	SCREEN_MIN_X < drawX and drawX < SCREEN_MAX_X and 
 			SCREEN_MIN_Y < drawY and drawY < SCREEN_MAX_Y then
-				FAST_DRAW(images[i], x, y)
+				DRAW_IMAGE(images[i], x, y)
 		end
 	end
 end
 
-
--- +--------------------------------------------------------------+
--- |                            Update                            |
--- +--------------------------------------------------------------+
-
-
-function updateEnemies(time, playerX, playerY, cameraPosX, cameraPosY, screenOffsetX, screenOffsetY)
-
-	--spawnMonsters(cameraPosX, cameraPosY, time)
-	updateEnemiesLists(time, playerX, playerY, screenOffsetX, screenOffsetY)
-
-
-	--printAndClearTotalTime("enemy move timing")
-end

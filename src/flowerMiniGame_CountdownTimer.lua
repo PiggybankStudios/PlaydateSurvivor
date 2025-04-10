@@ -67,6 +67,8 @@ local cdTimer_maskPoints = {}
 local CD_TIMER_MASKPOINTS_MAX 	<const> = 9
 local CD_TIMER_VERTICE_COUNT 	<const> = CD_TIMER_MASKPOINTS_MAX * 2
 
+local allowEndOfTimerNotification = true
+
 
 
 -- +--------------------------------------------------------------+
@@ -74,6 +76,8 @@ local CD_TIMER_VERTICE_COUNT 	<const> = CD_TIMER_MASKPOINTS_MAX * 2
 -- +--------------------------------------------------------------+
 
 function create_CountdownTimer()
+
+	allowEndOfTimerNotification = true
 
 	img_countdownTimer = NEW_IMAGE(CD_TIMER_RADIUS_DOUBLE, CD_TIMER_RADIUS_DOUBLE)
 	countdownTimer_set = CD_TIMER_SET_MILL * countdownTimer_seconds
@@ -92,7 +96,6 @@ end
 function clear_CountdownTimer()
 	img_countdownTimer = nil
 end
-
 
 
 -- +--------------------------------------------------------------+
@@ -154,6 +157,12 @@ function draw_CountdownTimer(time)
 			SET_COLOR(COLOR_WHITE)
 			DRAW_CIRCLE(CD_TIMER_RADIUS, CD_TIMER_RADIUS, CD_TIMER_RADIUS)
 		UNLOCK_FOCUS()
+
+		-- send flag to flowerMiniGame that the timer has fully elapsed.
+		if allowEndOfTimerNotification then
+			flowerGame_TimerHasElapsed(time)
+			allowEndOfTimerNotification = false
+		end
 	end
 
 	-- draw timer circle

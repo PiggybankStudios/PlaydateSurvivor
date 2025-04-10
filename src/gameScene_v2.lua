@@ -3,34 +3,65 @@ local gfx 	<const> = pd.graphics
 local tm 	<const> = gfx.tilemap
 local ldtk 	<const> = LDtk
 
+local LOCK_FOCUS 				<const> = gfx.lockFocus
+local UNLOCK_FOCUS 				<const> = gfx.unlockFocus	
+local NEXT 						<const> = next
 
-ldtk.load("Resources/Levels/world.ldtk", false)
+local DRAW 						<const> = gfx.image.draw
+local CLEAR_DISPLAY				<const> = gfx.clear
+local NEW_IMAGE					<const> = gfx.image.new
+local COLOR_BLACK				<const> = gfx.kColorBlack
 
+local GET_TM_COLLISION_RECTS	<const> = tm.getCollisionRects
+local GET_TM_TILE_SIZE			<const> = tm.getTileSize
+local TM_DRAW_STATIC			<const> = tm.drawIgnoringOffset
+	
+local LDTK_LOAD 				<const> = ldtk.load	
+local LDTK_GET_RECT				<const> = ldtk.get_rect
+local LDTK_GET_LAYERS			<const> = ldtk.get_layers
+local LDTK_CREATE_TILEMAP		<const> = ldtk.create_tilemap
+local LDTK_GET_EMPTY_TILE_IDS	<const> = ldtk.get_empty_tileIDs
+--local ldtk_get_level_list		<const> = ldtk.get_level_list
+
+local BUMP_NEW_WORLD			<const> = bump.newWorld
+local BUMP_ADD_TO_WORLD			<const> = addToWorld
+
+local GET_LEVEL_DATA 			<const> = flowerGame_get_Level_Data
+	
+local WORLD_TO_OBJECTS 			<const> = sendWorldCollidersToObjects
+local WORLD_TO_BULLETS 			<const> = sendWorldCollidersToBullets
+local WORLD_TO_ENEMIES 			<const> = sendWorldCollidersToEnemies
+
+
+-- +--------------------------------------------------------------+
+-- |                          Variables                           |
+-- +--------------------------------------------------------------+
 
 local tilemaps = {0, 0, 0, 0} -- room for extra tilemaps in case there's a level with a lot of layers
 local totalTilemaps = #tilemaps
 local tilemap_combined = 0
 
-local world, x, y, width, height = 0, 0, 0, 0, 0
+local world, width, height = 0, 0, 0, 0, 0
 local offsetWidth, offsetHeight = 0, 0
 
 local currentLevel = 0
-local level_list = ldtk.get_level_list()
+
+-- World files in LDtk, will probably use for theming and other tilemaps later on.
+local worlds_list = {
+	"Resources/Levels/world.ldtk"
+}
 
 
 -- +--------------------------------------------------------------+
 -- |                            Render                            |
 -- +--------------------------------------------------------------+
 
-local DRAW 		<const> = gfx.image.draw
-local CLEAR 	<const> = gfx.clear
-
 -- Draw the level, and clear the frame only when the camera goes outside the level bounds.
 function updateGameScene(screenOffsetX, screenOffsetY)
 	
 	if 	0 < screenOffsetX or screenOffsetX < offsetWidth or 
 		0 < screenOffsetY or screenOffsetY < offsetHeight then
-			CLEAR()
+			CLEAR_DISPLAY()
 	end
 	DRAW(tilemap_combined, 0, 0)
 
@@ -45,49 +76,43 @@ function updateGameScene(screenOffsetX, screenOffsetY)
 end
 
 
+-- +--------------------------------------------------------------+
+-- |                        Initialization                        |
+-- +--------------------------------------------------------------+
+
+function gameScene_v2_initialize_world()
+
+	print("")
+	print(" -- Initializing World of Levels --")
+	local currentTask = 1
+	local totalTasks = 1
+	coroutine.yield(currentTask, totalTasks, "Levels: Loading")
+
+	local timeStart = pd.getCurrentTimeMilliseconds()
+	LDTK_LOAD(worlds_list[1])
+	local timeEnd = pd.getCurrentTimeMilliseconds()
+
+	print("time to load level: " .. timeEnd - timeStart)
+end
+
 
 -- +--------------------------------------------------------------+
 -- |                  Level Loading & Collisions                  |
 -- +--------------------------------------------------------------+
 
-local lockFocus 			<const> = gfx.lockFocus
-local unlockFocus 			<const> = gfx.unlockFocus
-
-local NEXT 					<const> = next
-
-local newImage				<const> = gfx.image.new
-local colorBlack			<const> = gfx.kColorBlack
-
-local getCollisionRects		<const> = tm.getCollisionRects
-local getTileSize			<const> = tm.getTileSize
-local drawIgnoringOffset	<const> = tm.drawIgnoringOffset
-	
-local ldtk_getRect 			<const> = ldtk.get_rect
-local ldtk_getLayers		<const> = ldtk.get_layers
-local ldtk_createTilemap	<const> = ldtk.create_tilemap
-local ldtk_getEmptyTileIDs	<const> = ldtk.get_empty_tileIDs
-local ldtk_get_level_list	<const> = ldtk.get_level_list
-
-local bump_newWorld			<const> = bump.newWorld
-local bump_addToWorld		<const> = addToWorld
-
-local worldToObjects  		<const> = sendWorldCollidersToObjects
-local worldToBullets 		<const> = sendWorldCollidersToBullets
-local worldToEnemies 		<const> = sendWorldCollidersToEnemies
-
 
 local function CreateBumpCollisionForLayer(layer, layer_name, level_name, tileString, tileTag)
 
 	local zIndex = layer.zIndex + 1	
-	local tileMap = ldtk_createTilemap(level_name, layer_name)	
+	local tileMap = LDTK_CREATE_TILEMAP(level_name, layer_name)	
 	tilemaps[zIndex] = tileMap		
 
-	local emptyTiles = ldtk_getEmptyTileIDs(level_name, tileString, layer_name)
+	local emptyTiles = LDTK_GET_EMPTY_TILE_IDS(level_name, tileString, layer_name)
 	if (emptyTiles) then
 
 		-- Bump Collision
-		local wallRectList = getCollisionRects(tileMap, emptyTiles)
-		local tileSize = getTileSize(tileMap)
+		local wallRectList = GET_TM_COLLISION_RECTS(tileMap, emptyTiles)
+		local tileSize = GET_TM_TILE_SIZE(tileMap)
 
 		for i = 1, #wallRectList do
 			local rect = wallRectList[i]
@@ -102,28 +127,36 @@ local function CreateBumpCollisionForLayer(layer, layer_name, level_name, tileSt
 			r.width = rect.width * tileSize
 			r.height = rect.height * tileSize
 			r.tag = tileTag
-			bump_addToWorld(world, r, r.x, r.y, r.width, r.height)
+			BUMP_ADD_TO_WORLD(world, r, r.x, r.y, r.width, r.height)
 		end
 	end
 end
 
 
-local function gameScene_goToLevel(level_data, level_index)
+local function gameScene_goToLevel(level_index)
 
 	-- separate level details
+	local level_data = GET_LEVEL_DATA(level_index)
 	local level_name = level_data.name
+	local levelRect = LDTK_GET_RECT(level_name)
+	width = levelRect.width
+	height = levelRect.height
+	offsetWidth = -width + 400
+	offsetHeight = -height + 240
+
 
 	-- catch for if a tileset png name follows the naming convention required by LDtk
-	if ldtk_getLayers(level_name) == nil then
+	local level_layers = LDTK_GET_LAYERS(level_name)
+	if level_layers == nil then
 		print("no layers in level - something might be wrong with a file name")
 		return
 	end
 
 	-- Create a bump collision world
-	world = bump_newWorld(16) -- default cell size is 64
+	world = BUMP_NEW_WORLD(16) -- default cell size is 64
 
 	-- load in the level's tileset and collision
-	for layer_name, layer in NEXT, ldtk_getLayers(level_name) do
+	for layer_name, layer in NEXT, level_layers do
 		if layer.tiles then
 			CreateBumpCollisionForLayer(layer, layer_name, level_name, "Solid", TAGS.walls) 	-- Walls
 			CreateBumpCollisionForLayer(layer, layer_name, level_name, "Damage", TAGS.damage)	-- Damaging Tiles	
@@ -131,17 +164,23 @@ local function gameScene_goToLevel(level_data, level_index)
 	end
 
 	-- combine the separate tilemaps into a single image, based on their zIndex
-	tilemap_combined = newImage(width, height, colorBlack) 
-	lockFocus(tilemap_combined)
+	tilemap_combined = NEW_IMAGE(width, height, COLOR_BLACK) 
+	LOCK_FOCUS(tilemap_combined)
 		for i = 1, totalTilemaps do
 			if tilemaps[i] ~= 0 then -- If this layer doesn't have anything, then don't attempt to draw. Just skip it.
-				drawIgnoringOffset(tilemaps[i], 0, 0)
+				TM_DRAW_STATIC(tilemaps[i], 0, 0)
 			end
 		end
-	unlockFocus()
+	UNLOCK_FOCUS()
+
+	-- clear previous arrays: bullets, enemies, items, objects
+	--clearBullets()
+	--clearEnemies()
+	--clearItems()
+	--clearObjects()
 
 	-- Add objects (ldtk entities) to room
-	worldToObjects(world)
+	WORLD_TO_OBJECTS(world)
 	local entity_list, entity_counts = ldtk.get_entities_and_counts(level_name)
 	objects_SetObjectDetailsInLevel(level_data, entity_counts)
 	for _, entity in NEXT, entity_list do
@@ -149,71 +188,71 @@ local function gameScene_goToLevel(level_data, level_index)
 	end
 
 	-- Perform inits at start of level, and pass the new world collision to everything that needs it
+	create_ActionBannerUI()
 	local playerX, playerY = getPlayerSpawnPosition() -- a playerSpawner object sets the spawn position.
 	initPlayerInNewWorld(world, playerX, playerY)
-	worldToBullets(world)
-	worldToEnemies(world)
+	WORLD_TO_BULLETS(world)
+	WORLD_TO_ENEMIES(world)
 
 	-- Run the 'End Transition' animation
 	runTransitionEnd()
 end
 
 
-
 -- TO DO: make a level selection system
-function gameScene_init()
-
+function gameScene_startFirstLevel()
 	local level_index = 1
-
-	local levelData = get_Level_Data(level_index)
-	local levelRect = ldtk_getRect(levelData.name)
-	x = levelRect.x
-	y = levelRect.y
-	width = levelRect.width
-	height = levelRect.height
-
-	offsetWidth = -width + 400
-	offsetHeight = -height + 240
-
-	gameScene_goToLevel(levelData, level_index)
+	gameScene_goToLevel(level_index)
 end
 
 
 function gameScene_NextLevel()
 	-- new level name
-	--local newLevel = math.random(1, #level_list)
-	local newLevel = math.random(1, flowerGame_puzzleCount())
-	if newLevel == currentLevel then 
-		newLevel = newLevel + 1 
-		if newLevel > #level_list then newLevel = 1 end
+	local puzzleCount = flowerGame_puzzleCount()
+	local new_level_index = math.random(1, puzzleCount)
+	if new_level_index == currentLevel then 
+		new_level_index = new_level_index + 1 
+		if new_level_index > puzzleCount then new_level_index = 1 end
 	end
 
 	--TEST--
 	--newLevel = 1
 	--------
 
-	currentLevel = newLevel
+	currentLevel = new_level_index
+	gameScene_goToLevel(new_level_index)
+end
 
-	-- clear bullets, enemies, items, objects
+
+-- +--------------------------------------------------------------+
+-- |                   End of Action Game Clear                   |
+-- +--------------------------------------------------------------+
+
+local CLEAR_ACTION_BANNER_UI 	<const> = clear_ActionBannerUI
+local SHOTS_FIRED 				<const> = bullets_GetShotsFiredInFinishedArea
+local ENEMIES_KILLED 			<const> = enemy_v2_getEnemiesKilledInFinishedArea
+local ITEMS_GRABBED 			<const> = items_GetItemsCollectedInFinishedArea
+
+-- Perform all the 'Clear' functions for the action game in-between transitions.
+function gameScene_ClearState()
+
+	CLEAR_ACTION_BANNER_UI()
+	player_UpdateShotsFired( SHOTS_FIRED() )
+	player_UpdateEnemiesKilled( ENEMIES_KILLED() )
+	player_UpdateItemsGrabbed( ITEMS_GRABBED() )
+
 	clearBullets()
 	clearEnemies()
 	clearItems()
 	clearObjects()
 
-	-- new level setup
-	--local level_name = level_list[newLevel]
-	local level_data = get_Level_Data(newLevel)
-	local levelRect = ldtk_getRect(level_data.name)
-	x = levelRect.x
-	y = levelRect.y
-	width = levelRect.width
-	height = levelRect.height
-
-	offsetWidth = -width + 400
-	offsetHeight = -height + 240
-
-	gameScene_goToLevel(level_data, newLevel)
+	print("")
+	print("------------------")
+	print("game scene cleared")
+	print("------------------")
+	print("")
 end
+
 
 -- +--------------------------------------------------------------+
 -- |                           Globals                            |
@@ -254,7 +293,7 @@ local drawRectCoords 	= false
 
 function gameSceneDebugUpdate()
 
-	setColor(colorBlack)
+	setColor(COLOR_BLACK)
 
 	if drawCells then
 		for cy, row in NEXT, world.rows do
@@ -285,7 +324,7 @@ function gameSceneDebugUpdate()
 			if item.tag == TAGS.damage then 
 				SET_DITHER_PATTERN(0.6, DITHER_DIAGONAL)
 				fillRect(rX, rY, rW, rH)
-				setColor(colorBlack)
+				setColor(COLOR_BLACK)
 				drawRect(rX, rY, rW, rH)
 			else
 				drawRect(rX, rY, rW, rH)

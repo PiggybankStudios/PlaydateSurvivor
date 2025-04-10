@@ -9,6 +9,7 @@ local pd 	<const> = playdate
 local gfx 	<const> = pd.graphics
 
 -- math
+local dt 		<const> = getDT()
 local floor 	<const> = math.floor
 local max 		<const> = math.max
 local min 		<const> = math.min
@@ -20,20 +21,84 @@ local SCREEN_WIDTH 	<const> = pd.display.getWidth()
 local SCREEN_HEIGHT <const> = pd.display.getHeight()
 
 -- drawing
-local lockFocus 	<const> = gfx.lockFocus
-local unlockFocus 	<const> = gfx.unlockFocus
-local setColor 		<const> = gfx.setColor
-local colorBlack 	<const> = gfx.kColorBlack
-local colorWhite 	<const> = gfx.kColorWhite
-local colorClear 	<const> = gfx.kColorClear
-local roundRect 	<const> = gfx.fillRoundRect
+local LOCK_FOCUS 	<const> = gfx.lockFocus
+local UNLOCK_FOCUS 	<const> = gfx.unlockFocus
+local SET_COLOR 	<const> = gfx.setColor
+local COLOR_BLACK 	<const> = gfx.kColorBlack
+local COLOR_WHITE 	<const> = gfx.kColorWhite
+local COLOR_CLEAR 	<const> = gfx.kColorClear
+--local ROUND_RECT 	<const> = gfx.fillRoundRect
+local FILL_RECT 	<const> = gfx.fillRect
+local DRAW_PIXEL 	<const> = gfx.drawPixel
 
-local GET_IMAGE		<const> = gfx.imagetable.getImage
-local GET_SIZE 		<const> = gfx.image.getSize
+local NEW_IMAGE 		<const> = gfx.image.new
+local GET_IMAGE			<const> = gfx.imagetable.getImage
+local GET_SIZE 			<const> = gfx.image.getSize
+local GET_SIZE_AT_PATH	<const> = gfx.imageSizeAtPath
 
+local DRAW_IMAGE 		<const> = gfx.image.draw
+local UNFLIPPED 		<const> = gfx.kImageUnflipped
+local FLIP_XY 			<const> = gfx.kImageFlippedXY
+
+local SET_DRAW_MODE 	<const> = gfx.setImageDrawMode
+local INVERTED 			<const> = gfx.kDrawModeInverted
+local COPY 				<const> = gfx.kDrawModeCopy
 
 -- globals
-local dt 			<const> = getDT()
+local BANNER_UPDATE_EXP_BAR 			<const> = banner_UpdateActionBanner
+local BANNER_COLLECT_MULTIPLIER_TOKEN 	<const> = banner_CollectNewMultiplierToken
+local CAMERA_SHAKE_MEDIUM 				<const> = CAMERA_SHAKE_STRENGTH.medium
+
+
+
+-- +--------------------------------------------------------------+
+-- |                            Render                            |
+-- +--------------------------------------------------------------+
+
+-- Player
+local imgTable_player
+local PLAYER_IMAGE_WIDTH_HALF 
+local PLAYER_IMAGE_HEIGHT_HALF
+
+local IMAGE_ANGLE_DIFF 	<const> = 5
+
+-- Health Bar
+local img_healthbar_bkgr
+local img_healthbar
+
+local path_healthbar_bkgr = 'Resources/Sprites/player_healthbar_bkgr'
+local healthbar_width, healthbar_height = GET_SIZE_AT_PATH(path_healthbar_bkgr)
+local HEALTHBAR_FILL_X_MIN 	<const> = 2
+local HEALTHBAR_FILL_X_MAX 	<const> = healthbar_width - 2 
+local HEALTHBAR_FILL_Y 		<const> = 1 
+local HEALTHBAR_FILL_HEIGHT <const> = healthbar_height - 2
+local HEALTHBAR_OFFSET_Y 	<const> = 20
+
+
+local function load_playerImages()
+
+	-- Player
+	imgTable_player = gfx.imagetable.new('Resources/Sheets/player_v3')
+	local playerWidth, playerHeight = GET_SIZE( GET_IMAGE(imgTable_player, 1) )
+	PLAYER_IMAGE_WIDTH_HALF  = playerWidth // 2
+	PLAYER_IMAGE_HEIGHT_HALF  = playerHeight // 2
+
+	-- Healthbar	
+	img_healthbar_bkgr = NEW_IMAGE(path_healthbar_bkgr)
+	img_healthbar = NEW_IMAGE( GET_SIZE_AT_PATH(path_healthbar_bkgr) )
+end
+
+
+function player_initialize_data()
+
+	print("")
+	print(" -- Initializing Player --")
+	local currentTask = 1
+	local totalTasks = 1
+	
+	coroutine.yield(currentTask, totalTasks, "Player: Loading Images")
+	load_playerImages()		
+end
 
 
 -- +--------------------------------------------------------------+
@@ -44,14 +109,6 @@ local dt 			<const> = getDT()
 local world
 local world_Add 	<const> = worldAdd_Fast
 local world_Check 	<const> = worldCheckFast
-
--- Player Image
-local playerImageTable = gfx.imagetable.new('Resources/Sheets/player_v3')
-local IMAGE_ANGLE_DIFF 	<const> = 5
-
-local playerWidth, playerHeight = GET_SIZE( GET_IMAGE(playerImageTable, 1) )
-local PLAYER_IMAGE_WIDTH_HALF 	<const> = playerWidth * 0.5
-local PLAYER_IMAGE_HEIGHT_HALF 	<const> = playerHeight * 0.5
 
 -- Collider
 local colliderSize 	<const> = 25
@@ -66,16 +123,9 @@ local DELTA 			<const> = 0.01
 local inputLock = 1 
 
 -- Healthbar
-local HEALTHBAR_OFFSET_X 		<const> = 2
-local HEALTHBAR_OFFSET_Y 		<const> = 20
-local HEALTHBAR_MAXWIDTH 		<const> = 40
-local HEALTHBAR_HEIGHT 			<const> = 4
-local HEALTHBAR_CORNER_RADIUS 	<const> = 3
-
 local maxHealth 	= 30 --10
 local health 		= maxHealth
 local healthPercent = 1
-local healthImage 	= gfx.image.new(42, 6, colorClear)
 
 -- Damage
 local damageTimer = 0
@@ -93,6 +143,10 @@ local SPIKE_BOUNCE_SPEED 	<const> = 15
 -- |                         Player Stats                         |
 -- +--------------------------------------------------------------+
 
+-- money
+local persistentMoney = 0
+local runMoney = 0
+
 -- stattrack
 local damageDealt = 0
 local damageTaken = 0
@@ -109,7 +163,8 @@ local difficulty = 1
 local maxDifficulty = 15
 
 -- Player
-local playerLevel = 0
+local playerMultiplierTokens = 0 -- used in flowerGame to multiply word scores. Increases by 1 every level. Resets on new course start.
+local playerLevel = 0 -- increases throughout a run. Reset on new run. Each new level gives 1 multiplier token.
 local playerSpeed = 50
 local playerAttackRate = 100 --30
 local playerAttackRateMin = 10 --25 --limit
@@ -136,8 +191,9 @@ local gameStartTime = 0
 local playerExp = 0
 local maxExpForLevel = 5
 local playerMaxExp = maxExpForLevel
-local playerExpPercent = 0.3
+local playerExpPercent = 0
 local playerExpBonus = 0
+local EXP_GROWTH_FACTOR 	<const> = 3
 
 
 theCharmSlot1 = {0, 0, 0, 0} -- what charm is in column 1 for each gun slot
@@ -156,67 +212,6 @@ invincible = false
 -- |                         Player UI                            |
 -- +--------------------------------------------------------------+
 
---- UI Banner ---
-
-local uiBannerImage = gfx.image.new('Resources/Sprites/UIBanner')
-local UI_BANNER_WIDTH <const>, UI_BANNER_HEIGHT <const> = uiBannerImage:getSize()
-
-function getBannerHeight()
-	return UI_BANNER_HEIGHT
-end
-
-
---- EXP ---
-
--- EXP Bar
-local EXP_MAX_WIDTH <const> = SCREEN_WIDTH * 0.9
-local EXP_HEIGHT <const> = 6
-local EXP_RADIUS <const> = 3
-
--- EXP Border
-local EXP_BORDER_WIDTH <const> = EXP_MAX_WIDTH + 2
-local EXP_BORDER_HEIGHT <const> = EXP_HEIGHT + 2
-local EXP_BORDER_RADIUS <const> = EXP_RADIUS + 2
-
--- Position
-local EXP_BORDER_X <const> = floor((SCREEN_WIDTH - EXP_BORDER_WIDTH) / 2)
-local EXP_BORDER_Y <const> = 4
-local EXP_X_OFFSET <const> = floor((EXP_BORDER_WIDTH - EXP_MAX_WIDTH) / 2) + EXP_BORDER_X
-local EXP_Y_OFFSET <const> = floor((EXP_BORDER_HEIGHT - EXP_HEIGHT) / 2) + EXP_BORDER_Y
-
--- Interaction
-local EXP_GROWTH_FACTOR <const> = 3
-
-
-local function drawPlayerEXPBar()
-
-	local expbarWidth = playerExpPercent * EXP_MAX_WIDTH
-	local height = EXP_HEIGHT
-	local yPosOffset = EXP_Y_OFFSET
-	if expbarWidth < 1 then 
-		expbarWidth += 4
-		height = 4
-		yPosOffset += 1
-	end
-
-	-- Border -- Using lockFocus so the banner image can ignore the draw offset
-	lockFocus(uiBannerImage)
-		setColor(colorWhite)
-		roundRect(EXP_BORDER_X, EXP_BORDER_Y, EXP_BORDER_WIDTH, EXP_BORDER_HEIGHT, EXP_BORDER_RADIUS)
-		-- Fill Bar
-	    setColor(colorBlack)
-		roundRect(EXP_X_OFFSET, yPosOffset, expbarWidth, height, EXP_RADIUS)
-	unlockFocus()
-	uiBannerImage:drawIgnoringOffset(0, 0)	
-end
-
-
-local function resetEXPBar()
-	playerExp = 0
-	playerExpPercent = 0
-end
-
-
 -- TO DO: Need help from Devon to put level-up actions back in place
 function addPlayerEXP(amount)
 
@@ -228,6 +223,7 @@ function addPlayerEXP(amount)
 		playerExp = (playerExp - playerMaxExp) -- push any overfill exp into next level
 		playerMaxExp += EXP_GROWTH_FACTOR + floor(playerLevel/10)
 		playerLevel += 1
+		playerMultiplierTokens += 1
 
 		--levelUpList += 1 -- What is this for?
 		--updateLevel()
@@ -235,42 +231,49 @@ function addPlayerEXP(amount)
 	end
 
 	playerExpPercent = playerExp / playerMaxExp
-end
-
-
---- Health ---
-
-local function drawPlayerHealthBar()
-	local borderWidth = HEALTHBAR_MAXWIDTH + 2
-	local borderHeight = HEALTHBAR_HEIGHT + 2
-	local borderRadius = HEALTHBAR_CORNER_RADIUS + 2
-
-	local xPosOffset = floor((borderWidth - HEALTHBAR_MAXWIDTH) / 2)
-	local yPosOffset = floor((borderHeight - HEALTHBAR_HEIGHT) / 2)
-	local healthbarWidth = healthPercent * HEALTHBAR_MAXWIDTH
-
-	local x = playerRect.x + halfCol - PLAYER_IMAGE_WIDTH_HALF - HEALTHBAR_OFFSET_X
-	local y = playerRect.y + halfCol - PLAYER_IMAGE_HEIGHT_HALF - HEALTHBAR_OFFSET_Y
-
-	-- Border
-	setColor(colorBlack)
-	roundRect(x, y, borderWidth, borderHeight, borderRadius)
-	-- Fill Bar
-	setColor(colorWhite)
-	roundRect(x + xPosOffset, y + yPosOffset, healthbarWidth, HEALTHBAR_HEIGHT, HEALTHBAR_CORNER_RADIUS)
+	BANNER_UPDATE_EXP_BAR(playerExpPercent, playerLevel)
 end
 
 
 local function updateHealthBar()
+	
 	healthPercent = health / maxHealth
+
+	LOCK_FOCUS(img_healthbar)
+		-- clear healthbar from previous state, just by drawing blank background
+		DRAW_IMAGE(img_healthbar_bkgr, 0, 0)
+
+		-- draw new healthbar fill amount
+		if healthPercent > 0 then 
+			SET_COLOR(COLOR_WHITE)
+			local width = (HEALTHBAR_FILL_X_MAX - HEALTHBAR_FILL_X_MIN) * healthPercent
+
+			-- fill bar
+			FILL_RECT(HEALTHBAR_FILL_X_MIN, HEALTHBAR_FILL_Y, width, HEALTHBAR_FILL_HEIGHT)
+
+			-- nubs at either end of fill bar, to make it look rounded
+			DRAW_PIXEL(1,2)
+			DRAW_PIXEL(1,3)
+			DRAW_PIXEL(width+2,2)
+			DRAW_PIXEL(width+2,3)
+		end
+	UNLOCK_FOCUS()
+end
+
+
+function player_CollectNewMultiplierToken(time)
+	playerMultiplierTokens += 1
+	banner_CollectNewMultiplierToken(playerMultiplierTokens, time)
 end
 
 
 --- Draw All Player-Based UI ---
 
 function drawPlayerUI()
-	drawPlayerHealthBar()
-	drawPlayerEXPBar()
+	-- healthbar
+	local health_x = playerRect.x + halfCol - PLAYER_IMAGE_WIDTH_HALF
+	local health_y = playerRect.y + halfCol - PLAYER_IMAGE_HEIGHT_HALF - HEALTHBAR_OFFSET_Y
+	DRAW_IMAGE(img_healthbar, health_x, health_y)
 end
 
 --------------------------------
@@ -303,7 +306,9 @@ function initPlayerInNewWorld(gameSceneWorld, x, y)
 	-- init player variables
 	health = maxHealth
 	updateHealthBar()
-	resetEXPBar()
+	playerExpPercent = 0
+	playerMultiplierTokens = 0
+	BANNER_UPDATE_EXP_BAR(playerExpPercent, playerLevel)
 end
 
 
@@ -405,7 +410,7 @@ function addDamageReceived(amount)
 	currentCombo = 0
 end
 
-function addKill()
+function player_AddKill()
 	enemiesKilled += 1
 	currentCombo += 1
 	if currentCombo > maxCombo then maxCombo = currentCombo end
@@ -417,9 +422,22 @@ end
 -- |                  Player get values section                   |
 -- +--------------------------------------------------------------+
 
+function player_GetRunMoney()
+	return runMoney
+end
 
-function getPlayerLevel()
+function player_AddToRunMoney(value)
+	runMoney += value
+	return runMoney
+end
+
+function player_GetPlayerLevel()
 	return playerLevel
+end
+
+function player_GetPlayerMultiplierTokens()
+	-- Player always starts with multiplier of 1 - any tokens are added to this.
+	return 1 + playerMultiplierTokens
 end
 
 function getPlayerGunDamage()
@@ -696,6 +714,18 @@ function getPlayerAttackRate()
 	return playerAttackRate
 end
 
+function player_UpdateShotsFired(newShotsCount)
+	shotsFired += newShotsCount
+end
+
+function player_UpdateEnemiesKilled(newKillCount)
+	enemiesKilled += newKillCount
+end
+
+function player_UpdateItemsGrabbed(newItemsCount)
+	itemsGrabbed += newItemsCount
+end
+
 
 -- +--------------------------------------------------------------+
 -- |                          Movement                            |
@@ -757,8 +787,6 @@ function player_LockInput(value)
 end
 
 
--- TO DO:
-	-- Add a 'hold to move longer' to each tap
 local function movePlayer_NEW()
 
 	-- button input added to velocity
@@ -817,44 +845,28 @@ end
 -- |                            Update                            |
 -- +--------------------------------------------------------------+
 
-
-local FAST_DRAW 		<const> = gfx.image.draw
-local UNFLIPPED 		<const> = gfx.kImageUnflipped
-local FLIP_XY 			<const> = gfx.kImageFlippedXY
-
-local SET_DRAW_MODE 	<const> = gfx.setImageDrawMode
-local INVERTED 			<const> = gfx.kDrawModeInverted
-local COPY 				<const> = gfx.kDrawModeCopy
-
 local DAMAGE_PLAYER 		<const> = damagePlayer
-local CAMERA_SHAKE_MEDIUM 	<const> = CAMERA_SHAKE_STRENGTH.medium
 
 
 local function drawInvincible(time, image, x, y, flipState)
 	if invincibleTime > time then
 		if time % 500 > 250 then
 			SET_DRAW_MODE(INVERTED)
-			FAST_DRAW(image, x, y, flipState)
+			DRAW_IMAGE(image, x, y, flipState)
 			SET_DRAW_MODE(COPY)
 
 		else 
-			FAST_DRAW(image, x, y, flipState)
+			DRAW_IMAGE(image, x, y, flipState)
 		end
 	else
 		invincible = false
-		FAST_DRAW(image, x, y, flipState)
+		DRAW_IMAGE(image, x, y, flipState)
 	end
 end
 
 
-function updatePlayer(time, crank, newShots, newItems)
+function updatePlayer(time, crank)
 	
-	--currentTime = time
-
-	-- Update data tracking
-	shotsFired = shotsFired + newShots
-	itemsGrabbed = itemsGrabbed + newItems
-
 	-- Damage Instances
 	if performSpikeDamage then 				-- bool check makes sure first damage instance is caught
 		if damageTimer < time then 	-- timer check makes sure future damage instances are ignored			
@@ -869,7 +881,7 @@ function updatePlayer(time, crank, newShots, newItems)
 
 	local imageIndex = crank % 180 // IMAGE_ANGLE_DIFF + 1 	-- 1 to 40
 	local flipState = crank < 180 and UNFLIPPED or FLIP_XY	-- same as   a ? b : c
-	local image = GET_IMAGE(playerImageTable, imageIndex)
+	local image = GET_IMAGE(imgTable_player, imageIndex)
 
 	if invincible then 
 		drawInvincible(	time, 
@@ -878,7 +890,7 @@ function updatePlayer(time, crank, newShots, newItems)
 						playerY - PLAYER_IMAGE_HEIGHT_HALF, 
 						flipState)
 	else
-		FAST_DRAW(	image, 
+		DRAW_IMAGE(	image, 
 					playerX - PLAYER_IMAGE_WIDTH_HALF, 
 					playerY - PLAYER_IMAGE_HEIGHT_HALF, 
 					flipState)
@@ -897,7 +909,7 @@ function redrawPlayer(time, crank)
 
 	local imageIndex = crank % 180 // IMAGE_ANGLE_DIFF + 1 	-- 1 to 40
 	local flipState = crank < 180 and UNFLIPPED or FLIP_XY	-- same as   a ? b : c
-	local image = GET_IMAGE(playerImageTable, imageIndex)
+	local image = GET_IMAGE(imgTable_player, imageIndex)
 
 	if invincible then 
 		drawInvincible(	time, 
@@ -906,7 +918,7 @@ function redrawPlayer(time, crank)
 						playerY - PLAYER_IMAGE_HEIGHT_HALF, 
 						flipState)
 	else
-		FAST_DRAW(	image, 
+		DRAW_IMAGE(	image, 
 					playerX - PLAYER_IMAGE_WIDTH_HALF, 
 					playerY - PLAYER_IMAGE_HEIGHT_HALF, 
 					flipState)

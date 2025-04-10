@@ -206,7 +206,7 @@ function mainMenu_StateStart()
 end
 
 
-local function mainMenu_ClearState()
+function mainMenu_ClearState()
 
 	-- clear background images
 	img_MainMenuBackground = nil 
@@ -323,7 +323,7 @@ local function actionPlay()
 		menuItemSelected = false
 
 		-- 'gameScene_init' calls 'gameScene_goToLevel', which then calls 'runTransitionEnd'.
-		runTransitionStart( GAMESTATE.maingame, TRANSITION_TYPE.growingCircles, gameScene_init, mainMenu_ClearState )
+		runTransitionStart( GAMESTATE.maingame, TRANSITION_TYPE.growingCircles, gameScene_startFirstLevel, mainMenu_ClearState )
 	end
 end 
 
